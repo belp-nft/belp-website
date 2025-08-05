@@ -5,56 +5,92 @@ import Image from "next/image";
 
 export default function HeroSection() {
   return (
-    <section className="relative flex flex-col items-center justify-center text-center">
+    <section
+      className={clsx(
+        "relative flex flex-col items-center justify-center text-center",
+        "bg-[url('/images/bg-hero-section.png')] bg-no-repeat bg-cover",
+        "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px]"
+      )}
+    >
       <motion.h1
         className={clsx(
           "font-bold mb-4",
-          "text-4xl sm:text-6xl md:text-7xl lg:text-[96px]",
-          "bg-gradient-to-b from-[#8438CE] to-[#1C007C] bg-clip-text text-transparent leading-tight"
+          "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[96px]",
+          "bg-gradient-to-b from-[#ED00FF] to-[#FFC3F9] bg-clip-text text-transparent leading-tight"
         )}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        Your NFT. Your Story.
-        <br />
-        <span className="flex items-center gap-2 justify-center w-full text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-          Your Cat
-          <span className="relative top-2">
-            <Image
-              src="/icons/cat.png"
-              width={50}
-              height={40}
-              alt="Cat Icon"
-              className="inline-block w-10 sm:w-[60px] md:w-[80px] lg:w-[139px] h-auto"
-            />
-          </span>
-          Kingdom
-        </span>
+        Create Your Own Belp
+        <br />& Find New Universe
       </motion.h1>
-      <p className="text-base sm:text-xl md:text-2xl mb-8 mx-auto">
-        A new digital character ecosystem, starting with just one NFT.
+      <p
+        className={clsx(
+          "text-base sm:text-xl md:text-2xl mb-8 mx-auto",
+          "max-w-xl"
+        )}
+      >
+        The first limited collection of unique NFT tokens, there are amazing
+        adventure and exploration.
       </p>
 
-      <motion.video
-        src="/videos/cat.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="mb-4 drop-shadow-xl rounded-2xl w-full max-w-[420px] sm:max-w-[560px] md:max-w-[700px] h-auto"
-        initial={{ scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-      />
-      <div className="flex flex-col lg:flex-row gap-5 sm:gap-8 justify-center items-center sm:text-xl font-bold w-full mt-4 text-2xl">
-        <button className="min-w-[400px] h-[54px] sm:h-[64px] rounded-2xl bg-gradient-to-b from-[#A39BFF] to-[#FFC3F9] text-white shadow-lg hover:scale-105 transition">
+      <div
+        className={clsx(
+          "flex flex-col lg:flex-row gap-5 sm:gap-8 justify-center items-center sm:text-xl font-bold w-full mt-4 text-2xl"
+        )}
+      >
+        <button
+          className={clsx(
+            "min-w-[220px] sm:min-w-[320px] md:min-w-[400px]",
+            "h-[54px] sm:h-[64px]",
+            "rounded-2xl bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
+            "shadow-lg hover:scale-105 transition"
+          )}
+        >
           Mint Now
         </button>
-        <button className="min-w-[400px] h-[54px] sm:h-[64px] rounded-2xl shadow-lg hover:scale-105 transition bg-white/90 border border-[#eee]">
+        <button
+          className={clsx(
+            "min-w-[220px] sm:min-w-[320px] md:min-w-[400px]",
+            "h-[54px] sm:h-[64px]",
+            "rounded-2xl bg-[#E5CAFF] shadow-lg hover:scale-105 transition",
+            "border-2 border-[#8438CE] text-[#8438CE]"
+          )}
+        >
           Join Marketplace
         </button>
       </div>
+
+      <motion.div
+        initial={{ scale: 0.5, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 1 }}
+        viewport={{ once: false, margin: "-100px" }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+        className={clsx(
+          "relative z-10 flex-shrink-0 -mb-2 -ml-0 sm:-ml-6 lg:-ml-10 w-full max-w-[852px]"
+        )}
+      >
+        <Image
+          src="/images/belp-friends.png"
+          alt="belp friend"
+          width={852}
+          height={343}
+          priority
+          draggable={false}
+          className="w-full h-auto"
+        />
+      </motion.div>
+
+      {/* Gradient fade at the bottom */}
+      <div
+        className={clsx(
+          "pointer-events-none absolute left-0 bottom-0 w-full",
+          "h-16 sm:h-24 md:h-32 lg:h-40",
+          "bg-gradient-to-b from-transparent to-[#FFE7FF]",
+          "z-0"
+        )}
+      />
     </section>
   );
 }

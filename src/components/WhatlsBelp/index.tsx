@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import TraitsSection from "../TraitsSection";
+import CatCarousel from "../CatCarousel";
 
 function rand(min: number, max: number) {
   return Math.random() * (max - min) + min;
@@ -60,11 +60,16 @@ export default function WhatlsBelp() {
   }, []);
 
   return (
-    <section className="relative mx-auto my-10 text-center pt-10">
+    <section
+      className={clsx(
+        "relative text-center",
+        "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px]"
+      )}
+    >
       <motion.h2
         className={clsx(
           "lg:text-[64px] font-bold mb-3",
-          "bg-gradient-to-b from-[#8438CE] to-[#1C007C] bg-clip-text text-transparent leading-tight"
+          "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
         )}
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -72,60 +77,13 @@ export default function WhatlsBelp() {
       >
         What is BELP
       </motion.h2>
-      <p>
+      <p className="text-[#1C007C] mb-[92px]">
         Meet Belp, the adorable Web3-born character that's taking the digital
         universe by storm. Born from the cosmic dreams of creators and the
         infinite imagination of the community.
       </p>
 
-      {cloudConfigs.map((cfg) => (
-        <motion.div
-          key={cfg.key}
-          style={cfg.style}
-          animate={cfg.animate}
-          transition={cfg.transition}
-        >
-          <Image
-            src="/images/cloud.svg"
-            alt={cfg.key}
-            width={Number(cfg.style.width)}
-            height={Number(cfg.style.height)}
-            draggable={false}
-            style={{
-              opacity: 0.93,
-              width: cfg.style.width,
-              height: cfg.style.height,
-              pointerEvents: "none",
-              filter: "drop-shadow(0 4px 16px rgba(132, 56, 206, 0.14))",
-            }}
-            className="drop-shadow-lg"
-          />
-        </motion.div>
-      ))}
-
-      <motion.div
-        animate={{
-          y: [0, -32, 0, 32, 0],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          repeatType: "loop",
-          ease: "easeInOut",
-        }}
-        className="flex justify-center relative z-20"
-      >
-        <Image
-          src="/images/belp-cat.png"
-          alt="Belp"
-          width={320}
-          height={380}
-          className="w-full max-w-[320px] sm:max-w-[420px] md:max-w-[538px] h-auto"
-          priority
-        />
-      </motion.div>
-
-      <TraitsSection />
+      <CatCarousel />
     </section>
   );
 }
