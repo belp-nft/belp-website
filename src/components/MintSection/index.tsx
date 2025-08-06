@@ -1,31 +1,62 @@
-'use client'
-import { motion } from 'framer-motion'
+"use client";
+import { motion, useAnimation } from "framer-motion";
+import Image from "next/image";
+import { useRef } from "react";
 
 export default function MintSection() {
+  const controls = useAnimation();
+  const imgRef = useRef(null);
+
   return (
-    <section className='py-20 px-4 flex flex-col items-center justify-center bg-gradient-to-br from-fuchsia-100 to-violet-100 rounded-3xl shadow-lg mb-16'>
-      <motion.h2
-        className='text-3xl font-bold mb-4 text-center'
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-      >
-        Mint Your BELP Cat Now!
-      </motion.h2>
-      <motion.p
-        className='text-center text-lg text-gray-700 mb-8'
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        Connect your wallet and mint the cutest NFT on Solana.
-      </motion.p>
+    <section className="py-20 md:px-4 w-full flex flex-col md:flex-row items-center justify-center max-w-5xl mx-auto">
       <motion.button
-        className='px-8 py-3 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 text-white font-bold text-lg shadow-lg hover:scale-105 transition-all'
+        className="text-[#C000FF] font-bold text-[52px] sm:text-[72px] md:text-[98px] lg:text-[124px] xl:text-[138px] leading-tight hover:scale-105 transition-all md:w-1/3 w-full mb-8 md:mb-0"
         whileTap={{ scale: 0.95 }}
+        onHoverStart={() => controls.start({ scale: 1.05 })}
+        onHoverEnd={() => controls.start({ scale: 1 })}
       >
-        Mint Now
+        Mint now !
       </motion.button>
+
+      <motion.div
+        initial={{ x: 260, scale: 0.2, opacity: 0 }}
+        whileInView={{ x: 0, scale: 1, opacity: 1 }}
+        animate={controls}
+        viewport={{ once: false, margin: "-100px" }}
+        transition={{
+          type: "spring",
+          stiffness: 80,
+          damping: 15,
+          mass: 0.7,
+        }}
+        className="w-full md:w-2/3 hidden md:flex justify-center items-end"
+        style={{ minHeight: 320 }}
+        ref={imgRef}
+      >
+        <Image
+          src="/images/belp-cat-3.svg"
+          alt="belp cat"
+          width={684}
+          height={700}
+          priority
+          draggable={false}
+          className="max-w-[320px] sm:max-w-[440px] md:max-w-[540px] lg:max-w-[620px] xl:max-w-[684px] h-auto"
+        />
+      </motion.div>
+
+      <div className="w-full flex md:hidden justify-center items-end">
+        <video
+          src="/videos/cat-walk.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{
+            width: "100%",
+            objectFit: "contain",
+          }}
+        />
+      </div>
     </section>
-  )
+  );
 }
