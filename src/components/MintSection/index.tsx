@@ -8,7 +8,7 @@ export default function MintSection() {
   const imgRef = useRef(null);
 
   return (
-    <section className="py-20 md:px-4 w-full flex flex-col md:flex-row items-center justify-center max-w-5xl mx-auto">
+    <section className="pt-20 md:px-4 w-full flex flex-col md:flex-row items-center justify-center max-w-5xl mx-auto">
       <motion.button
         className="text-[#C000FF] font-bold text-[52px] sm:text-[72px] md:text-[98px] lg:text-[124px] xl:text-[138px] leading-tight hover:scale-105 transition-all md:w-1/3 w-full mb-8 md:mb-0"
         whileTap={{ scale: 0.95 }}
