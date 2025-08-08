@@ -4,6 +4,10 @@ import { usePathname } from "next/navigation";
 import WalletModal from "./WalletModal";
 import WalletButton from "./WalletButton";
 import { Connected, useWallet } from "@/hooks/useWallet";
+import { useSolflareProvider } from "@/hooks/useSolflareProvider";
+import { useBackpackProvider } from "@/hooks/useBackpackProvider";
+import { useGlowProvider } from "@/hooks/useGlowProvider";
+import { useOKXProvider } from "@/hooks/useOKXProvider";
 
 type Props = {
   className?: string;
@@ -25,6 +29,31 @@ export default function ConnectWallet({ className, onConnected }: Props) {
     disconnect,
     solBalanceText,
   } = useWallet(onConnected);
+
+  const {
+    solflare,
+    isConnected: isSolflareConnected,
+    connect: connectSolflare,
+    disconnect: disconnectSolflare,
+  } = useSolflareProvider();
+  const {
+    backpack,
+    isConnected: isBackpackConnected,
+    connect: connectBackpack,
+    disconnect: disconnectBackpack,
+  } = useBackpackProvider();
+  const {
+    glow,
+    isConnected: isGlowConnected,
+    connect: connectGlow,
+    disconnect: disconnectGlow,
+  } = useGlowProvider();
+  const {
+    okx,
+    isConnected: isOKXConnected,
+    connect: connectOKX,
+    disconnect: disconnectOKX,
+  } = useOKXProvider();
 
   const label = useMemo(
     () => (solAddress && shorten(solAddress)) || "",
@@ -94,9 +123,33 @@ export default function ConnectWallet({ className, onConnected }: Props) {
         open={open}
         onClose={() => setOpen(false)}
         hasPhantom={hasPhantom}
+        hasSolflare={!!solflare}
+        hasBackpack={!!backpack}
+        hasGlow={!!glow}
+        hasOKX={!!okx}
         loading={loading}
         connectPhantom={async () => {
           await connectPhantom();
+          setOpen(false);
+          setShowMenu(false);
+        }}
+        connectSolflare={async () => {
+          await connectSolflare();
+          setOpen(false);
+          setShowMenu(false);
+        }}
+        connectBackpack={async () => {
+          await connectBackpack();
+          setOpen(false);
+          setShowMenu(false);
+        }}
+        connectGlow={async () => {
+          await connectGlow();
+          setOpen(false);
+          setShowMenu(false);
+        }}
+        connectOKX={async () => {
+          await connectOKX();
           setOpen(false);
           setShowMenu(false);
         }}

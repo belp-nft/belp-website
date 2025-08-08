@@ -38,6 +38,10 @@ export function useOKXProvider() {
   }, [okx]);
 
   const connect = useCallback(async () => {
+    if (!okx) {
+      window.open("https://www.okx.com/web3", "_blank");
+      return null;
+    }
     if (!okx?.connect) return null;
     const resp = await okx.connect();
     setIsConnected(true);

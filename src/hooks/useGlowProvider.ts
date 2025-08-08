@@ -38,6 +38,10 @@ export function useGlowProvider() {
   }, [glow]);
 
   const connect = useCallback(async () => {
+    if (!glow) {
+      window.open("https://glow.app/", "_blank");
+      return null;
+    }
     if (!glow?.connect) return null;
     const resp = await glow.connect();
     setIsConnected(true);

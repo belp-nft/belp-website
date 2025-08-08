@@ -39,6 +39,10 @@ export function useSolflareProvider() {
   }, [solflare]);
 
   const connect = useCallback(async () => {
+    if (!solflare) {
+      window.open("https://solflare.com/download", "_blank");
+      return null;
+    }
     if (!solflare?.connect) return null;
     const resp = await solflare.connect();
     setIsConnected(true);

@@ -43,6 +43,10 @@ export function useBackpackProvider() {
 
   // Hàm connect/disconnect có thể gọi từ UI
   const connect = useCallback(async () => {
+    if (!backpack) {
+      window.open("https://backpack.app/download", "_blank");
+      return null;
+    }
     if (!backpack?.connect) return null;
     try {
       const resp = await backpack.connect();
