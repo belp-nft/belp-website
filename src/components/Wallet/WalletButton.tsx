@@ -1,7 +1,6 @@
 "use client";
 import { formatNumber } from "@/lib/helpers/format-helpers";
 import clsx from "clsx";
-import { FaUser } from "react-icons/fa";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import { SiSolana } from "react-icons/si";
 
@@ -39,7 +38,7 @@ export default function WalletButton({
       <div className="flex-1 flex flex-col">
         <span
           className={
-            !!label ? "font-bold tracking-wide animate-fade-in" : undefined
+            label ? "font-bold tracking-wide animate-fade-in" : "text-white"
           }
         >
           {label || "Connect wallet"}

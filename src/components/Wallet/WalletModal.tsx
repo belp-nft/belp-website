@@ -7,16 +7,32 @@ type Props = {
   open: boolean;
   onClose: () => void;
   hasPhantom: boolean;
+  hasSolflare?: boolean;
+  hasBackpack?: boolean;
+  hasGlow?: boolean;
+  hasOKX?: boolean;
   loading: LoadingKind;
   connectPhantom: () => void;
+  connectSolflare: () => void;
+  connectBackpack: () => void;
+  connectGlow: () => void;
+  connectOKX: () => void;
 };
 
 export default function WalletModal({
   open,
   onClose,
   hasPhantom,
+  hasSolflare,
+  hasBackpack,
+  hasGlow,
+  hasOKX,
   loading,
   connectPhantom,
+  connectSolflare,
+  connectBackpack,
+  connectGlow,
+  connectOKX,
 }: Props) {
   return (
     <AnimatePresence>
@@ -49,25 +65,45 @@ export default function WalletModal({
 
             <div className="flex flex-col gap-3">
               <ProviderRow
-                logo={{
-                  src: "https://raw.githubusercontent.com/phantom-labs/phantom-brand/master/Phantom%20Primary%20Logo%20Mark/Primary_Lockup.svg",
-                  alt: "Phantom",
-                }}
+                logo={{ src: "/icons/phantom.svg", alt: "Phantom" }}
                 title="Phantom"
                 subtitle="Solana"
                 onClick={connectPhantom}
                 loading={loading === "phantom"}
                 installedHint={hasPhantom ? null : "Install"}
               />
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={onClose}
-                className="text-[#7A4BD6] font-semibold px-3 py-2 hover:opacity-80"
-              >
-                Cancel
-              </button>
+              <ProviderRow
+                logo={{ src: "/icons/solflare.svg", alt: "Solflare" }}
+                title="Solflare"
+                subtitle="Solana"
+                onClick={connectSolflare}
+                loading={loading === "solflare"}
+                installedHint={hasSolflare ? null : "Install"}
+              />
+              <ProviderRow
+                logo={{ src: "/icons/backpack.svg", alt: "Backpack" }}
+                title="Backpack"
+                subtitle="Solana"
+                onClick={connectBackpack}
+                loading={loading === "backpack"}
+                installedHint={hasBackpack ? null : "Install"}
+              />
+              <ProviderRow
+                logo={{ src: "/icons/glow.jpg", alt: "Glow" }}
+                title="Glow"
+                subtitle="Solana"
+                onClick={connectGlow}
+                loading={loading === "glow"}
+                installedHint={hasGlow ? null : "Install"}
+              />
+              <ProviderRow
+                logo={{ src: "/icons/okx.svg", alt: "OKX" }}
+                title="OKX"
+                subtitle="Solana"
+                onClick={connectOKX}
+                loading={loading === "okx"}
+                installedHint={hasOKX ? null : "Install"}
+              />
             </div>
           </motion.div>
         </>

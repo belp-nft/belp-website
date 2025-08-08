@@ -17,7 +17,14 @@ declare global {
   }
 }
 
-export type LoadingKind = "phantom" | "sol-balance" | null;
+export type LoadingKind =
+  | "phantom"
+  | "solflare"
+  | "backpack"
+  | "glow"
+  | "okx"
+  | "sol-balance"
+  | null;
 
 const SOLANA_RPC =
   "https://young-patient-asphalt.solana-mainnet.quiknode.pro/81fe1cb3431ef0eb5a1423f7e2f529f82a0f344f/";
@@ -113,7 +120,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       try {
         setLoading("sol-balance");
         const lamports = await getSolBalanceLamports(target);
-        console.log("🚀 ~ useWallet ~ lamports:", lamports);
         setSolLamports(lamports);
       } catch {
         setSolLamports(null);
