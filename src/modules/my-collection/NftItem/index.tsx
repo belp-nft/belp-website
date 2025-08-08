@@ -1,0 +1,42 @@
+"use client";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { NftItem as NftItemType } from "@/lib/collection-mock";
+import Link from "next/link";
+
+export default function NftItem({ item }: { item: NftItemType }) {
+  return (
+    <Link href={`/my-collection/${item.id}`} passHref legacyBehavior>
+      <motion.a
+        whileHover={{ y: -3 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className={[
+          "block w-full text-left rounded-xl p-2 sm:p-3 bg-white/80 backdrop-blur border border-[#eadffd] hover:border-[#d8c7ff]",
+        ].join(" ")}
+      >
+        <div className="relative rounded-lg overflow-hidden">
+          <Image
+            src={item.image}
+            alt={item.name}
+            width={480}
+            height={480}
+            className="w-full aspect-square object-cover rounded-lg"
+          />
+        </div>
+
+        <div className="mt-2 sm:mt-3">
+          <div className="text-[#2b1a5e] font-semibold text-sm sm:text-[15px]">
+            {item.name}
+          </div>
+          <div className="flex items-center justify-between text-xs text-[#6c5a99] mt-1">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-[#7a4bd6]" />
+              {item.price.toFixed(2)} Sol
+            </span>
+            <span className="opacity-60">{item.likes} ❤️</span>
+          </div>
+        </div>
+      </motion.a>
+    </Link>
+  );
+}
