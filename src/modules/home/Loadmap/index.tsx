@@ -50,7 +50,7 @@ export default function Roadmap() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.75, type: "spring", bounce: 0.15 }}
         viewport={{ once: true, margin: "-100px" }}
-        className="relative z-10 w-full max-w-3xl mx-auto"
+        className="relative z-10 w-full medium-text-container"
       >
         <motion.h2
           className="font-extrabold mb-3 text-4xl sm:text-5xl md:text-[56px] lg:text-[64px]

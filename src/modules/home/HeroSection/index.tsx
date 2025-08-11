@@ -11,7 +11,7 @@ export default function HeroSection() {
         "bg-[url('/images/home/bg-hero-section.png')] bg-no-repeat bg-cover"
       )}
     >
-      <div className="py-20 md:py-24 lg:py-[100px] px-5">
+      <div className="py-20 md:py-24 lg:py-[100px] px-5 mt-20">
         <motion.h1
           className={clsx(
             "font-bold mb-4",
@@ -28,7 +28,7 @@ export default function HeroSection() {
         <p
           className={clsx(
             "text-base sm:text-xl md:text-2xl text-white",
-            "max-w-xl mb-8 mx-auto"
+            "text-container mb-8"
           )}
         >
           The first limited collection of unique NFT tokens, there are amazing

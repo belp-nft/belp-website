@@ -45,3 +45,57 @@ body {
   background: var(--background);
   font-family: "GmarketSans", Arial, Helvetica, sans-serif;
 }
+
+/* Main container utility class */
+.main-container {
+  max-width: 1440px; /* equivalent to max-w-4xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Footer container - wider than main container */
+.footer-container {
+  max-width: 1440px; /* equivalent to max-w-[1440px] */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Wide section container */
+.wide-container {
+  max-width: 1280px; /* equivalent to max-w-5xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Text container for hero sections */
+.text-container {
+  max-width: 576px; /* equivalent to max-w-xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Medium text container */
+.medium-text-container {
+  max-width: 768px; /* equivalent to max-w-3xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Small text container */
+.small-text-container {
+  max-width: 672px; /* equivalent to max-w-2xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}

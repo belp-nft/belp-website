@@ -50,7 +50,7 @@ export default function CatCarousel() {
         initialSlide={2}
         loop={false}
         speed={600}
-        className="w-full max-w-5xl select-none"
+        className="w-full wide-container select-none"
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}

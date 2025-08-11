@@ -3,38 +3,104 @@
 import BreadCrumbs from "@/components/Breadcrumb";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useMemo } from "react";
-import { makeMockItems } from "@/lib/collection-mock";
+import { useRealNfts } from "@/hooks/useRealNfts";
 import { BiStar } from "react-icons/bi";
+import { motion } from "framer-motion";
 
 const NftDetailPage = () => {
   const { id } = useParams();
-  const allItems = useMemo(() => makeMockItems(88), []);
-  const item = allItems.find((it) => it.id === id);
+  const { getNftById, loading } = useRealNfts();
+  const item = getNftById(id as string);
 
-  if (!item)
-    return <div className="p-8 text-center text-red-500">NFT not found</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f8f4ff] via-white to-[#f0e6ff]">
+        <div className="text-center">
+          {/* Clean NFT Frame */}
+          <motion.div
+            className="relative w-24 h-24 mx-auto mb-8"
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#F356FF] to-[#AE4DCE] p-1">
+              <div className="w-full h-full bg-white rounded-xl flex items-center justify-center">
+                <motion.span
+                  className="text-3xl"
+                  animate={{
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  🖼️
+                </motion.span>
+              </div>
+            </div>
+          </motion.div>
 
-  const traits = [
-    { label: "SPECIAL", value: "Water" },
-    { label: "AURA", value: "Planet" },
-    { label: "GLASSES", value: "Sunglasses" },
-    { label: "HELMET", value: "Summer" },
-    { label: "SNACK", value: "Fish" },
-    { label: "FACE", value: "Scar" },
-    { label: "EARS", value: "Gold" },
-    { label: "HAIR", value: "Devil Horn" },
-    { label: "HAT", value: "Hellboy" },
-    { label: "MASK", value: "Jason 2" },
-    { label: "MOUTH", value: "Water" },
-    { label: "NECK", value: "Water" },
-    { label: "EQUIP", value: "Water" },
-    { label: "CLOAK", value: "Water" },
-  ];
+          {/* Simple text */}
+          <motion.h2
+            className="text-2xl font-bold text-[#2b1a5e] mb-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            Loading NFT
+          </motion.h2>
+
+          {/* Loading dots */}
+          <div className="flex justify-center gap-1">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 bg-[#7A4BD6] rounded-full"
+                animate={{
+                  y: [0, -8, 0],
+                }}
+                transition={{
+                  duration: 0.8,
+                  repeat: Infinity,
+                  delay: i * 0.15,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className="p-8 text-center">
+        <div className="text-6xl mb-4">🔍</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">NFT not found</h2>
+        <p className="text-gray-600 mb-6">
+          This NFT doesn't exist in your collection.
+        </p>
+        <button
+          onClick={() => (window.location.href = "/my-collection")}
+          className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl"
+        >
+          Back to Collection
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-[#ede9f6] py-8 px-2">
-      <div className="w-full max-w-[900px]">
+    <div className="min-h-screen flex flex-col items-center bg-[#ede9f6] py-8">
+      <div className="main-container w-full">
         <BreadCrumbs
           breadcrumbs={[
             { href: "/my-collection", label: "My Collection" },
@@ -71,13 +137,13 @@ const NftDetailPage = () => {
               <div>
                 <div className="font-bold text-[#2b1a5e] mb-1">Backstory</div>
                 <div className="text-[#7466a1] text-sm leading-relaxed">
-                  BELPY #{item.id.replace("belpy-", "")} was born under the Moon
-                  of Whisker Hollow. Known for its mysterious glow and trickster
-                  nature, this BELPY has a hidden destiny linked to the lost
-                  Harmony Stone.
+                  {item.name} was born under the Moon of Whisker Hollow. Known
+                  for its mysterious glow and trickster nature, this BELPY has a
+                  hidden destiny linked to the lost Harmony Stone.
                 </div>
               </div>
             </div>
+
             {/* Blockchain details */}
             <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2">
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
@@ -96,19 +162,37 @@ const NftDetailPage = () => {
                 <div className="font-bold text-[#2b1a5e] mb-1">
                   Blockchain details
                 </div>
-                <div className="text-[#7466a1] text-sm grid grid-cols-2 gap-x-4">
-                  <span>Contract Address</span>
-                  <span>#6782</span>
-                  <span>Token ID</span>
-                  <span>{item.id}</span>
-                  <span>Token Standard</span>
-                  <span>NFT</span>
-                  <span>Chain</span>
-                  <span>Solana</span>
+                <div className="text-[#7466a1] text-sm space-y-1">
+                  <div>
+                    <strong>Token ID:</strong> {item.id}
+                  </div>
+                  <div>
+                    <strong>Network:</strong> Solana Devnet
+                  </div>
+                  {item.mintSignature && (
+                    <div>
+                      <strong>Mint Tx:</strong>{" "}
+                      <a
+                        href={`https://solscan.io/tx/${item.mintSignature}?cluster=devnet`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#7a4bd6] hover:underline"
+                      >
+                        View on Solscan
+                      </a>
+                    </div>
+                  )}
+                  {item.mintedAt && (
+                    <div>
+                      <strong>Minted:</strong>{" "}
+                      {new Date(item.mintedAt).toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
+
           {/* Right: Trait Info */}
           <div className="flex-1 flex flex-col gap-4">
             <button className="self-start px-6 py-2 rounded-xl bg-[#7a4bd6] text-white font-bold shadow text-base mb-2">
@@ -120,7 +204,13 @@ const NftDetailPage = () => {
                 Trait
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {traits.map((trait) => (
+                {/* Show some default traits for minted NFTs */}
+                {[
+                  { label: "TYPE", value: "Genesis BELPY" },
+                  { label: "RARITY", value: "Common" },
+                  { label: "SPECIAL", value: "Minted" },
+                  { label: "NETWORK", value: "Solana" },
+                ].map((trait) => (
                   <div
                     key={trait.label}
                     className="bg-white rounded-lg px-3 py-2 text-sm flex flex-col items-start border border-[#e9defd]"

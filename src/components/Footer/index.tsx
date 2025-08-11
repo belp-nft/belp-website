@@ -11,8 +11,8 @@ import {
 
 export default function BelpFooter() {
   return (
-    <footer className="bg-[#690078] pt-12 pb-6 px-4 md:px-10 w-full">
-      <div className="max-w-[1440px] mx-auto w-full">
+    <footer className="bg-[#690078] pt-12 pb-6 w-full">
+      <div className="footer-container w-full">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-8 md:gap-0">
           <div className="flex flex-col sm:flex-row gap-10 md:gap-16 w-full md:w-auto px-5 sm:px-10">
             <div>
