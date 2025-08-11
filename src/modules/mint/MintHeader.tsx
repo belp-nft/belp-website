@@ -17,9 +17,8 @@ const MintHeader: React.FC<MintHeaderProps> = ({
     <>
       <motion.h1
         className={clsx(
-          "font-bold text-center",
-          "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight",
-          "text-4xl sm:text-6xl md:text-7xl lg:text-[96px]"
+          "font-bold text-center title-text",
+          "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
         )}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}

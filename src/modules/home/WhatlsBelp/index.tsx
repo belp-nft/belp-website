@@ -14,12 +14,12 @@ export default function WhatlsBelp() {
     <section
       className={clsx(
         "relative text-center",
-        "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px]"
+        "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px] mt-10"
       )}
     >
-      <motion.h2
+      <motion.h1
         className={clsx(
-          "lg:text-[64px] font-bold mb-3",
+          "font-bold mb-4 title-text",
           "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
         )}
         initial={{ x: -50, opacity: 0 }}
@@ -27,8 +27,8 @@ export default function WhatlsBelp() {
         transition={{ delay: 0.2 }}
       >
         What is BELP
-      </motion.h2>
-      <p className="mb-[92px]">
+      </motion.h1>
+      <p className="mb-[92px] large-text-container">
         Meet Belp, the adorable Web3-born character that's taking the digital
         universe by storm. Born from the cosmic dreams of creators and the
         infinite imagination of the community.

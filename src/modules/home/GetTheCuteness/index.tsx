@@ -98,9 +98,9 @@ function DesktopCarousel() {
   const angles = Array.from({ length: N }, (_, i) => (360 / N) * i);
 
   return (
-    <div className="relative h-[500px] w-[500px] min-w-[220px] flex-shrink-0 flex items-center justify-start">
+    <div className="h-[500px] w-1/2 flex-shrink-0 flex items-center justify-start">
       {isMounted ? (
-        <motion.div className="absolute left-[-132px] top-1/2 -translate-y-1/2 w-full h-full origin-left">
+        <motion.div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-full origin-left">
           {cats.map((item, i) => {
             const angle = angles[i];
             const actualAngle = (angle + rotation) % 360;
@@ -161,113 +161,115 @@ function DesktopCarousel() {
 
 export default function GetTheCuteness() {
   return (
-    <section className="relative wide-container my-10 py-8 w-full">
-      <div className="w-full flex flex-col items-stretch md:hidden">
-        <h2
-          className="font-bold text-[28px] xs:text-[34px] sm:text-[40px] mb-4
+    <div className="relative">
+      <section className="main-container my-10 py-10 lg:py-32 w-full">
+        <div className="w-full flex flex-col items-stretch md:hidden">
+          <h2
+            className="font-bold text-[28px] xs:text-[34px] sm:text-[40px] mb-4
           bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent px-2 pt-2"
-        >
-          Get the cuteness
-        </h2>
-        <div className="flex flex-row w-full min-h-[300px]">
-          <div className="relative flex-1 min-w-0" style={{ height: 230 }}>
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-              className="absolute left-1 top-0"
-              style={{ zIndex: 2, width: 82 }}
-            >
-              <Image
-                src="/icons/token-nft-2.svg"
-                alt="cat2"
-                width={82}
-                height={82}
-                className="rounded-2xl shadow-lg rotate-[-11deg] bg-[#ffe1fc] p-1"
-                draggable={false}
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85, y: 20 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" }}
-              className="absolute left-8 top-32"
-              style={{ zIndex: 1, width: 72 }}
-            >
-              <Image
-                src="/icons/token-nft-5.svg"
-                alt="cat5"
-                width={72}
-                height={72}
-                className="rounded-2xl shadow-lg rotate-[-6deg] bg-[#e6f4ff] p-1"
-                draggable={false}
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 60 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              viewport={{ once: true, margin: "-70px" }}
-              transition={{ delay: 0.28, duration: 0.5, ease: "easeOut" }}
-              className="absolute left-14 top-10"
-              style={{ zIndex: 10, width: 122 }}
-            >
-              <Image
-                src="/icons/token-nft-1.svg"
-                alt="cat1"
-                width={122}
-                height={122}
-                className="rounded-2xl shadow-xl rotate-[7deg] bg-[#edf3ff] p-1"
-                draggable={false}
-              />
-            </motion.div>
-            <div className="h-[200px] w-full" />
-          </div>
-          <div className="text-[15px] font-medium text-right max-w-[150px] sm:max-w-[200px] mt-6 pr-5">
-            Belpy consists of 100 rare Genesis NFTs and 9,900 General collection
-            NFTs, featuring over 550 customizable traits and meticulously
-            handcrafted, high-quality designs.
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden md:flex md:flex-row items-center justify-between w-full gap-0">
-        <DesktopCarousel />
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-right">
-          <motion.h2
-            className={clsx(
-              "text-4xl sm:text-5xl lg:text-[64px] font-bold mb-4",
-              "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
-            )}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
           >
             Get the cuteness
-          </motion.h2>
-          <motion.p
-            className="text-lg md:text-xl lg:text-2xl mb-8 max-w-xl"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            Belpy consists of 100 rare Genesis NFTs and 9,900 General collection
-            NFTs, featuring over 550 customizable traits and meticulously
-            handcrafted, high-quality designs.
-          </motion.p>
-          <motion.p
-            className="text-lg md:text-xl lg:text-2xl max-w-xl"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            Each Belpy NFT serves as the main key that connects to all future
-            content, unlocking unique value across the entire Belpy ecosystem,
-            including games, merchandise, and token rewards.
-          </motion.p>
+          </h2>
+          <div className="flex flex-row w-full min-h-[300px]">
+            <div className="relative flex-1 min-w-0" style={{ height: 230 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="absolute left-1 top-0"
+                style={{ zIndex: 2, width: 82 }}
+              >
+                <Image
+                  src="/icons/token-nft-2.svg"
+                  alt="cat2"
+                  width={82}
+                  height={82}
+                  className="rounded-2xl shadow-lg rotate-[-11deg] bg-[#ffe1fc] p-1"
+                  draggable={false}
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, y: 20 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" }}
+                className="absolute left-8 top-32"
+                style={{ zIndex: 1, width: 72 }}
+              >
+                <Image
+                  src="/icons/token-nft-5.svg"
+                  alt="cat5"
+                  width={72}
+                  height={72}
+                  className="rounded-2xl shadow-lg rotate-[-6deg] bg-[#e6f4ff] p-1"
+                  draggable={false}
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 60 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true, margin: "-70px" }}
+                transition={{ delay: 0.28, duration: 0.5, ease: "easeOut" }}
+                className="absolute left-14 top-10"
+                style={{ zIndex: 10, width: 122 }}
+              >
+                <Image
+                  src="/icons/token-nft-1.svg"
+                  alt="cat1"
+                  width={122}
+                  height={122}
+                  className="rounded-2xl shadow-xl rotate-[7deg] bg-[#edf3ff] p-1"
+                  draggable={false}
+                />
+              </motion.div>
+              <div className="h-[200px] w-full" />
+            </div>
+            <div className="text-[15px] font-medium text-right max-w-[150px] sm:max-w-[200px] mt-6 pr-5">
+              Belpy consists of 100 rare Genesis NFTs and 9,900 General
+              collection NFTs, featuring over 550 customizable traits and
+              meticulously handcrafted, high-quality designs.
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+
+        <div className="hidden md:flex md:flex-row items-center justify-between w-full">
+          <DesktopCarousel />
+          <div className="w-full md:w-1/2 flex flex-col items-center md:items-end text-center md:text-right">
+            <motion.h2
+              className={clsx(
+                "title-text font-bold mb-4",
+                "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
+              )}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
+            >
+              Get the cuteness
+            </motion.h2>
+            <motion.p
+              className="text-lg md:text-xl lg:text-2xl mb-8 max-w-xl"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Belpy consists of 100 rare Genesis NFTs and 9,900 General
+              collection NFTs, featuring over 550 customizable traits and
+              meticulously handcrafted, high-quality designs.
+            </motion.p>
+            <motion.p
+              className="text-lg md:text-xl lg:text-2xl max-w-xl"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Each Belpy NFT serves as the main key that connects to all future
+              content, unlocking unique value across the entire Belpy ecosystem,
+              including games, merchandise, and token rewards.
+            </motion.p>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

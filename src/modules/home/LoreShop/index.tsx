@@ -8,7 +8,7 @@ export default function LoreShop() {
     <section
       className={clsx(
         "relative w-full min-h-[720px] overflow-hidden",
-        "bg-[#2c1a52] pt-12 pb-10 px-4 md:px-12 lg:px-24"
+        "bg-[#2c1a52] pt-12 pb-10"
       )}
       style={{
         backgroundImage: "url('/images/home/bg-lore-shop.png')",
@@ -23,7 +23,7 @@ export default function LoreShop() {
             "linear-gradient(to bottom, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.06) 32%, rgba(255,255,255,0.06) 68%, rgba(255,255,255,0.72) 100%)",
         }}
       />
-      <div className="flex flex-col md:flex-row items-center justify-between w-full h-full relative z-20 gap-12 md:gap-0">
+      <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full relative z-20 gap-12 md:gap-0 main-container">
         <motion.div
           initial={{ x: -300, scale: 0.5, opacity: 0 }}
           whileInView={{ x: 0, scale: 1, opacity: 1 }}
@@ -41,11 +41,10 @@ export default function LoreShop() {
             className="max-w-[320px] sm:max-w-[440px] md:max-w-[540px] lg:max-w-[620px] xl:max-w-[684px] h-auto"
           />
         </motion.div>
-        <div className="w-full md:w-1/2 flex flex-col justify-center items-center md:items-start px-0 md:px-6 xl:px-12">
+        <div className="w-full md:w-1/2 flex flex-col justify-center items-center md:items-end">
           <motion.h2
             className={clsx(
-              "font-extrabold mb-6 text-center md:text-left",
-              "text-4xl sm:text-6xl md:text-7xl lg:text-[76px] xl:text-[90px] text-white leading-tight"
+              "font-extrabold mb-6 text-center md:text-left title-text text-white leading-tight text-nowrap"
             )}
             initial={{ opacity: 0, y: 48 }}
             whileInView={{ opacity: 1, y: 0 }}

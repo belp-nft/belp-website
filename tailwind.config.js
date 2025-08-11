@@ -20,4 +20,31 @@ module.exports = {
       },
     },
   },
+  plugins: [
+    function ({ addBase }) {
+      // Set responsive base font size for html and body
+      addBase({
+        html: {
+          fontSize: "16px",
+        },
+        body: {
+          fontSize: "1rem", // This will scale with html font-size
+        },
+        // Make text-base responsive by default
+        ".text-base": {
+          fontSize: "1rem", // Will scale with html font-size
+        },
+        "@screen md": {
+          html: {
+            fontSize: "18px",
+          },
+        },
+        "@screen xl": {
+          html: {
+            fontSize: "20px",
+          },
+        },
+      });
+    },
+  ],
 };

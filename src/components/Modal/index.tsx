@@ -126,7 +126,7 @@ const Modal: React.FC<ModalProps> = ({
               </motion.div>
 
               <motion.div
-                className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 sm:pt-4 flex gap-2 sm:gap-3 flex-col sm:flex-row mx-auto justify-center sm:justify-end"
+                className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 sm:pt-4 flex gap-2 sm:gap-3 flex-col sm:flex-row mx-auto justify-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.8 }}

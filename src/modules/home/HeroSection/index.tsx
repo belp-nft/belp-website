@@ -11,11 +11,10 @@ export default function HeroSection() {
         "bg-[url('/images/home/bg-hero-section.png')] bg-no-repeat bg-cover"
       )}
     >
-      <div className="py-20 md:py-24 lg:py-[100px] px-5 mt-20">
+      <div className="py-20 md:py-24 lg:py-[100px] mt-20">
         <motion.h1
           className={clsx(
-            "font-bold mb-4",
-            "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[96px]",
+            "font-bold mb-4 title-text",
             "bg-gradient-to-b from-[#ED00FF] to-[#FFC3F9] bg-clip-text text-transparent leading-tight"
           )}
           initial={{ opacity: 0, y: 20 }}
@@ -25,12 +24,7 @@ export default function HeroSection() {
           Create Your Own Belp
           <br />& Find New Universe
         </motion.h1>
-        <p
-          className={clsx(
-            "text-base sm:text-xl md:text-2xl text-white",
-            "text-container mb-8"
-          )}
-        >
+        <p className={clsx("text-white", "medium-text-container mb-8")}>
           The first limited collection of unique NFT tokens, there are amazing
           adventure and exploration.
         </p>

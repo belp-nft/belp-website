@@ -27,33 +27,11 @@ const MintSection: React.FC<MintSectionProps> = ({
   candyMachineId,
 }) => {
   const getScaleAndSize = (text: string) => {
-    const length = text.length;
-
-    if (length <= 5) {
-      return {
-        scale: 1,
-        sizeClasses:
-          "text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[120px] 2xl:text-[140px]",
-      };
-    } else if (length <= 8) {
-      return {
-        scale: 1,
-        sizeClasses:
-          "text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[100px] 2xl:text-[120px]",
-      };
-    } else if (length <= 12) {
-      return {
-        scale: 1,
-        sizeClasses:
-          "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl 2xl:text-[100px]",
-      };
-    } else {
-      return {
-        scale: 0.9,
-        sizeClasses:
-          "text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl",
-      };
-    }
+    // Simplified to use consistent title-text class
+    return {
+      scale: 1,
+      sizeClasses: "title-text",
+    };
   };
 
   const mintText =

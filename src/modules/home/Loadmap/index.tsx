@@ -53,15 +53,15 @@ export default function Roadmap() {
         className="relative z-10 w-full medium-text-container"
       >
         <motion.h2
-          className="font-extrabold mb-3 text-4xl sm:text-5xl md:text-[56px] lg:text-[64px]
+          className="font-extrabold mb-3 title-text
           bg-gradient-to-b from-[#B553F3] to-[#A800BD] bg-clip-text text-transparent text-left"
         >
           Road map
         </motion.h2>
-        <div className="text-[#411A7A] text-base md:text-lg font-medium mb-2">
+        <div className="text-[#411A7A] text-responsive-lg font-medium mb-2">
           The Expanding Belpy Universe
         </div>
-        <div className="text-[#401B79] text-sm md:text-base mb-6">
+        <div className="text-[#401B79] text-responsive mb-6">
           Belpy NFTs are your key to a growing Web3 ecosystem where digital
           culture meets real-world experiences
         </div>

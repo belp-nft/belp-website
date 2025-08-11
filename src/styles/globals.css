@@ -51,8 +51,13 @@ body {
   max-width: 1440px; /* equivalent to max-w-4xl */
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 5rem;
+  padding-right: 5rem;
+
+  @media screen and (min-width: 1280px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 /* Footer container - wider than main container */
@@ -60,8 +65,13 @@ body {
   max-width: 1440px; /* equivalent to max-w-[1440px] */
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 5rem;
+  padding-right: 5rem;
+
+  @media screen and (min-width: 1280px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 /* Wide section container */
@@ -69,13 +79,27 @@ body {
   max-width: 1280px; /* equivalent to max-w-5xl */
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 5rem;
+  padding-right: 5rem;
+
+  @media screen and (min-width: 1280px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 /* Text container for hero sections */
 .text-container {
   max-width: 576px; /* equivalent to max-w-xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Large text container */
+.large-text-container {
+  max-width: 1048px; /* equivalent to max-w-3xl */
   margin-left: auto;
   margin-right: auto;
   padding-left: 1rem;
@@ -98,4 +122,49 @@ body {
   margin-right: auto;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* Title text sizing utility */
+.title-text {
+  font-size: 2.25rem; /* text-4xl */
+}
+
+@media (min-width: 640px) {
+  .title-text {
+    font-size: 3rem; /* sm:text-5xl */
+  }
+}
+
+@media (min-width: 768px) {
+  .title-text {
+    font-size: 3.75rem; /* md:text-6xl */
+  }
+}
+
+@media (min-width: 1024px) {
+  .title-text {
+    font-size: 4.5rem; /* lg:text-7xl */
+  }
+}
+
+@media (min-width: 1280px) {
+  .title-text {
+    font-size: 80px; /* xl:text-[80px] */
+  }
+}
+
+/* Responsive base text utility */
+.text-responsive {
+  font-size: 1rem; /* Scales with html font-size */
+  line-height: 1.5;
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem; /* Scales with html font-size */
+  line-height: 1.5;
+}
+
+.text-responsive-xl {
+  font-size: 1.25rem; /* Scales with html font-size */
+  line-height: 1.5;
 }
