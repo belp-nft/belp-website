@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import UserInfo from "@/modules/my-collection//UserInfo";
+import { useWallet } from "@/hooks/useWallet";
 import NftGrid from "@/modules/my-collection//NftGrid";
 import { makeMockItems, NftItem } from "@/lib/collection-mock";
 
@@ -11,6 +12,8 @@ const MyCollectionPage = () => {
   const [visible, setVisible] = useState(20);
 
   const items = allItems.slice(0, visible);
+
+  const { solAddress } = useWallet();
 
   return (
     <main className="min-h-screen">
@@ -27,8 +30,8 @@ const MyCollectionPage = () => {
 
       <section className="px-4 sm:px-6 lg:px-10 mt-4">
         <UserInfo
-          username="GqPyxf...ojLh"
           contract="sm6LqSRQLkM29bMqct9QBRX5HZMEXYgELgwCXpump"
+          walletAddress={solAddress || undefined}
           onHistoryClick={() => alert("History clicked")}
         />
       </section>

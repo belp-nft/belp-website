@@ -71,6 +71,22 @@ export default function ConnectWallet({ className, onConnected }: Props) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showMenu]);
 
+  const handleDisconnect = () => {
+    if (isSolflareConnected) {
+      disconnectSolflare();
+    } else if (isBackpackConnected) {
+      disconnectBackpack();
+    } else if (isGlowConnected) {
+      disconnectGlow();
+    } else if (isOKXConnected) {
+      disconnectOKX();
+    } else if (hasPhantom) {
+      disconnect();
+    }
+    window.localStorage.removeItem("wallet");
+    setShowMenu(false);
+  };
+
   return (
     <>
       <div className="relative inline-block">
@@ -108,10 +124,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
             <div className="my-2 border-t border-[#E3D6F6]" />
             <button
               className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium"
-              onClick={() => {
-                disconnect();
-                window.localStorage.removeItem("wallet");
-              }}
+              onClick={handleDisconnect}
             >
               Disconnect
             </button>

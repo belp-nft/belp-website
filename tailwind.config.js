@@ -15,6 +15,9 @@ module.exports = {
         "cal-height-lt": "calc(100vh - 351px)",
         "cal-height-mb": "calc(100vh - 223px)",
       },
+      fontFamily: {
+        gmarket: ["GmarketSans", "sans-serif"],
+      },
     },
   },
 };

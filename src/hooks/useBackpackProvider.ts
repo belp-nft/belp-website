@@ -41,7 +41,6 @@ export function useBackpackProvider() {
     };
   }, [backpack]);
 
-  // Hàm connect/disconnect có thể gọi từ UI
   const connect = useCallback(async () => {
     if (!backpack) {
       window.open("https://backpack.app/download", "_blank");

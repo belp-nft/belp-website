@@ -7,7 +7,6 @@ export function usePhantomProvider() {
   const connectRef = useRef<((...args: any[]) => void) | null>(null);
   const disconnectRef = useRef<((...args: any[]) => void) | null>(null);
 
-  // Detect Phantom provider
   useEffect(() => {
     if (typeof window === "undefined") return;
     const provider = window.solana;
@@ -18,7 +17,6 @@ export function usePhantomProvider() {
     }
   }, []);
 
-  // Listen connect/disconnect
   useEffect(() => {
     if (!phantom?.on) return;
     const onConnect = () => {
@@ -40,7 +38,6 @@ export function usePhantomProvider() {
     };
   }, [phantom]);
 
-  // Connect Phantom
   const connect = useCallback(async () => {
     if (!phantom?.connect) return null;
     const resp = await phantom.connect();
@@ -49,7 +46,6 @@ export function usePhantomProvider() {
     return resp;
   }, [phantom]);
 
-  // Disconnect Phantom
   const disconnect = useCallback(async () => {
     if (!phantom?.disconnect) return;
     await phantom.disconnect();
