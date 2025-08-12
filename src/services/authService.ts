@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'http://localhost:4444';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'https://belpy-core.blockifyy.com';
 
 // JWT Token management
 const TOKEN_KEY = 'belp_jwt_token';

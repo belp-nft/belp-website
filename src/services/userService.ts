@@ -13,7 +13,7 @@ import type {
 } from './types';
 
 // Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'http://localhost:4444';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'https://belpy-core.blockifyy.com';
 
 /**
  * User Service Class - Handles all User Controller APIs

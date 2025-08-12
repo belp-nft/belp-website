@@ -9,7 +9,7 @@ export { AuthService } from "./authService";
 
 // Configuration constants
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URI || "http://localhost:4444",
+  BASE_URL: process.env.NEXT_PUBLIC_API_URI || "https://belpy-core.blockifyy.com",
   TIMEOUT: 30000,
   ENDPOINTS: {
     USER: "/api/user",
