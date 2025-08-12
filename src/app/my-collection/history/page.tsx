@@ -98,7 +98,7 @@ const HistoryPage = () => {
         />
         <motion.h1
           className={clsx(
-            "font-bold mt-5 mb-10 title-text",
+            "font-bold my-10 title-text",
             "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
           )}
           initial={{ opacity: 0, scale: 0.8 }}
@@ -167,25 +167,38 @@ const HistoryPage = () => {
                         href={`/my-collection/${nft.id}`}
                         className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
                       >
-                        {nft.name}
+                        NFT Details
                       </Link>
                       <div className="text-xs text-[#6c5a99] mt-1">
-                        #{nft.id.slice(-8).toUpperCase()}
+                        {nft.name}
                       </div>
                     </div>
 
                     {/* Tx Hash */}
                     <div className="col-span-2">
                       {nft.mintSignature ? (
-                        <a
-                          href={`https://solscan.io/tx/${nft.mintSignature}?cluster=devnet`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#7a4bd6] hover:underline text-sm font-mono"
-                        >
-                          {nft.mintSignature.slice(0, 8)}...
-                          {nft.mintSignature.slice(-8)}
-                        </a>
+                        <div className="text-sm text-[#6c5a99]">
+                          {nft.mintedAt ? (
+                            <>
+                              <div className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors">
+                                Tx Hash
+                              </div>
+                              <div className="text-xs text-[#6c5a99] mt-1">
+                                <a
+                                  href={`https://solscan.io/tx/${nft.mintSignature}?cluster=devnet`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#7a4bd6] hover:underline text-sm font-mono"
+                                >
+                                  {nft.mintSignature.slice(0, 8)}...
+                                  {nft.mintSignature.slice(-8)}
+                                </a>
+                              </div>
+                            </>
+                          ) : (
+                            "Unknown"
+                          )}
+                        </div>
                       ) : (
                         <span className="text-gray-400 text-sm">
                           No signature
@@ -193,22 +206,16 @@ const HistoryPage = () => {
                       )}
                     </div>
 
-                    {/* Type */}
-                    <div className="col-span-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Mint
-                      </span>
-                    </div>
-
                     {/* Time */}
                     <div className="col-span-3">
                       <div className="text-sm text-[#6c5a99]">
                         {nft.mintedAt ? (
                           <>
-                            <div>
-                              {new Date(nft.mintedAt).toLocaleDateString()}
+                            <div className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors">
+                              Time
                             </div>
-                            <div className="text-xs opacity-70">
+                            <div className="text-xs text-[#6c5a99] mt-1">
+                              {new Date(nft.mintedAt).toLocaleDateString()} -{" "}
                               {new Date(nft.mintedAt).toLocaleTimeString()}
                             </div>
                           </>
