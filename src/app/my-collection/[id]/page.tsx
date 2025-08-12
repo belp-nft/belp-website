@@ -145,7 +145,7 @@ const NftDetailPage = () => {
             </div>
 
             {/* Blockchain details */}
-            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2">
+            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2 w-full">
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
                 <rect
                   x="4"
@@ -158,32 +158,22 @@ const NftDetailPage = () => {
                 />
                 <path d="M8 8h8v8H8z" stroke="#7a4bd6" strokeWidth="2" />
               </svg>
-              <div>
+              <div className="flex-1">
                 <div className="font-bold text-[#2b1a5e] mb-1">
                   Blockchain details
                 </div>
                 <div className="text-[#7466a1] text-sm space-y-1">
-                  <div>
-                    <strong>Token ID:</strong> {item.id}
+                  <div className="flex justify-between">
+                    <strong>Token ID</strong> {item.name}
                   </div>
-                  <div>
-                    <strong>Network:</strong> Solana Devnet
+                  <div className="flex justify-between">
+                    <strong>Token Standard</strong> NFT
                   </div>
-                  {item.mintSignature && (
-                    <div>
-                      <strong>Mint Tx:</strong>{" "}
-                      <a
-                        href={`https://solscan.io/tx/${item.mintSignature}?cluster=devnet`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#7a4bd6] hover:underline"
-                      >
-                        View on Solscan
-                      </a>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <strong>Chain</strong> Solana
+                  </div>
                   {item.mintedAt && (
-                    <div>
+                    <div className="flex justify-between">
                       <strong>Minted:</strong>{" "}
                       {new Date(item.mintedAt).toLocaleDateString()}
                     </div>
