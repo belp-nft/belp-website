@@ -99,7 +99,7 @@ const NftDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-[#ede9f6] py-8">
+    <div className="min-h-screen flex flex-col items-center bg-[#f2ecf6] py-8">
       <div className="main-container w-full">
         <BreadCrumbs
           breadcrumbs={[

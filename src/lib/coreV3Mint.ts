@@ -90,7 +90,7 @@ export async function createCoreCollection(wallet: any) {
       configLineSettings: {
         prefixName: "BELPY Cat #",
         nameLength: 32,
-        prefixUri: "https://your-domain.com/metadata/",
+        prefixUri: "https://belpy.blockifyy.com/icons/",
         uriLength: 200,
         isSequential: false,
       },
@@ -217,7 +217,7 @@ export async function createDirectCoreAsset(
     const createAssetTx = createCoreAsset(umi, {
       asset: assetSigner,
       name: `BELPY Cat #${nftId}`,
-      uri: `https://your-domain.com/metadata/${nftId}.json`,
+      uri: `https://belpy.blockifyy.com/icons/token-nft-1.svg`,
     });
 
     const result = await createAssetTx.sendAndConfirm(umi);
@@ -232,7 +232,7 @@ export async function createDirectCoreAsset(
         address: assetSigner.publicKey.toString(),
         name: `BELPY Cat #${nftId}`,
         image: `/icons/token-nft-${(nftId % 5) + 1}.svg`,
-        uri: `https://your-domain.com/metadata/${nftId}.json`,
+        uri: `https://belpy.blockifyy.com/icons/token-nft-1.svg`,
       },
       signature: result.signature.toString(),
     };

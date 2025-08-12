@@ -2,12 +2,13 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HeroSection() {
   return (
     <section
       className={clsx(
-        "relative flex flex-col items-center justify-center text-center",
+        "relative flex flex-col items-center justify-center text-center main-container",
         "bg-[url('/images/home/bg-hero-section.png')] bg-no-repeat bg-cover"
       )}
     >
@@ -31,23 +32,26 @@ export default function HeroSection() {
 
         <div
           className={clsx(
-            "flex flex-col lg:flex-row gap-5 sm:gap-8 justify-center items-center sm:text-xl font-bold w-full mt-4 text-2xl mb-20"
+            "flex flex-col md:flex-row gap-5 sm:gap-8 justify-center items-center font-bold w-full mt-4 mb-20",
+            "text-sm sm:text-base md:text-lg lg:text-xl"
           )}
         >
+          <Link href="/mint" className="w-full">
+            <button
+              className={clsx(
+                "w-full min-w-[200px] sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
+                "h-[48px] sm:h-[56px] md:h-[64px]",
+                "rounded-2xl bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
+                "shadow-lg hover:scale-105 transition"
+              )}
+            >
+              Mint Now
+            </button>
+          </Link>
           <button
             className={clsx(
-              "min-w-[220px] sm:min-w-[320px] md:min-w-[400px]",
-              "h-[54px] sm:h-[64px]",
-              "rounded-2xl bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
-              "shadow-lg hover:scale-105 transition"
-            )}
-          >
-            Mint Now
-          </button>
-          <button
-            className={clsx(
-              "min-w-[220px] sm:min-w-[320px] md:min-w-[400px]",
-              "h-[54px] sm:h-[64px]",
+              "w-full min-w-[200px] sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
+              "h-[48px] sm:h-[56px] md:h-[64px]",
               "rounded-2xl bg-[#E5CAFF] shadow-lg hover:scale-105 transition",
               "border-2 border-[#8438CE] text-[#8438CE]"
             )}

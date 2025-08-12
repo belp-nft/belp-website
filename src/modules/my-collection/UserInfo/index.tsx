@@ -72,7 +72,7 @@ export default function UserInfo({
         </div>
 
         <div className="min-w-0">
-          <div className="font-semibold text-[#2b1a5e] truncate">
+          <div className="font-semibold text-primary-text truncate">
             <span className="sm:hidden">{displayWalletShort}</span>
             <span className="hidden sm:inline">{displayWalletFull}</span>
           </div>
@@ -92,7 +92,9 @@ export default function UserInfo({
               <MdContentCopy />
             </button>
             {copied && (
-              <span className="text-[#7a4bd6] text-xs shrink-0">Copied!</span>
+              <span className="text-primary-accent text-xs shrink-0">
+                Copied!
+              </span>
             )}
           </div>
         </div>

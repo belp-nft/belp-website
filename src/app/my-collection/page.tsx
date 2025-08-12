@@ -58,7 +58,7 @@ const MyCollectionPage = () => {
 
           {/* Clean Loading Text */}
           <motion.h2
-            className="text-2xl font-bold text-[#2b1a5e] mb-3"
+            className="text-2xl font-bold text-primary-text mb-3"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -130,7 +130,7 @@ const MyCollectionPage = () => {
           </div>
         ) : (
           <>
-            <div className="text-right text-xs text-[#6c5a99] mb-2">
+            <div className="text-right text-xs text-primary-muted mb-2">
               {totalCount} Items
             </div>
 
@@ -140,7 +140,7 @@ const MyCollectionPage = () => {
               <div className="flex justify-center py-8">
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-[#7A4BD6] font-semibold shadow-md hover:shadow-lg transition"
+                  className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-primary-accent font-semibold shadow-md hover:shadow-lg transition"
                   onClick={() =>
                     setVisible((v) => Math.min(v + 20, totalCount))
                   }
