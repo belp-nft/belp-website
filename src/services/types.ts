@@ -47,6 +47,20 @@ export interface NFT {
   description?: string;
   attributes?: Record<string, any>;
   createdAt: string;
+  userId?: string;
+}
+
+// Response types for getUserNfts API
+export interface GetUserNftsResponse {
+  success: boolean;
+  count: number;
+  nfts: NFT[];
+}
+
+// Response types for getNftDetails API  
+export interface GetNftDetailsResponse {
+  success: boolean;
+  nft: NFT;
 }
 
 export interface SaveNftRequest {
@@ -96,12 +110,10 @@ export interface SendSignedTxRequest {
 
 export interface SendSignedTxResponse {
   success: boolean;
-  transactionSignature: string;
   nftAddress: string;
   message: string;
-  // Alternative format fields
-  signature?: string; // Alternative for transactionSignature
-  error?: string; // Error message field
+  signature?: string;
+  error?: string;
 }
 
 export interface CandyMachineInfo {

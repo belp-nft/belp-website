@@ -1,22 +1,22 @@
 "use client";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { RealNftItem } from "@/hooks/useRealNfts";
+import type { NFT } from "@/services/types";
 import Link from "next/link";
 
-export default function NftItem({ item }: { item: RealNftItem }) {
+export default function NftItem({ item }: { item: NFT }) {
   return (
-    <Link href={`/my-collection/${item.id}`} passHref legacyBehavior>
-      <motion.a
+    <Link href={`/my-collection/${item.nftAddress}`}>
+      <motion.div
         whileHover={{ y: -3 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className={[
-          "block w-full text-left rounded-xl p-2 sm:p-3 bg-white/80 backdrop-blur border border-[#eadffd] hover:border-[#d8c7ff]",
+          "block w-full text-left rounded-xl p-2 sm:p-3 bg-white/80 backdrop-blur border border-[#eadffd] hover:border-[#d8c7ff] cursor-pointer",
         ].join(" ")}
       >
         <div className="relative rounded-lg overflow-hidden">
           <Image
-            src={item.image}
+            src={item.imageUrl}
             alt={item.name}
             width={480}
             height={480}
@@ -31,12 +31,12 @@ export default function NftItem({ item }: { item: RealNftItem }) {
           <div className="flex items-center justify-between text-xs text-[#6c5a99] mt-1">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[#7a4bd6]" />
-              {(item.price || 0.0001).toFixed(4)} SOL
+              NFT
             </span>
-            <span className="opacity-60">{item.likes || 0} ❤️</span>
+            <span className="opacity-60">{item.nftAddress.slice(-4)}</span>
           </div>
         </div>
-      </motion.a>
+      </motion.div>
     </Link>
   );
 }

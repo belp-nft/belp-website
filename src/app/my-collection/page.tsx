@@ -1,25 +1,63 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import UserInfo from "@/modules/my-collection//UserInfo";
 import { useWallet } from "@/hooks/useWallet";
-import { useRealNfts } from "@/hooks/useRealNfts";
+import { NftService } from "@/services/nftService";
+import type { NFT } from "@/services/types";
 import NftGrid from "@/modules/my-collection//NftGrid";
 
 const MyCollectionPage = () => {
-  const { nfts, loading, totalCount } = useRealNfts();
+  const [nfts, setNfts] = useState<NFT[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(20);
   const router = useRouter();
 
-  const items = nfts.slice(0, visible);
-
   const { solAddress } = useWallet();
+
+  const items = nfts.slice(0, visible);
+  const totalCount = nfts.length;
 
   const handleHistoryClick = () => {
     router.push("/my-collection/history");
   };
+
+  // Load NFTs từ service
+  useEffect(() => {
+    const loadNfts = async () => {
+      if (!solAddress) {
+        setNfts([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🖼️ Loading NFTs for wallet:', solAddress);
+        
+        const response = await NftService.getUserNfts(solAddress);
+        
+        if (response.success) {
+          setNfts(response.nfts || []);
+          console.log('✅ NFTs loaded:', response.nfts?.length || 0);
+        } else {
+          setError('Failed to load NFTs');
+          console.error('❌ Failed to load NFTs');
+        }
+      } catch (err) {
+        console.error('❌ Error loading NFTs:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNfts();
+  }, [solAddress]);
 
   if (loading) {
     return (

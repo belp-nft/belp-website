@@ -1,17 +1,14 @@
-import axios from 'axios';
-
-// Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'https://belpy-core.blockifyy.com';
+import { APP_CONFIG } from '../config/env.config';
 
 // JWT Token management
-const TOKEN_KEY = 'belp_jwt_token';
+const TOKEN_KEY = APP_CONFIG.STORAGE_KEYS.JWT_TOKEN;
 
 export class AuthService {
   /**
    * Lưu JWT token vào localStorage
    */
   static setToken(token: string): void {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.setItem(TOKEN_KEY, token);
     }
   }
@@ -20,7 +17,7 @@ export class AuthService {
    * Lấy JWT token từ localStorage
    */
   static getToken(): string | null {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       return localStorage.getItem(TOKEN_KEY);
     }
     return null;
@@ -30,7 +27,7 @@ export class AuthService {
    * Xóa JWT token khỏi localStorage
    */
   static removeToken(): void {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.removeItem(TOKEN_KEY);
     }
   }
@@ -48,25 +45,14 @@ export class AuthService {
   static getAuthHeaders(): Record<string, string> {
     const token = this.getToken();
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     return headers;
-  }
-
-  /**
-   * Tạo axios instance với auth headers
-   */
-  static createAuthorizedClient() {
-    return axios.create({
-      baseURL: API_BASE_URL,
-      timeout: 30000,
-      headers: this.getAuthHeaders(),
-    });
   }
 
   /**
@@ -74,7 +60,7 @@ export class AuthService {
    */
   static handleUnauthorized(error: any) {
     if (error.response?.status === 401) {
-      console.warn('Token expired or invalid, removing token');
+      console.warn("Token expired or invalid, removing token");
       this.removeToken();
       // Có thể redirect về trang login hoặc show modal connect wallet
     }

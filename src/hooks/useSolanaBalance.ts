@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-
-// Sử dụng devnet cho development (có thể config từ env)
-const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC || "https://api.devnet.solana.com";
+import { BLOCKCHAIN_CONFIG } from "../config/env.config";
 
 async function getSolBalanceLamports(address: string): Promise<number> {
   const body = {
@@ -10,7 +8,7 @@ async function getSolBalanceLamports(address: string): Promise<number> {
     method: "getBalance",
     params: [address, { commitment: "processed" }],
   };
-  const res = await fetch(SOLANA_RPC, {
+  const res = await fetch(BLOCKCHAIN_CONFIG.SOLANA_RPC, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -63,6 +61,6 @@ export function useSolanaBalance(address?: string | null) {
     error,
     refresh,
     lastUpdated,
-    rpcEndpoint: SOLANA_RPC,
+    rpcEndpoint: BLOCKCHAIN_CONFIG.SOLANA_RPC,
   };
 }

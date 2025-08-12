@@ -1,8 +1,10 @@
 "use client";
 
 import BreadCrumbs from "@/components/Breadcrumb";
-import { useRealNfts } from "@/hooks/useRealNfts";
 import { useWallet } from "@/hooks/useWallet";
+import { UserService } from "@/services/userService";
+import { NftService } from "@/services/nftService";
+import type { NFT, Transaction } from "@/services/types";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -10,18 +12,83 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 
 const HistoryPage = () => {
-  const { solAddress, transactions, userStatistics } = useWallet();
-  const { nfts, backendNfts, loading, syncing, loadBackendNfts } = useRealNfts(solAddress);
+  const { solAddress, userStatistics } = useWallet();
+  const [backendNfts, setBackendNfts] = useState<NFT[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(10);
-  const [showBackendData, setShowBackendData] = useState(true);
   const [showTransactions, setShowTransactions] = useState(false);
+
+  // Load NFTs từ backend
+  const loadBackendNfts = async () => {
+    if (!solAddress) return;
+
+    try {
+      setSyncing(true);
+      setError(null);
+      
+      console.log('🖼️ Loading backend NFTs for:', solAddress);
+      
+      const response = await NftService.getUserNfts(solAddress);
+      
+      if (response.success && response.nfts) {
+        setBackendNfts(response.nfts);
+        console.log('✅ Backend NFTs loaded:', response.nfts.length);
+      } else {
+        console.warn('⚠️ Failed to load backend NFTs');
+        setError('Failed to load NFTs');
+      }
+    } catch (err) {
+      console.error('❌ Error loading backend NFTs:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Load transactions từ backend
+  const loadTransactions = async () => {
+    if (!solAddress) return;
+
+    try {
+      setSyncing(true);
+      setError(null);
+      
+      console.log('📜 Loading transactions for:', solAddress);
+      
+      const response = await UserService.getTransactions(solAddress);
+      
+      if (response.success && response.data) {
+        setTransactions(response.data);
+        console.log('✅ Transactions loaded:', response.data.length);
+      } else {
+        console.warn('⚠️ Failed to load transactions:', response.message);
+        setError(response.message || 'Failed to load transactions');
+      }
+    } catch (err) {
+      console.error('❌ Error loading transactions:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Auto-refresh backend data khi có wallet address
   useEffect(() => {
-    if (solAddress && loadBackendNfts) {
-      loadBackendNfts();
+    if (solAddress) {
+      setLoading(true);
+      Promise.all([loadBackendNfts(), loadTransactions()]).finally(() => {
+        setLoading(false);
+      });
+    } else {
+      // Reset data khi không có wallet
+      setBackendNfts([]);
+      setTransactions([]);
+      setError(null);
     }
-  }, [solAddress, loadBackendNfts]);
+  }, [solAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Chọn data source để hiển thị
   let dataSource, sortedData;
@@ -37,11 +104,11 @@ const HistoryPage = () => {
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
   } else {
-    // Hiển thị NFTs
-    dataSource = showBackendData ? backendNfts : nfts;
+    // Hiển thị NFTs từ backend
+    dataSource = backendNfts || [];
     sortedData = [...dataSource].sort((a, b) => {
-      const dateA = showBackendData ? (a.createdAt || a.mintedAt) : a.mintedAt;
-      const dateB = showBackendData ? (b.createdAt || b.mintedAt) : b.mintedAt;
+      const dateA = a.createdAt;
+      const dateB = b.createdAt;
       
       if (!dateA || !dateB) return 0;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
@@ -145,29 +212,18 @@ const HistoryPage = () => {
             <div className="flex items-center gap-4">
               <div className="flex bg-white rounded-lg p-1 shadow-sm border border-[#e9defd]">
                 <button
-                  onClick={() => { setShowBackendData(true); setShowTransactions(false); }}
+                  onClick={() => setShowTransactions(false)}
                   className={clsx(
                     "px-3 py-2 rounded-md text-sm font-medium transition-all",
-                    showBackendData && !showTransactions
+                    !showTransactions
                       ? "bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] text-white shadow-sm"
                       : "text-[#7A4BD6] hover:bg-[#f8f4ff]"
                   )}
                 >
-                  Backend NFTs ({backendNfts.length})
+                  NFTs ({backendNfts.length})
                 </button>
                 <button
-                  onClick={() => { setShowBackendData(false); setShowTransactions(false); }}
-                  className={clsx(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-all",
-                    !showBackendData && !showTransactions
-                      ? "bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] text-white shadow-sm"
-                      : "text-[#7A4BD6] hover:bg-[#f8f4ff]"
-                  )}
-                >
-                  Local NFTs ({nfts.length})
-                </button>
-                <button
-                  onClick={() => { setShowTransactions(true); setShowBackendData(false); }}
+                  onClick={() => setShowTransactions(true)}
                   className={clsx(
                     "px-3 py-2 rounded-md text-sm font-medium transition-all",
                     showTransactions
@@ -222,10 +278,11 @@ const HistoryPage = () => {
               {/* History Items */}
               {visibleData.map((item, index) => {
                 if (showTransactions) {
-                  // Hiển thị transaction item
+                  // Hiển thị transaction item - item là Transaction type
+                  const transaction = item as Transaction;
                   return (
                     <motion.div
-                      key={item._id || item.transactionSignature}
+                      key={transaction._id}
                       className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -246,21 +303,21 @@ const HistoryPage = () => {
                             Transaction
                           </div>
                           <div className="text-xs text-[#6c5a99] mt-1">
-                            {item.transactionSignature?.slice(0, 8)}...{item.transactionSignature?.slice(-8)}
+                            {transaction.transactionSignature?.slice(0, 8)}...{transaction.transactionSignature?.slice(-8)}
                           </div>
                         </div>
 
                         {/* Candy Machine */}
                         <div className="col-span-2">
                           <div className="text-sm text-[#6c5a99] font-mono">
-                            {item.candyMachineAddress?.slice(0, 4)}...{item.candyMachineAddress?.slice(-4)}
+                            {transaction.candyMachineAddress?.slice(0, 4)}...{transaction.candyMachineAddress?.slice(-4)}
                           </div>
                         </div>
 
                         {/* Tx Hash Link */}
                         <div className="col-span-2">
                           <a
-                            href={`https://solscan.io/tx/${item.transactionSignature}?cluster=devnet`}
+                            href={`https://solscan.io/tx/${transaction.transactionSignature}?cluster=devnet`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[#7a4bd6] hover:underline text-sm font-mono"
@@ -279,13 +336,13 @@ const HistoryPage = () => {
                         {/* Time */}
                         <div className="col-span-1">
                           <div className="text-sm text-[#6c5a99]">
-                            {item.createdAt || item.timestamp ? (
+                            {transaction.createdAt || transaction.timestamp ? (
                               <>
                                 <div>
-                                  {new Date(item.createdAt || item.timestamp).toLocaleDateString()}
+                                  {new Date(transaction.createdAt || transaction.timestamp).toLocaleDateString()}
                                 </div>
                                 <div className="text-xs opacity-70">
-                                  {new Date(item.createdAt || item.timestamp).toLocaleTimeString()}
+                                  {new Date(transaction.createdAt || transaction.timestamp).toLocaleTimeString()}
                                 </div>
                               </>
                             ) : (
@@ -297,19 +354,12 @@ const HistoryPage = () => {
                     </motion.div>
                   );
                 } else {
-                  // Hiển thị NFT item
-                  // Adapt data structure cho cả backend và local NFTs
-                  const nft = showBackendData ? {
-                    id: item.nftAddress || item._id,
-                    name: item.name,
-                    image: item.imageUrl || item.image,
-                    mintSignature: item.attributes?.mintSignature,
-                    mintedAt: item.createdAt || item.attributes?.mintedAt,
-                  } : item;
+                  // Hiển thị NFT item từ backend
+                  const nft = item as NFT;
                   
                   return (
                 <motion.div
-                  key={nft.id}
+                  key={nft._id}
                   className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -321,7 +371,7 @@ const HistoryPage = () => {
                     <div className="col-span-2">
                       <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
                         <Image
-                          src={nft.image}
+                          src={nft.imageUrl}
                           alt={nft.name}
                           fill
                           className="object-cover"
@@ -332,57 +382,39 @@ const HistoryPage = () => {
                     {/* NFT Details */}
                     <div className="col-span-3">
                       <Link
-                        href={`/my-collection/${nft.id}`}
+                        href={`/my-collection/${nft._id}`}
                         className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
                       >
                         {nft.name}
                       </Link>
                       <div className="text-xs text-[#6c5a99] mt-1">
-                        #{nft.id.slice(-8).toUpperCase()}
+                        #{nft.nftAddress.slice(-8).toUpperCase()}
                       </div>
                     </div>
 
-                    {/* Tx Hash */}
+                    {/* NFT Address */}
                     <div className="col-span-2">
-                      {nft.mintSignature ? (
-                        <a
-                          href={`https://solscan.io/tx/${nft.mintSignature}?cluster=devnet`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#7a4bd6] hover:underline text-sm font-mono"
-                        >
-                          {nft.mintSignature.slice(0, 8)}...
-                          {nft.mintSignature.slice(-8)}
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 text-sm">
-                          No signature
-                        </span>
-                      )}
+                      <div className="text-sm text-[#6c5a99] font-mono">
+                        {nft.nftAddress.slice(0, 4)}...{nft.nftAddress.slice(-4)}
+                      </div>
                     </div>
 
                     {/* Type */}
                     <div className="col-span-2">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Mint
+                        NFT
                       </span>
                     </div>
 
                     {/* Time */}
                     <div className="col-span-3">
                       <div className="text-sm text-[#6c5a99]">
-                        {nft.mintedAt ? (
-                          <>
-                            <div>
-                              {new Date(nft.mintedAt).toLocaleDateString()}
-                            </div>
-                            <div className="text-xs opacity-70">
-                              {new Date(nft.mintedAt).toLocaleTimeString()}
-                            </div>
-                          </>
-                        ) : (
-                          "Unknown"
-                        )}
+                        <div>
+                          {new Date(nft.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs opacity-70">
+                          {new Date(nft.createdAt).toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -414,7 +446,7 @@ const HistoryPage = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
                 <div className="text-sm text-[#6c5a99]">
-                  Total {showTransactions ? 'transactions' : (showBackendData ? 'backend NFTs' : 'local NFTs')}:{" "}
+                  Total {showTransactions ? 'transactions' : 'NFTs'}:{" "}
                   <span className="font-semibold text-[#7a4bd6]">
                     {dataSource.length}
                   </span>

@@ -3,14 +3,51 @@
 import BreadCrumbs from "@/components/Breadcrumb";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useRealNfts } from "@/hooks/useRealNfts";
+import { useState, useEffect } from "react";
+import { NftService } from "@/services/nftService";
+import type { NFT } from "@/services/types";
 import { BiStar } from "react-icons/bi";
 import { motion } from "framer-motion";
 
 const NftDetailPage = () => {
   const { id } = useParams();
-  const { getNftById, loading } = useRealNfts();
-  const item = getNftById(id as string);
+  const [nft, setNft] = useState<NFT | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load NFT details từ service
+  useEffect(() => {
+    const loadNftDetails = async () => {
+      if (!id || typeof id !== 'string') {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🖼️ Loading NFT details for:', id);
+        
+        const response = await NftService.getNftDetails(id);
+        
+        if (response.success && response.nft) {
+          setNft(response.nft);
+          console.log('✅ NFT details loaded:', response.nft);
+        } else {
+          setError('NFT not found');
+          console.error('❌ Failed to load NFT details');
+        }
+      } catch (err) {
+        console.error('❌ Error loading NFT details:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setNft(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNftDetails();
+  }, [id]);
 
   if (loading) {
     return (
@@ -80,13 +117,13 @@ const NftDetailPage = () => {
     );
   }
 
-  if (!item) {
+  if (error || !nft) {
     return (
       <div className="p-8 text-center">
         <div className="text-6xl mb-4">🔍</div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">NFT not found</h2>
         <p className="text-gray-600 mb-6">
-          This NFT doesn't exist in your collection.
+          {error || "This NFT doesn't exist in your collection."}
         </p>
         <button
           onClick={() => (window.location.href = "/my-collection")}
@@ -108,15 +145,15 @@ const NftDetailPage = () => {
           ]}
         />
         <h1 className="mt-6 mb-4 text-[2rem] font-extrabold text-[#6c3ad6] tracking-tight">
-          {item.name}
+          {nft.name}
         </h1>
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Left: Image + Info */}
           <div className="flex flex-col gap-4 w-full md:w-[340px]">
             <div className="rounded-2xl border-2 border-[#7a4bd6] bg-black/80 p-2 w-full h-[320px] flex items-center justify-center shadow-lg">
               <Image
-                src={item.image}
-                alt={item.name}
+                src={nft.imageUrl}
+                alt={nft.name}
                 width={260}
                 height={260}
                 className="rounded-xl object-contain"
@@ -137,9 +174,9 @@ const NftDetailPage = () => {
               <div>
                 <div className="font-bold text-[#2b1a5e] mb-1">Backstory</div>
                 <div className="text-[#7466a1] text-sm leading-relaxed">
-                  {item.name} was born under the Moon of Whisker Hollow. Known
+                  {nft.description || `${nft.name} was born under the Moon of Whisker Hollow. Known
                   for its mysterious glow and trickster nature, this BELPY has a
-                  hidden destiny linked to the lost Harmony Stone.
+                  hidden destiny linked to the lost Harmony Stone.`}
                 </div>
               </div>
             </div>
@@ -164,7 +201,10 @@ const NftDetailPage = () => {
                 </div>
                 <div className="text-[#7466a1] text-sm space-y-1">
                   <div className="flex justify-between">
-                    <strong>Token ID</strong> {item.name}
+                    <strong>Token ID</strong> {nft.name}
+                  </div>
+                  <div className="flex justify-between">
+                    <strong>Token Address</strong> {nft.nftAddress.slice(0, 8)}...{nft.nftAddress.slice(-8)}
                   </div>
                   <div className="flex justify-between">
                     <strong>Token Standard</strong> NFT
@@ -172,10 +212,10 @@ const NftDetailPage = () => {
                   <div className="flex justify-between">
                     <strong>Chain</strong> Solana
                   </div>
-                  {item.mintedAt && (
+                  {nft.createdAt && (
                     <div className="flex justify-between">
                       <strong>Minted:</strong>{" "}
-                      {new Date(item.mintedAt).toLocaleDateString()}
+                      {new Date(nft.createdAt).toLocaleDateString()}
                     </div>
                   )}
                 </div>

@@ -2,20 +2,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { UserService, AuthService, NftService } from "@/services";
+import { UserService, AuthService, NftService, ConfigService } from "@/services";
 
 export type Connected = { kind: "sol"; address: string };
 
-export interface MintResult {
-  success: boolean;
-  nft?: {
-    address: string;
-    name: string;
-    image: string;
-  };
-  signature?: string;
-  error?: string;
-}
+
 
 declare global {
   interface Window {
@@ -44,18 +35,10 @@ export type LoadingKind =
   | "sol-balance"
   | null;
 
-import { getCurrentCandyMachineId } from "@/lib/simpleCandyMachine";
+
 
 const SOLANA_RPC = "https://api.devnet.solana.com";
-const USE_MOCK_MINT = false;
-// Check if Candy Machine ID exists in localStorage
-const USE_CANDY_MACHINE = () => {
-  return (
-    getCurrentCandyMachineId() !== null &&
-    getCurrentCandyMachineId() !== "11111111111111111111111111111112"
-  );
-};
-const USE_CORE_V3 = true; // Use Metaplex Core V3 for modern NFT minting
+
 
 async function getSolBalanceLamports(address: string): Promise<number> {
   const body = {
@@ -314,149 +297,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     console.log('🔌 Wallet disconnected');
   }, [detachSolListeners, getSolanaProvider]);
 
-  const mintNft = useCallback(async (): Promise<MintResult> => {
-    try {
-      if (USE_MOCK_MINT) {
-        const { mockMintBelpyNFT } = await import("../lib/mockMint");
-        const mockResult = await mockMintBelpyNFT();
 
-        if (mockResult.success && mockResult.nft) {
-          await refreshSolBalance(solAddress);
-
-          return {
-            success: true,
-            nft: {
-              address: mockResult.nft.address,
-              name: mockResult.nft.name,
-              image: mockResult.nft.image,
-            },
-            signature: mockResult.signature,
-          };
-        } else {
-          throw new Error(mockResult.error || "Mock mint failed");
-        }
-      }
-
-      if (!solAddress) {
-        throw new Error("Wallet not connected");
-      }
-
-      const sol = getSolanaProvider();
-      if (!sol || !sol.publicKey) {
-        throw new Error("Phantom wallet not found or not connected");
-      }
-
-      if (!sol.signTransaction || !sol.signAllTransactions) {
-        throw new Error("Wallet does not support required signing methods");
-      }
-
-      const connection = new Connection(SOLANA_RPC);
-      const publicKey = new PublicKey(sol.publicKey.toString());
-
-      const walletAdapter = {
-        publicKey,
-        signTransaction: sol.signTransaction.bind(sol),
-        signAllTransactions: sol.signAllTransactions.bind(sol),
-      };
-
-      console.log("Starting NFT mint...");
-
-      if (USE_CORE_V3) {
-        const { createDirectCoreAsset } = await import("../lib/coreV3Mint");
-
-        const walletAdapter = {
-          publicKey,
-          signTransaction: sol.signTransaction.bind(sol),
-          signAllTransactions: sol.signAllTransactions.bind(sol),
-        };
-
-        const result = await createDirectCoreAsset(walletAdapter);
-
-        if (!result.success) {
-          throw new Error(result.error || "Core V3 mint failed");
-        }
-
-        console.log("Core V3 mint successful!", result);
-
-        await refreshSolBalance(solAddress);
-
-        return {
-          success: true,
-          nft: {
-            address: result.nft!.address,
-            name: result.nft!.name,
-            image: result.nft!.image,
-          },
-          signature: result.signature,
-        };
-      } else if (USE_CANDY_MACHINE()) {
-        const { mintFromCandyMachine } = await import(
-          "../lib/candyMachineMint"
-        );
-
-        const result = await mintFromCandyMachine(
-          connection,
-          walletAdapter,
-          solAddress
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || "Candy Machine mint failed");
-        }
-
-        console.log("Candy Machine mint successful!", result);
-
-        await refreshSolBalance(solAddress);
-
-        return {
-          success: true,
-          nft: {
-            address: result.nft!.address,
-            name: result.nft!.name,
-            image: result.nft!.image,
-          },
-          signature: result.signature,
-        };
-      } else {
-        // Fallback to direct mint if Candy Machine is not available
-        const { directMintBelpyNFT } = await import("../lib/candyMachineMint");
-
-        const result = await directMintBelpyNFT(
-          connection,
-          walletAdapter,
-          solAddress
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || "Direct mint failed");
-        }
-
-        console.log("Direct mint successful!", result);
-
-        await refreshSolBalance(solAddress);
-
-        return {
-          success: true,
-          nft: {
-            address: result.nft!.address,
-            name: result.nft!.name,
-            image: result.nft!.image,
-          },
-          signature: result.signature,
-        };
-      }
-    } catch (error) {
-      console.error("Mint failed:", error);
-
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-
-      return {
-        success: false,
-        error: errorMessage,
-      };
-    }
-  }, [solAddress, getSolanaProvider, refreshSolBalance]);
 
   return {
     solAddress,
@@ -469,7 +310,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     solLamports,
     solBalanceText,
     refreshSolBalance,
-    mintNft,
+
     getSolanaProvider,
     authToken,
     userStatistics,

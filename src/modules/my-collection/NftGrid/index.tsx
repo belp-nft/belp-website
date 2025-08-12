@@ -1,9 +1,9 @@
 "use client";
-import { RealNftItem } from "@/hooks/useRealNfts";
+import type { NFT } from "@/services/types";
 import NftItem from "../NftItem";
 
 type Props = {
-  items: RealNftItem[];
+  items: NFT[];
 };
 
 export default function NftGrid({ items }: Props) {
@@ -15,7 +15,7 @@ export default function NftGrid({ items }: Props) {
     "
     >
       {items.map((it) => (
-        <NftItem key={it.id} item={it} />
+        <NftItem key={it.nftAddress} item={it} />
       ))}
     </div>
   );

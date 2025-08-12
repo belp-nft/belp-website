@@ -1,4 +1,4 @@
-import { AuthService } from './authService';
+import { BaseService } from "./baseService";
 import type {
   ApiResponse,
   User,
@@ -10,15 +10,20 @@ import type {
   UserStatistics,
   OverviewStatistics,
   PaginationParams,
-} from './types';
-
-// Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'https://belpy-core.blockifyy.com';
+} from "./types";
 
 /**
  * User Service Class - Handles all User Controller APIs
  */
-export class UserService {
+export class UserService extends BaseService {
+  private static readonly ENDPOINTS = {
+    CONNECT: "/api/user/connect",
+    USER: "/api/user",
+    TRANSACTION: "/api/user/transaction",
+    NFT: "/api/user/nft",
+    STATISTICS: "/api/user/statistics",
+    OVERVIEW_STATISTICS: "/api/user/statistics/overview",
+  };
   /**
    * 1. Kết nối ví (Public) - POST /api/user/connect
    */
@@ -26,28 +31,22 @@ export class UserService {
     walletAddress: string
   ): Promise<ApiResponse<User>> {
     try {
-      console.log('🔗 Connecting wallet...', { walletAddress });
+      console.log("🔗 Connecting wallet...", { walletAddress });
 
-      const response = await fetch(`${API_BASE_URL}/api/user/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          walletAddress,
-        } as ConnectWalletRequest),
-      });
+      const requestData: ConnectWalletRequest = {
+        walletAddress,
+      };
 
-      const data = await response.json();
+      const result = await this.post<User>(
+        this.ENDPOINTS.CONNECT,
+        requestData,
+        false // Public API - không cần auth
+      );
 
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      console.log('✅ Wallet connected successfully', data);
-      return data;
+      console.log("✅ Wallet connected successfully", result);
+      return result;
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
+      console.error("❌ Failed to connect wallet:", error);
       throw error;
     }
   }
@@ -57,14 +56,18 @@ export class UserService {
    */
   static async getUserInfo(walletAddress: string): Promise<ApiResponse<User>> {
     try {
-      console.log('👤 Fetching user info...', { walletAddress });
+      console.log("👤 Fetching user info...", { walletAddress });
 
-      const client = AuthService.createAuthorizedClient();
-      const response = await client.get(`/api/user/${walletAddress}`);
+      const result = await this.get<User>(
+        `${this.ENDPOINTS.USER}/${walletAddress}`,
+        undefined,
+        true // Requires auth
+      );
 
-      return response.data;
+      console.log("✅ User info fetched:", result);
+      return result;
     } catch (error) {
-      AuthService.handleUnauthorized(error);
+      console.error("❌ Failed to get user info:", error);
       throw error;
     }
   }
@@ -76,42 +79,18 @@ export class UserService {
     transactionData: SaveTransactionRequest
   ): Promise<ApiResponse<Transaction>> {
     try {
-      console.log('💾 Saving transaction...', transactionData);
+      console.log("💾 Saving transaction...", transactionData);
 
-      const client = AuthService.createAuthorizedClient();
-      const response = await client.post('/api/user/transaction', transactionData);
+      const result = await this.post<Transaction>(
+        this.ENDPOINTS.TRANSACTION,
+        transactionData,
+        true // Requires auth
+      );
 
-      return response.data;
+      console.log("✅ Transaction saved:", result);
+      return result;
     } catch (error) {
-      AuthService.handleUnauthorized(error);
-      throw error;
-    }
-  }
-
-  /**
-   * 4. Lưu thông tin NFT (Public) - POST /api/user/nft
-   */
-  static async saveNft(nftData: SaveNftRequest): Promise<ApiResponse<NFT>> {
-    try {
-      console.log('🖼️ Saving NFT info...', nftData);
-
-      const response = await fetch(`${API_BASE_URL}/api/user/nft`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(nftData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Failed to save NFT info:', error);
+      console.error("❌ Failed to save transaction:", error);
       throw error;
     }
   }
@@ -124,16 +103,18 @@ export class UserService {
     params?: PaginationParams
   ): Promise<ApiResponse<Transaction[]>> {
     try {
-      console.log('📜 Fetching transactions...', { walletAddress, params });
+      console.log("📜 Fetching transactions...", { walletAddress, params });
 
-      const client = AuthService.createAuthorizedClient();
-      const response = await client.get(`/api/user/${walletAddress}/transactions`, {
+      const result = await this.get<Transaction[]>(
+        `${this.ENDPOINTS.USER}/${walletAddress}/transactions`,
         params,
-      });
+        true // Requires auth
+      );
 
-      return response.data;
+      console.log("✅ Transactions fetched:", result);
+      return result;
     } catch (error) {
-      AuthService.handleUnauthorized(error);
+      console.error("❌ Failed to get transactions:", error);
       throw error;
     }
   }
@@ -146,16 +127,18 @@ export class UserService {
     params?: PaginationParams
   ): Promise<ApiResponse<NFT[]>> {
     try {
-      console.log('🖼️ Fetching NFTs...', { walletAddress, params });
+      console.log("🖼️ Fetching NFTs...", { walletAddress, params });
 
-      const client = AuthService.createAuthorizedClient();
-      const response = await client.get(`/api/user/${walletAddress}/nfts`, {
+      const result = await this.get<NFT[]>(
+        `${this.ENDPOINTS.USER}/${walletAddress}/nfts`,
         params,
-      });
+        true // Requires auth
+      );
 
-      return response.data;
+      console.log("✅ NFTs fetched:", result);
+      return result;
     } catch (error) {
-      AuthService.handleUnauthorized(error);
+      console.error("❌ Failed to get NFTs:", error);
       throw error;
     }
   }
@@ -163,16 +146,22 @@ export class UserService {
   /**
    * 7. Lấy thống kê tổng quan - GET /api/user/statistics/overview
    */
-  static async getOverviewStatistics(): Promise<ApiResponse<OverviewStatistics>> {
+  static async getOverviewStatistics(): Promise<
+    ApiResponse<OverviewStatistics>
+  > {
     try {
-      console.log('📊 Fetching overview statistics...');
+      console.log("📊 Fetching overview statistics...");
 
-      const client = AuthService.createAuthorizedClient();
-      const response = await client.get('/api/user/statistics/overview');
+      const result = await this.get<OverviewStatistics>(
+        this.ENDPOINTS.OVERVIEW_STATISTICS,
+        undefined,
+        true // Requires auth
+      );
 
-      return response.data;
+      console.log("✅ Overview statistics fetched:", result);
+      return result;
     } catch (error) {
-      AuthService.handleUnauthorized(error);
+      console.error("❌ Failed to get overview statistics:", error);
       throw error;
     }
   }
@@ -184,14 +173,18 @@ export class UserService {
     walletAddress: string
   ): Promise<ApiResponse<UserStatistics>> {
     try {
-      console.log('📈 Fetching user statistics...', { walletAddress });
+      console.log("📈 Fetching user statistics...", { walletAddress });
 
-      const client = AuthService.createAuthorizedClient();
-      const response = await client.get(`/api/user/${walletAddress}/statistics`);
+      const result = await this.get<UserStatistics>(
+        `${this.ENDPOINTS.USER}/${walletAddress}/statistics`,
+        undefined,
+        true // Requires auth
+      );
 
-      return response.data;
+      console.log("✅ User statistics fetched:", result);
+      return result;
     } catch (error) {
-      AuthService.handleUnauthorized(error);
+      console.error("❌ Failed to get user statistics:", error);
       throw error;
     }
   }
@@ -203,31 +196,28 @@ export class UserService {
     walletAddress: string
   ): Promise<ApiResponse<{ deletedCount: number }>> {
     try {
-      console.log('🗑️ Deleting transactions...', { walletAddress });
+      console.log("🗑️ Deleting transactions...", { walletAddress });
 
-      const client = AuthService.createAuthorizedClient();
-      const response = await client.delete(`/api/user/${walletAddress}/transactions`);
+      const result = await this.delete<{ deletedCount: number }>(
+        `${this.ENDPOINTS.USER}/${walletAddress}/transactions`,
+        true // Requires auth
+      );
 
-      return response.data;
+      console.log("✅ Transactions deleted:", result);
+      return result;
     } catch (error) {
-      AuthService.handleUnauthorized(error);
+      console.error("❌ Failed to delete transactions:", error);
       throw error;
     }
   }
 
   /**
-   * Get API configuration
+   * Get service configuration
    */
-  static getConfig() {
+  static getServiceConfig() {
     return {
-      baseURL: API_BASE_URL,
-      endpoints: {
-        connect: '/api/user/connect',
-        user: '/api/user',
-        transaction: '/api/user/transaction',
-        nft: '/api/user/nft',
-        statistics: '/api/user/statistics',
-      },
+      ...this.getConfig(),
+      endpoints: this.ENDPOINTS,
     };
   }
 }
