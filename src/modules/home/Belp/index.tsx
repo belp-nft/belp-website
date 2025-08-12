@@ -8,14 +8,13 @@ const BelpSection = () => {
     <div
       className={clsx(
         "flex flex-col md:flex-row items-center justify-between w-full gap-10",
-        "px-4 sm:px-10 md:px-20 lg:px-32 xl:px-48 py-10"
+        "main-container py-10"
       )}
     >
       <div className="w-full md:w-1/2 flex flex-col justify-center">
         <motion.h1
           className={clsx(
-            "font-bold mb-4",
-            "text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[96px]",
+            "font-bold mb-4 title-text",
             "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
           )}
           initial={{ opacity: 0, y: 20 }}
@@ -24,7 +23,7 @@ const BelpSection = () => {
         >
           BELP
         </motion.h1>
-        <div className="text-base sm:text-lg md:text-xl space-y-4">
+        <div className="text-responsive-lg space-y-4">
           <p>
             Welcome to the world of Belpy a Web3-born feline brand built on
             cuteness, claw, and community.
@@ -51,7 +50,7 @@ const BelpSection = () => {
           repeatType: "loop",
           ease: "easeInOut",
         }}
-        className="w-full md:w-1/2 flex justify-center relative z-20"
+        className="w-full md:w-1/2 flex justify-center md:justify-end relative z-20 right-[-28px] md:right-[-70px]"
       >
         <Image
           src="/images/home/belp-cat-1.png"

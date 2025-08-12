@@ -21,11 +21,6 @@ const menu = [
   { label: "MINT", href: "/mint", icon: <MdSmartButton size={22} /> },
   { label: "LORE", href: "/lore", icon: <MdShoppingBag size={22} /> },
   { label: "DOC", href: "/doc", icon: <MdDescription size={22} /> },
-  // {
-  //   label: "MY COLLECTION",
-  //   href: "/my-collection",
-  //   icon: <MdGridView size={22} />,
-  // },
 ];
 
 export default function BelpHeader() {
@@ -72,53 +67,45 @@ export default function BelpHeader() {
                 </button>
               </div>
               <div className="flex flex-col items-center mt-4 mb-5">
-                <Image
-                  src="/avatars/cat-1.png"
-                  alt="User"
-                  width={56}
-                  height={56}
-                  className="rounded-full border border-[#d3b0f7] shadow-sm"
+                <ConnectWallet
+                  onConnected={(info) => console.log("Connected:", info)}
                 />
-                <span className="mt-2 font-semibold text-[#401B79]">
-                  User 01
-                </span>
               </div>
               <nav className="flex-1 w-full">
                 <ul className="flex flex-col gap-2 px-6">
-                  {menu.map((item) => (
-                    <motion.li
-                      key={item.label}
-                      initial={{ x: -24, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: -32, opacity: 0 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 180,
-                        delay: 0.05,
-                      }}
-                    >
-                      <Link
-                        href={item.href}
-                        onClick={() => setOpen(false)}
-                        className={clsx(
-                          "flex items-center gap-3 py-2 px-2 rounded-lg font-semibold uppercase tracking-wider text-[18px]",
-                          pathname.startsWith(item.href)
-                            ? "text-[#AE9CFF] font-extrabold"
-                            : "text-[#6B6475] hover:bg-[#e8d8fb] transition-all"
-                        )}
+                  {menu.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      pathname.startsWith(item.href + "/");
+                    return (
+                      <motion.li
+                        key={item.label}
+                        initial={{ x: -24, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -32, opacity: 0 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 180,
+                          delay: 0.05,
+                        }}
                       >
-                        <span className="opacity-80">{item.icon}</span>
-                        {item.label}
-                      </Link>
-                    </motion.li>
-                  ))}
+                        <Link
+                          href={item.href}
+                          onClick={() => setOpen(false)}
+                          className={clsx(
+                            "flex items-center gap-3 py-2 px-2 rounded-lg font-semibold uppercase tracking-wider text-[18px]",
+                            isActive
+                              ? "font-extrabold"
+                              : "text-[#6B6475] hover:bg-[#e8d8fb] transition-all"
+                          )}
+                        >
+                          <span className="opacity-80">{item.icon}</span>
+                          {item.label}
+                        </Link>
+                      </motion.li>
+                    );
+                  })}
                 </ul>
-
-                <div className="flex items-center justify-center mt-6">
-                  <ConnectWallet
-                    onConnected={(info) => console.log("Connected:", info)}
-                  />
-                </div>
               </nav>
             </motion.aside>
           </>

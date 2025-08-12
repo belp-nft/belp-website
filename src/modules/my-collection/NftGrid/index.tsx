@@ -1,9 +1,9 @@
 "use client";
-import { NftItem as NftItemType } from "@/lib/collection-mock";
+import { RealNftItem } from "@/hooks/useRealNfts";
 import NftItem from "../NftItem";
 
 type Props = {
-  items: NftItemType[];
+  items: RealNftItem[];
 };
 
 export default function NftGrid({ items }: Props) {

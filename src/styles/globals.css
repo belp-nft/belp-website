@@ -22,26 +22,134 @@
   font-display: swap;
 }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+body {
+  font-family: "GmarketSans", Arial, Helvetica, sans-serif;
+  color: #1c007c;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark body {
+  color: white;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Main container utility class */
+.main-container {
+  max-width: 1440px; /* equivalent to max-w-4xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 5rem;
+  padding-right: 5rem;
+
+  @media screen and (min-width: 1280px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
 }
 
-body {
-  background: var(--background);
-  font-family: "GmarketSans", Arial, Helvetica, sans-serif;
+/* Footer container - wider than main container */
+.footer-container {
+  max-width: 1440px; /* equivalent to max-w-[1440px] */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 5rem;
+  padding-right: 5rem;
+
+  @media screen and (min-width: 1280px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Wide section container */
+.wide-container {
+  max-width: 1280px; /* equivalent to max-w-5xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 5rem;
+  padding-right: 5rem;
+
+  @media screen and (min-width: 1280px) {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Text container for hero sections */
+.text-container {
+  max-width: 576px; /* equivalent to max-w-xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Large text container */
+.large-text-container {
+  max-width: 1048px; /* equivalent to max-w-3xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Medium text container */
+.medium-text-container {
+  max-width: 768px; /* equivalent to max-w-3xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Small text container */
+.small-text-container {
+  max-width: 672px; /* equivalent to max-w-2xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Title text sizing utility */
+.title-text {
+  font-size: 2.25rem; /* text-4xl */
+}
+
+@media (min-width: 640px) {
+  .title-text {
+    font-size: 3rem; /* sm:text-5xl */
+  }
+}
+
+@media (min-width: 768px) {
+  .title-text {
+    font-size: 3.75rem; /* md:text-6xl */
+  }
+}
+
+@media (min-width: 1024px) {
+  .title-text {
+    font-size: 4.5rem; /* lg:text-7xl */
+  }
+}
+
+@media (min-width: 1280px) {
+  .title-text {
+    font-size: 80px; /* xl:text-[80px] */
+  }
+}
+
+/* Responsive base text utility */
+.text-responsive {
+  font-size: 1rem; /* Scales with html font-size */
+  line-height: 1.5;
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem; /* Scales with html font-size */
+  line-height: 1.5;
+}
+
+.text-responsive-xl {
+  font-size: 1.25rem; /* Scales with html font-size */
+  line-height: 1.5;
 }

@@ -1,10 +1,10 @@
 "use client";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { NftItem as NftItemType } from "@/lib/collection-mock";
+import { RealNftItem } from "@/hooks/useRealNfts";
 import Link from "next/link";
 
-export default function NftItem({ item }: { item: NftItemType }) {
+export default function NftItem({ item }: { item: RealNftItem }) {
   return (
     <Link href={`/my-collection/${item.id}`} passHref legacyBehavior>
       <motion.a
@@ -31,9 +31,9 @@ export default function NftItem({ item }: { item: NftItemType }) {
           <div className="flex items-center justify-between text-xs text-[#6c5a99] mt-1">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[#7a4bd6]" />
-              {item.price.toFixed(2)} Sol
+              {(item.price || 0.0001).toFixed(4)} SOL
             </span>
-            <span className="opacity-60">{item.likes} ❤️</span>
+            <span className="opacity-60">{item.likes || 0} ❤️</span>
           </div>
         </div>
       </motion.a>
