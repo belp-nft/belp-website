@@ -8,11 +8,11 @@ export default function HeroSection() {
   return (
     <section
       className={clsx(
-        "relative flex flex-col items-center justify-center text-center main-container",
+        "relative flex flex-col items-center justify-center text-center",
         "bg-[url('/images/home/bg-hero-section.png')] bg-no-repeat bg-cover"
       )}
     >
-      <div className="py-20 md:py-24 lg:py-[100px] mt-20">
+      <div className="main-container py-20 md:py-24 lg:py-[100px] mt-20">
         <motion.h1
           className={clsx(
             "font-bold mb-4 title-text",
