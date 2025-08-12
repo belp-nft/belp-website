@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-const SOLANA_RPC =
-  "https://young-patient-asphalt.solana-mainnet.quiknode.pro/81fe1cb3431ef0eb5a1423f7e2f529f82a0f344f/";
+// Sử dụng devnet cho development (có thể config từ env)
+const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC || "https://api.devnet.solana.com";
 
 async function getSolBalanceLamports(address: string): Promise<number> {
   const body = {
@@ -31,15 +31,20 @@ export function useSolanaBalance(address?: string | null) {
   const [lamports, setLamports] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const refresh = useCallback(async () => {
     if (!address) return;
     setLoading(true);
     setError(null);
     try {
+      console.log('💰 Fetching SOL balance for:', address);
       const value = await getSolBalanceLamports(address);
       setLamports(value);
+      setLastUpdated(new Date());
+      console.log('✅ SOL balance updated:', formatSol(value), 'SOL');
     } catch (e: any) {
+      console.error('❌ Failed to fetch SOL balance:', e);
       setError(e?.message || "Error fetching balance");
       setLamports(null);
     } finally {
@@ -57,5 +62,7 @@ export function useSolanaBalance(address?: string | null) {
     loading,
     error,
     refresh,
+    lastUpdated,
+    rpcEndpoint: SOLANA_RPC,
   };
 }
