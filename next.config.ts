@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/nft/:path*",
-        destination: "http://localhost:4444/nft/:path*",
+        destination: "https://belpy-core.blockifyy.com/nft/:path*",
       },
     ];
   },
