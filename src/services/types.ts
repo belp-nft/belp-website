@@ -13,6 +13,7 @@ export interface User {
   walletAddress: string;
   createdAt: string;
   updatedAt: string;
+  accessToken?: string; // JWT token từ connect response
 }
 
 export interface ConnectWalletRequest {
@@ -107,7 +108,7 @@ export interface CandyMachineInfo {
   maxSupply: number;
 }
 
-// Config related types
+// Config related types - Only what's documented
 export interface CandyMachineConfig {
   _id: string;
   address: string;
@@ -120,20 +121,6 @@ export interface CandyMachineConfig {
   active: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface CreateConfigRequest {
-  address: string;
-  collectionAddress: string;
-  itemsAvailable?: number;
-  itemsLoaded?: number;
-  totalProcessed?: number;
-  network?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface ActivateConfigRequest {
-  address: string;
 }
 
 // Pagination types
