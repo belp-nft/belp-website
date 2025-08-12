@@ -54,16 +54,13 @@ export default function MintSection() {
         </motion.div>
 
         <div className="w-full flex md:hidden justify-center items-end">
-          <video
-            src="/videos/cat-walk.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            style={{
-              width: "100%",
-              objectFit: "contain",
-            }}
+          <Image
+            src="/gifs/cat-walk.gif"
+            alt="belp cat walking"
+            width={400}
+            height={300}
+            priority
+            className="w-full h-auto object-contain"
           />
         </div>
       </div>
