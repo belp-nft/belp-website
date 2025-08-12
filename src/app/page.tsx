@@ -2,7 +2,7 @@ import HeroSection from "@/modules/home/HeroSection";
 import WhatlsBelp from "@/modules/home/WhatlsBelp";
 import LoreShop from "@/modules/home/LoreShop";
 import GetTheCuteness from "@/modules/home/GetTheCuteness";
-import Loadmap from "@/modules/home/Loadmap";
+import Roadmap from "@/modules/home/Roadmap";
 import MintSection from "@/modules/home/MintSection";
 import BelpSection from "@/modules/home/Belp";
 import BelpFooter from "@/components//Footer";
@@ -19,7 +19,7 @@ export default function Home() {
         <BelpSection />
         <LoreShop />
         <GetTheCuteness />
-        <Loadmap />
+        <Roadmap />
         <MintSection />
       </div>
       <BelpFooter />

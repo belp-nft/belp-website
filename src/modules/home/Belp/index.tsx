@@ -50,7 +50,7 @@ const BelpSection = () => {
           repeatType: "loop",
           ease: "easeInOut",
         }}
-        className="w-full md:w-1/2 flex justify-center md:justify-end relative z-20"
+        className="w-full md:w-1/2 flex justify-center md:justify-end relative z-20 right-[-28px] md:right-[-70px]"
       >
         <Image
           src="/images/home/belp-cat-1.png"

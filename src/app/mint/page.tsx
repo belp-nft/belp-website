@@ -206,7 +206,7 @@ const BelpyMintPage = () => {
         mintedNfts.push({
           id: result.nft.address,
           name: result.nft.name,
-          image: result.nft.image || `/icons/${cats[randomCat]}`,
+          image: "https://belpy.blockifyy.com/icons/token-nft-1.svg",
           price: 0.0001,
           likes: Math.floor(Math.random() * 100),
           mintSignature: result.signature,
@@ -270,47 +270,49 @@ const BelpyMintPage = () => {
   };
 
   return (
-    <motion.div
-      className="main-container py-8"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-    >
-      <MintHeader />
+    <div className="bg-[url('/images/mint/background.png')] bg-no-repeat bg-cover pt-24 pb-16 min-h-[calc(100vh-64px)]">
+      <motion.div
+        className="main-container"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <MintHeader />
 
-      <MintSection
-        minted={minted}
-        supply={supply}
-        isMinting={isMinting}
-        mintSuccess={mintSuccess}
-        selectedCat={selectedCat}
-        cats={cats}
-        onMintClick={handleMintClick}
-        candyMachineId={currentCandyMachineId}
-      />
+        <MintSection
+          minted={minted}
+          supply={supply}
+          isMinting={isMinting}
+          mintSuccess={mintSuccess}
+          selectedCat={selectedCat}
+          cats={cats}
+          onMintClick={handleMintClick}
+          candyMachineId={currentCandyMachineId}
+        />
 
-      <MintConfirmModal
-        isOpen={showMintModal}
-        isMinting={isMinting}
-        onClose={() => setShowMintModal(false)}
-        onConfirm={handleMint}
-      />
+        <MintConfirmModal
+          isOpen={showMintModal}
+          isMinting={isMinting}
+          onClose={() => setShowMintModal(false)}
+          onConfirm={handleMint}
+        />
 
-      <MintSuccessModal
-        isOpen={showSuccessModal}
-        selectedCat={selectedCat}
-        cats={cats}
-        mintedNftId={mintedNftId}
-        onClose={handleSuccessModalClose}
-        onViewDetails={() => {
-          router.push(`/my-collection/${mintedNftId.replace("#", "")}`);
-          handleSuccessModalClose();
-        }}
-        onViewHistory={() => {
-          handleSuccessModalClose();
-        }}
-      />
-    </motion.div>
+        <MintSuccessModal
+          isOpen={showSuccessModal}
+          selectedCat={selectedCat}
+          cats={cats}
+          mintedNftId={mintedNftId}
+          onClose={handleSuccessModalClose}
+          onViewDetails={() => {
+            router.push(`/my-collection/${mintedNftId.replace("#", "")}`);
+            handleSuccessModalClose();
+          }}
+          onViewHistory={() => {
+            handleSuccessModalClose();
+          }}
+        />
+      </motion.div>
+    </div>
   );
 };
 

@@ -194,7 +194,7 @@ export async function directMintBelpyNFT(
       name: `BELPY Cat #${nftId}`,
       description:
         "A cute BELPY cat from the BELP universe! Ready to explore and play.",
-      image: `https://your-domain.com/icons/token-nft-${imageIndex}.svg`,
+      image: `https://belpy.blockifyy.com/icons/token-nft-1.svg`,
       attributes: [
         { trait_type: "Type", value: "BELPY Cat" },
         { trait_type: "Rarity", value: "Common" },
@@ -203,7 +203,7 @@ export async function directMintBelpyNFT(
       properties: {
         files: [
           {
-            uri: `https://your-domain.com/icons/token-nft-${imageIndex}.svg`,
+            uri: `https://belpy.blockifyy.com/icons/token-nft-1.svg`,
             type: "image/svg+xml",
           },
         ],

@@ -17,11 +17,11 @@ export default function RootLayoutClient({
 
   return (
     <html lang="en">
-      <body className="font-gmarket antialiased text-[#1C007C]">
+      <body className="font-gmarket antialiased">
         <BelpHeader />
         <div
           className={clsx(
-            !["/", "/my-collection"].includes(pathname) && "mt-24"
+            !["/", "/my-collection"].includes(pathname) && "mt-16"
           )}
         >
           {children}

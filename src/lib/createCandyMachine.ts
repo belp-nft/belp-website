@@ -21,7 +21,7 @@ export async function createBelpyCandyMachine(wallet: any) {
 
     // Create collection NFT first
     const collectionMint = generateSigner(umi);
-    await createNft(umi, {
+    const createNftTx = await createNft(umi, {
       mint: collectionMint,
       authority: umi.identity,
       name: "BELPY Collection",
@@ -29,7 +29,8 @@ export async function createBelpyCandyMachine(wallet: any) {
       sellerFeeBasisPoints: percentAmount(5, 2), // 5% royalty
       isCollection: true,
       collectionDetails: { __kind: "V1", size: 0 },
-    }).sendAndConfirm(umi);
+    });
+    await createNftTx.sendAndConfirm(umi);
 
     console.log("Collection created:", collectionMint.publicKey.toString());
 
@@ -37,12 +38,13 @@ export async function createBelpyCandyMachine(wallet: any) {
 
     // Create Candy Machine
     const candyMachine = generateSigner(umi);
-    await create(umi, {
+    const createCandyMachineTx = await create(umi, {
       candyMachine,
       collectionMint: collectionMint.publicKey,
       collectionUpdateAuthority: umi.identity,
       tokenStandard: TokenStandard.NonFungible,
       itemsAvailable: 5000, // Total number of NFTs
+      sellerFeeBasisPoints: percentAmount(5, 2), // 5% royalty
       creators: [
         {
           address: umi.identity.publicKey,
@@ -50,7 +52,8 @@ export async function createBelpyCandyMachine(wallet: any) {
           percentageShare: 100,
         },
       ],
-    }).sendAndConfirm(umi);
+    });
+    await createCandyMachineTx.sendAndConfirm(umi);
 
     const candyMachineId = candyMachine.publicKey.toString();
     console.log("🎉 CANDY_MACHINE_ID =", candyMachineId);

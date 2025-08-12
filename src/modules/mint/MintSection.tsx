@@ -45,22 +45,13 @@ const MintSection: React.FC<MintSectionProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.6 }}
     >
-      <motion.div
-        className="w-full lg:w-1/2 flex items-center justify-center"
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, delay: 0.8 }}
-      >
-        <video
-          src="/videos/cat-play-ball.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full max-w-[420px] rounded-2xl object-contain shadow-lg"
+      <div className="w-full lg:w-1/2 flex items-center justify-center">
+        <img
+          src="/gifs/cat-play-ball.gif"
+          alt="Cat playing with ball"
           style={{ aspectRatio: "4/3" }}
         />
-      </motion.div>
+      </div>
 
       <motion.div
         className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-4"
