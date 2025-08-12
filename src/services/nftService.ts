@@ -12,8 +12,6 @@ import type {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'http://localhost:4444';
 const NFT_ENDPOINT = '/nft';
 
-
-
 /**
  * NFT Service Class - Handles all NFT Controller APIs according to documentation
  */
@@ -110,27 +108,6 @@ export class NftService {
       console.error('Failed to get candy machine info:', error);
       AuthService.handleUnauthorized(error);
       throw error;
-    }
-  }
-
-  /**
-   * Helper method để check health của NFT API
-   */
-  static async healthCheck(): Promise<boolean> {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      const response = await fetch(`${API_BASE_URL}/nft/health`, {
-        method: 'GET',
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      return response.ok;
-    } catch (error) {
-      console.warn('NFT API health check failed:', error);
-      return false;
     }
   }
 
