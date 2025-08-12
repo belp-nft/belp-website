@@ -78,8 +78,13 @@ export interface BuildMintTxRequest {
 }
 
 export interface BuildMintTxResponse {
-  success: boolean;
   unsignedTx: string;
+  note?: string;
+  // Alternative format
+  success?: boolean;
+  data?: {
+    unsignedTx: string;
+  };
   message?: string;
 }
 
@@ -94,6 +99,9 @@ export interface SendSignedTxResponse {
   transactionSignature: string;
   nftAddress: string;
   message: string;
+  // Alternative format fields
+  signature?: string; // Alternative for transactionSignature
+  error?: string; // Error message field
 }
 
 export interface CandyMachineInfo {
