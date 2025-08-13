@@ -167,6 +167,9 @@ export default function GetTheCuteness() {
           <h2
             className="font-bold text-[28px] xs:text-[34px] sm:text-[40px] mb-4
           bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent px-2 pt-2"
+            style={{
+              fontFamily: "var(--font-oxanium) !important",
+            }}
           >
             Get the cuteness
           </h2>
@@ -244,11 +247,14 @@ export default function GetTheCuteness() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
+              style={{
+                fontFamily: "var(--font-oxanium) !important",
+              }}
             >
               Get the cuteness
             </motion.h2>
             <motion.p
-              className="text-lg md:text-xl lg:text-2xl mb-8 max-w-xl"
+              className="text-responsive-lg lg:text-2xl mb-8 max-w-xl"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -258,7 +264,7 @@ export default function GetTheCuteness() {
               meticulously handcrafted, high-quality designs.
             </motion.p>
             <motion.p
-              className="text-lg md:text-xl lg:text-2xl max-w-xl"
+              className="text-responsive-lg lg:text-2xl max-w-xl"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.2 }}

@@ -10,18 +10,21 @@ export default function MintSection() {
   const imgRef = useRef(null);
 
   return (
-    <section className="bg-gradient-to-b from-[#FFC3F920] via-[#FFC3F910] via-60% to-[#ED00FF]">
+    <section className="bg-gradient-to-b from-[#ffffff20] via-[#ffffff10] via-60% to-[#f785ff]">
       <div className="main-container pt-40 w-full flex flex-col md:flex-row items-center justify-center">
         <Link href="/mint" className="md:w-1/3 w-full text-center">
           <motion.button
             className={clsx(
               "cursor-pointer",
               "bg-gradient-to-b from-[#C000FF] to-[#ED00FF] bg-clip-text text-transparent leading-tight",
-              "font-bold text-[52px] sm:text-[64px] md:text-[72px] lg:text-[98px] xl:text-[138px] leading-tight hover:scale-105 transition-all mb-8 md:mb-0"
+              "font-bold text-[52px] sm:text-[64px] md:text-[72px] lg:text-[98px] xl:text-[100px] leading-tight hover:scale-105 transition-all mb-8 md:mb-0"
             )}
             whileTap={{ scale: 0.95 }}
             onHoverStart={() => controls.start({ scale: 1.05 })}
             onHoverEnd={() => controls.start({ scale: 1 })}
+            style={{
+              fontFamily: "var(--font-oxanium)",
+            }}
           >
             Mint <span className="text-nowrap">now !</span>
           </motion.button>

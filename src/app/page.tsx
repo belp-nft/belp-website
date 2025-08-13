@@ -13,15 +13,13 @@ export default function Home() {
       <div className="font-medium bg-[#640076] text-center py-2 text-white">
         Belp is now on SOLANA
       </div>
-      <div className="bg-[url('/images/home/background.svg')] bg-no-repeat bg-cover">
-        <HeroSection />
-        <WhatlsBelp />
-        <BelpSection />
-        <LoreShop />
-        <GetTheCuteness />
-        <Roadmap />
-        <MintSection />
-      </div>
+      <HeroSection />
+      <WhatlsBelp />
+      <BelpSection />
+      <LoreShop />
+      <GetTheCuteness />
+      <Roadmap />
+      <MintSection />
       <BelpFooter />
     </main>
   );

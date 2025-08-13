@@ -128,7 +128,7 @@ body {
 
 @media (min-width: 1024px) {
   .title-text {
-    font-size: 4.5rem; /* lg:text-7xl */
+    font-size: 6rem; /* lg:text-7xl */
   }
 }
 
