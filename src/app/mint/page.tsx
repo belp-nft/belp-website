@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Metaplex } from "@metaplex-foundation/js";
-import { Connection, PublicKey } from "@solana/web3.js";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/hooks/useWallet";
 
-import { NftService, UserService, ConfigService } from "@/services";
+import { NftService, UserService } from "@/services";
+import {
+  useConfig,
+  useMintStats,
+  useConfigActions,
+  useCandyMachineAddress,
+} from "@/stores/config";
 import MintHeader from "@/modules/mint/MintHeader";
 import MintSection from "@/modules/mint/MintSection";
 import MintConfirmModal from "@/modules/mint/MintConfirmModal";
@@ -20,8 +24,6 @@ const cats = [
   "token-nft-4.svg",
 ];
 
-const RPC_URL = "https://api.devnet.solana.com";
-
 const BelpyMintPage = () => {
   const router = useRouter();
   const {
@@ -33,8 +35,13 @@ const BelpyMintPage = () => {
     loadUserData,
   } = useWallet();
 
-  const [minted, setMinted] = useState<number>(0);
-  const [supply, setSupply] = useState<number>(0);
+  // Zustand store
+  const candyMachineConfig = useConfig();
+  const candyMachineAddress = useCandyMachineAddress();
+  const { minted, supply } = useMintStats();
+  const { fetchConfig, refreshStats, incrementMinted } = useConfigActions();
+
+  // Local state
   const [isMinting, setIsMinting] = useState<boolean>(false);
   const [mintSuccess, setMintSuccess] = useState<boolean>(false);
   const [selectedCat, setSelectedCat] = useState<number | null>(null);
@@ -42,144 +49,22 @@ const BelpyMintPage = () => {
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [nftAddress, setNftAddress] = useState<string>("");
   const [nftDetailData, setNftDetailData] = useState<any>(null);
-  const [currentCandyMachineId, setCurrentCandyMachineId] =
-    useState<string>("");
-  const [candyMachineConfig, setCandyMachineConfig] = useState<any>(null);
 
+  // Auto-refresh stats every 30s
   useEffect(() => {
-    if (!currentCandyMachineId) return;
+    if (!candyMachineAddress) return;
 
     const interval = setInterval(async () => {
       try {
         console.log("🔄 Auto-refreshing candy machine stats...");
-        const result = await ConfigService.getCandyMachineConfig(
-          currentCandyMachineId
-        );
-
-        if (result.success && result.data) {
-          const totalProcessed = result.data.totalProcessed || 0;
-          const totalSupply = result.data.itemsAvailable || 10;
-
-          setMinted(totalProcessed);
-          setSupply(totalSupply);
-          console.log("✅ Stats refreshed from API:", {
-            minted: totalProcessed,
-            supply: totalSupply,
-          });
-        }
+        await refreshStats(candyMachineAddress);
       } catch (error) {
         console.error("⚠️ Failed to auto-refresh stats:", error);
       }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [currentCandyMachineId]);
-
-  useEffect(() => {
-    const loadCandyMachineConfig = async () => {
-      try {
-        console.log("📋 Loading candy machine config from backend...");
-        const result = await ConfigService.getCandyMachineConfig();
-
-        if (result.success && result.data) {
-          console.log("✅ Candy machine config loaded:", result.data);
-          setCandyMachineConfig(result.data);
-          setCurrentCandyMachineId(result.data.address);
-
-          const totalProcessed = result.data.totalProcessed || 0;
-          const totalSupply = result.data.itemsAvailable || 10;
-          const remaining = Math.max(0, totalSupply - totalProcessed);
-
-          setMinted(totalProcessed);
-          setSupply(totalSupply);
-        } else {
-          console.warn(
-            "Failed to load candy machine config, using localStorage"
-          );
-        }
-      } catch (error) {
-        console.error("Error loading candy machine config:", error);
-      }
-    };
-
-    loadCandyMachineConfig();
-  }, []);
-
-  useEffect(() => {
-    const fetchCandyMachine = async () => {
-      try {
-        if (
-          !currentCandyMachineId ||
-          currentCandyMachineId === "11111111111111111111111111111112"
-        ) {
-          console.log("CANDY_MACHINE_ID not configured, using mock data");
-          setMinted(1234);
-          setSupply(5000);
-          return;
-        }
-
-        if (currentCandyMachineId.includes("BELPY") || candyMachineConfig) {
-          console.log("Using candy machine config from API");
-
-          if (candyMachineConfig) {
-            const totalProcessed = candyMachineConfig.totalProcessed || 0;
-            const totalSupply = candyMachineConfig.itemsAvailable || 10;
-
-            setMinted(totalProcessed);
-            setSupply(totalSupply);
-            console.log("✅ Stats loaded from config:", {
-              minted: totalProcessed,
-              supply: totalSupply,
-            });
-          }
-          return;
-        }
-
-        try {
-          new PublicKey(currentCandyMachineId);
-        } catch (e) {
-          console.error(
-            "Invalid CANDY_MACHINE_ID format:",
-            currentCandyMachineId
-          );
-          setMinted(1234);
-          setSupply(5000);
-          return;
-        }
-
-        const connection = new Connection(RPC_URL);
-
-        const accountInfo = await connection.getAccountInfo(
-          new PublicKey(currentCandyMachineId)
-        );
-        if (!accountInfo) {
-          console.warn("Candy Machine account not found, using mock data");
-          setMinted(1234);
-          setSupply(5000);
-          return;
-        }
-
-        const metaplex = new Metaplex(connection);
-        console.log("🚀 ~ fetchCandyMachine ~ metaplex:", metaplex);
-
-        const candyMachine = await metaplex.candyMachines().findByAddress({
-          address: new PublicKey(currentCandyMachineId),
-        });
-
-        console.log("🚀 ~ fetchCandyMachine ~ candyMachine:", candyMachine);
-        setMinted(candyMachine.itemsMinted || 0);
-        setSupply(candyMachine.itemsAvailable || 0);
-      } catch (e) {
-        console.log("fetchCandyMachine error:", e);
-        setMinted(1234);
-        setSupply(5000);
-      }
-    };
-
-    if (currentCandyMachineId) {
-      fetchCandyMachine();
-    }
-  }, [currentCandyMachineId]);
+  }, [candyMachineAddress]); // Use stable address selector
 
   const handleMint = async () => {
     setIsMinting(true);
@@ -196,13 +81,17 @@ const BelpyMintPage = () => {
         throw new Error("Candy Machine configuration not loaded!");
       }
 
+      if (!candyMachineAddress) {
+        throw new Error("Candy Machine address not available!");
+      }
+
       console.log("Starting NFT mint...");
-      console.log("Candy Machine:", candyMachineConfig.address);
+      console.log("Candy Machine:", candyMachineAddress);
       console.log("Buyer wallet:", solAddress);
 
       console.log("Creating unsigned transaction...");
       const buildResult = await NftService.buildMintTransaction(
-        candyMachineConfig.address,
+        candyMachineAddress,
         solAddress
       );
 
@@ -263,7 +152,7 @@ const BelpyMintPage = () => {
       const sendResult = await NftService.sendSignedTransaction(
         signedTxBase64,
         solAddress,
-        candyMachineConfig.address
+        candyMachineAddress
       );
 
       console.log("Backend send response:", sendResult);
@@ -299,7 +188,7 @@ const BelpyMintPage = () => {
             await UserService.saveTransaction({
               walletAddress: solAddress,
               transactionSignature: transactionSignature,
-              candyMachineAddress: candyMachineConfig.address,
+              candyMachineAddress: candyMachineAddress,
               timestamp: new Date().toISOString(),
             });
             console.log("Transaction saved to backend");
@@ -338,25 +227,17 @@ const BelpyMintPage = () => {
           console.error("Failed to fetch NFT details:", nftError);
         }
 
-        setMinted((prev) => {
-          const newMinted = prev + 1;
+        // Increment minted count in store
+        incrementMinted();
 
-          ConfigService.getCandyMachineConfig(currentCandyMachineId)
-            .then((result) => {
-              if (result.success && result.data) {
-                const totalProcessed = result.data.totalProcessed || newMinted;
-                setMinted(totalProcessed);
-                console.log("Stats updated from API after mint:", {
-                  minted: totalProcessed,
-                });
-              }
-            })
-            .catch((error) => {
-              console.error("Failed to refresh stats after mint:", error);
-            });
-
-          return newMinted;
-        });
+        // Refresh stats from API after a delay
+        setTimeout(async () => {
+          try {
+            await refreshStats(candyMachineAddress);
+          } catch (error) {
+            console.error("Failed to refresh stats after mint:", error);
+          }
+        }, 2000);
 
         setMintSuccess(true);
         setShowMintModal(false);

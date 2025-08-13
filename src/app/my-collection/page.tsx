@@ -8,6 +8,11 @@ import { useWallet } from "@/hooks/useWallet";
 import { NftService } from "@/services/nftService";
 import type { NFT } from "@/services/types";
 import NftGrid from "@/modules/my-collection//NftGrid";
+import {
+  useCollectionAddress,
+  useConfig,
+  useConfigStore,
+} from "@/stores/config";
 
 const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -17,6 +22,8 @@ const MyCollectionPage = () => {
   const router = useRouter();
 
   const { solAddress } = useWallet();
+
+  const collectionAddress = useCollectionAddress();
 
   const items = nfts.slice(0, visible);
   const totalCount = nfts.length;
@@ -142,7 +149,7 @@ const MyCollectionPage = () => {
 
       <section className="main-container mt-4">
         <UserInfo
-          contract="sm6LqSRQLkM29bMqct9QBRX5HZMEXYgELgwCXpump"
+          contract={collectionAddress || ""}
           walletAddress={solAddress || undefined}
           onHistoryClick={handleHistoryClick}
         />

@@ -4,6 +4,7 @@ import BreadCrumbs from "@/components/Breadcrumb";
 import { useWallet } from "@/hooks/useWallet";
 import { UserService } from "@/services/userService";
 import { NftService } from "@/services/nftService";
+import { BLOCKCHAIN_CONFIG } from "@/services";
 import type { NFT, Transaction } from "@/services/types";
 import clsx from "clsx";
 import { motion } from "framer-motion";
@@ -20,6 +21,18 @@ const HistoryPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(10);
   const [showTransactions, setShowTransactions] = useState(false);
+
+  const openTokenOnSolscan = (tokenAddress: string) => {
+    if (!tokenAddress) return;
+
+    // Detect network (mainnet or devnet based on environment)
+    const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
+
+    const url = `https://solscan.io/token/${tokenAddress}${
+      isMainnet ? "" : "?cluster=devnet"
+    }`;
+    window.open(url, "_blank");
+  };
 
   // Load NFTs từ backend
   const loadBackendNfts = async () => {
@@ -402,7 +415,11 @@ const HistoryPage = () => {
 
                         {/* NFT Address */}
                         <div className="col-span-2">
-                          <div className="text-sm text-[#6c5a99] font-mono">
+                          <div
+                            className="text-sm text-[#6c5a99] font-mono cursor-pointer hover:text-[#7A4BD6] transition-colors"
+                            onClick={() => openTokenOnSolscan(nft.nftAddress)}
+                            title="View token on Solscan"
+                          >
                             {nft.nftAddress.slice(0, 4)}...
                             {nft.nftAddress.slice(-4)}
                           </div>

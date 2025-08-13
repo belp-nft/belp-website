@@ -1,4 +1,5 @@
 "use client";
+import { BLOCKCHAIN_CONFIG } from "@/services";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { MdContentCopy, MdHistory } from "react-icons/md";
@@ -52,6 +53,30 @@ export default function UserInfo({
     }
   };
 
+  const openSolscan = () => {
+    if (!walletAddress) return;
+
+    // Detect network (mainnet or devnet based on environment)
+    const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
+
+    const url = `https://solscan.io/account/${walletAddress}${
+      isMainnet ? "" : "?cluster=devnet"
+    }`;
+    window.open(url, "_blank");
+  };
+
+  const openContractOnSolscan = () => {
+    if (!contract) return;
+
+    // Detect network (mainnet or devnet based on environment)
+    const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
+
+    const url = `https://solscan.io/token/${contract}${
+      isMainnet ? "" : "?cluster=devnet"
+    }`;
+    window.open(url, "_blank");
+  };
+
   return (
     <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex items-center gap-3 min-w-0">
@@ -72,14 +97,22 @@ export default function UserInfo({
         </div>
 
         <div className="min-w-0">
-          <div className="font-semibold text-primary-text truncate">
+          <div
+            className="font-semibold text-primary-text truncate cursor-pointer hover:text-[#7A4BD6] transition-colors"
+            onClick={openSolscan}
+            title="View on Solscan"
+          >
             <span className="sm:hidden">{displayWalletShort}</span>
             <span className="hidden sm:inline">{displayWalletFull}</span>
           </div>
 
           <div className="mt-0.5 text-sm text-[#7466a1] flex items-center gap-2">
             <span className="shrink-0">Contract</span>
-            <code className="bg-white border border-[#e9defd] rounded-md px-2 py-0.5 text-[#5b3e9e] whitespace-nowrap">
+            <code
+              className="bg-white border border-[#e9defd] rounded-md px-2 py-0.5 text-[#5b3e9e] whitespace-nowrap cursor-pointer hover:text-[#7A4BD6] hover:border-[#7A4BD6] transition-colors"
+              onClick={openContractOnSolscan}
+              title="View token on Solscan"
+            >
               <span className="sm:hidden">{displayContractShort}</span>
               <span className="hidden sm:inline">{displayContractFull}</span>
             </code>

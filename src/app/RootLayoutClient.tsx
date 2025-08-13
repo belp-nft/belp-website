@@ -5,6 +5,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 
 import BelpHeader from "@/components/Header";
+import { ConfigProvider } from "@/providers/ConfigProvider";
 import clsx from "clsx";
 import { usePathname } from "next/navigation";
 
@@ -18,14 +19,16 @@ export default function RootLayoutClient({
   return (
     <html lang="en">
       <body className="font-gmarket antialiased">
-        <BelpHeader />
-        <div
-          className={clsx(
-            !["/", "/my-collection"].includes(pathname) && "mt-16"
-          )}
-        >
-          {children}
-        </div>
+        <ConfigProvider>
+          <BelpHeader />
+          <div
+            className={clsx(
+              !["/", "/my-collection"].includes(pathname) && "mt-16"
+            )}
+          >
+            {children}
+          </div>
+        </ConfigProvider>
       </body>
     </html>
   );

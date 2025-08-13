@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { NftService } from "@/services/nftService";
+import { BLOCKCHAIN_CONFIG } from "@/services";
 import type { NFT } from "@/services/types";
 import { BiStar } from "react-icons/bi";
 import { motion } from "framer-motion";
@@ -15,10 +16,22 @@ const NftDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const openTokenOnSolscan = (tokenAddress: string) => {
+    if (!tokenAddress) return;
+
+    // Detect network (mainnet or devnet based on environment)
+    const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
+
+    const url = `https://solscan.io/token/${tokenAddress}${
+      isMainnet ? "" : "?cluster=devnet"
+    }`;
+    window.open(url, "_blank");
+  };
+
   // Load NFT details từ service
   useEffect(() => {
     const loadNftDetails = async () => {
-      if (!id || typeof id !== 'string') {
+      if (!id || typeof id !== "string") {
         setLoading(false);
         return;
       }
@@ -26,20 +39,20 @@ const NftDetailPage = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🖼️ Loading NFT details for:', id);
-        
+        console.log("🖼️ Loading NFT details for:", id);
+
         const response = await NftService.getNftDetails(id);
-        
+
         if (response.success && response.nft) {
           setNft(response.nft);
-          console.log('✅ NFT details loaded:', response.nft);
+          console.log("✅ NFT details loaded:", response.nft);
         } else {
-          setError('NFT not found');
-          console.error('❌ Failed to load NFT details');
+          setError("NFT not found");
+          console.error("❌ Failed to load NFT details");
         }
       } catch (err) {
-        console.error('❌ Error loading NFT details:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error("❌ Error loading NFT details:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
         setNft(null);
       } finally {
         setLoading(false);
@@ -174,7 +187,8 @@ const NftDetailPage = () => {
               <div>
                 <div className="font-bold text-[#2b1a5e] mb-1">Backstory</div>
                 <div className="text-[#7466a1] text-sm leading-relaxed">
-                  {nft.description || `${nft.name} was born under the Moon of Whisker Hollow. Known
+                  {nft.description ||
+                    `${nft.name} was born under the Moon of Whisker Hollow. Known
                   for its mysterious glow and trickster nature, this BELPY has a
                   hidden destiny linked to the lost Harmony Stone.`}
                 </div>
@@ -204,7 +218,14 @@ const NftDetailPage = () => {
                     <strong>Token ID</strong> {nft.name}
                   </div>
                   <div className="flex justify-between">
-                    <strong>Token Address</strong> {nft.nftAddress.slice(0, 8)}...{nft.nftAddress.slice(-8)}
+                    <strong>Token Address</strong>
+                    <span
+                      className="cursor-pointer hover:text-[#7A4BD6] transition-colors"
+                      onClick={() => openTokenOnSolscan(nft.nftAddress)}
+                      title="View token on Solscan"
+                    >
+                      {nft.nftAddress.slice(0, 8)}...{nft.nftAddress.slice(-8)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <strong>Token Standard</strong> NFT
