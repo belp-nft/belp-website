@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import CatCarouselCuteness from "../CatCarouselCuteness";
 
 const cats = [
   "token-nft-1.svg",
@@ -161,8 +162,8 @@ function DesktopCarousel() {
 
 export default function GetTheCuteness() {
   return (
-    <div className="relative -mt-2 bg-white">
-      <section className="main-container py-20 lg:py-32 w-full">
+    <div className="relative">
+      <section className="main-container pt-20 lg:py-32 w-full">
         <div className="w-full flex flex-col items-stretch md:hidden">
           <h2
             className="font-bold text-[28px] xs:text-[34px] sm:text-[40px] mb-4
@@ -173,66 +174,10 @@ export default function GetTheCuteness() {
           >
             Get the cuteness
           </h2>
-          <div className="flex flex-row w-full min-h-[300px]">
-            <div className="relative flex-1 min-w-0" style={{ height: 230 }}>
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                className="absolute left-1 top-0"
-                style={{ zIndex: 2, width: 82 }}
-              >
-                <Image
-                  src="/icons/token-nft-2.svg"
-                  alt="cat2"
-                  width={82}
-                  height={82}
-                  className="rounded-2xl shadow-lg rotate-[-11deg] bg-[#ffe1fc] p-1"
-                  draggable={false}
-                />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85, y: 20 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" }}
-                className="absolute left-8 top-32"
-                style={{ zIndex: 1, width: 72 }}
-              >
-                <Image
-                  src="/icons/token-nft-5.svg"
-                  alt="cat5"
-                  width={72}
-                  height={72}
-                  className="rounded-2xl shadow-lg rotate-[-6deg] bg-[#e6f4ff] p-1"
-                  draggable={false}
-                />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 60 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                viewport={{ once: true, margin: "-70px" }}
-                transition={{ delay: 0.28, duration: 0.5, ease: "easeOut" }}
-                className="absolute left-14 top-10"
-                style={{ zIndex: 10, width: 122 }}
-              >
-                <Image
-                  src="/icons/token-nft-1.svg"
-                  alt="cat1"
-                  width={122}
-                  height={122}
-                  className="rounded-2xl shadow-xl rotate-[7deg] bg-[#edf3ff] p-1"
-                  draggable={false}
-                />
-              </motion.div>
-              <div className="h-[200px] w-full" />
-            </div>
-            <div className="text-[15px] font-medium text-right max-w-[150px] sm:max-w-[200px] mt-6 pr-5">
-              Belpy consists of 100 rare Genesis NFTs and 9,900 General
-              collection NFTs, featuring over 550 customizable traits and
-              meticulously handcrafted, high-quality designs.
-            </div>
+          <div className="text-sm">
+            Belpy consists of 100 rare Genesis NFTs and 9,900 General collection
+            NFTs, featuring over 550 customizable traits and meticulously
+            handcrafted, high-quality designs.
           </div>
         </div>
 
@@ -276,6 +221,9 @@ export default function GetTheCuteness() {
           </div>
         </div>
       </section>
+      <div className="md:hidden pb-20 mt-10">
+        <CatCarouselCuteness />
+      </div>
     </div>
   );
 }

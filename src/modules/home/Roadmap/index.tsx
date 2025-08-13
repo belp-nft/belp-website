@@ -30,7 +30,7 @@ const roadmapItems = [
 
 export default function Roadmap() {
   return (
-    <div className="bg-[url('/images/home/bg-roadmap.png')] bg-contain bg-fixed bg-bottom">
+    <div className="bg-[url('/images/home/bg-roadmap.png')] bg-cover bg-fixed bg-bottom">
       <section
         className="w-full flex justify-center items-center relative py-12 md:py-20"
         style={{

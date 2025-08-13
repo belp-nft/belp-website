@@ -6,7 +6,7 @@ import RandomCloud from "../RandomCloud";
 
 const BelpSection = () => {
   return (
-    <div className="relative">
+    <div className="relative bg-white z-10">
       <div
         className={clsx(
           "flex flex-col md:flex-row items-center justify-between w-full gap-10",

@@ -11,7 +11,7 @@ export default function MintSection() {
 
   return (
     <section className="bg-gradient-to-b from-[#ffffff20] via-[#ffffff10] via-60% to-[#f785ff]">
-      <div className="main-container pt-40 w-full flex flex-col md:flex-row items-center justify-center">
+      <div className="main-container py-20 md:pt-40 w-full flex flex-col md:flex-row items-center justify-center">
         <Link href="/mint" className="md:w-1/3 w-full text-center">
           <motion.button
             className={clsx(

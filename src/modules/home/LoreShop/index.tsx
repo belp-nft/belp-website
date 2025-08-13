@@ -7,7 +7,7 @@ export default function LoreShop() {
   return (
     <section
       className={clsx(
-        "relative w-full min-h-[720px] overflow-hidden -mt-2",
+        "relative w-full min-h-[720px] overflow-hidden -mt-2 z-10",
         "bg-[#2c1a52] pt-12 pb-10 bg-fixed"
       )}
       style={{

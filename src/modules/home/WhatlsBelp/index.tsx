@@ -11,7 +11,7 @@ export default function WhatlsBelp() {
   return (
     <section
       className={clsx(
-        "relative text-center -mt-2 bg-white",
+        "relative text-center -mt-2 ",
         "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px]"
       )}
       style={{
