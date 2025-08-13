@@ -40,34 +40,31 @@ export class UserService extends BaseService {
       const result = await this.post<User>(
         this.ENDPOINTS.CONNECT,
         requestData,
-        false // Public API - không cần auth
+        false
       );
 
-      console.log("✅ Wallet connected successfully", result);
+      console.log("Wallet connected successfully", result);
       return result;
     } catch (error) {
-      console.error("❌ Failed to connect wallet:", error);
+      console.error("Failed to connect wallet:", error);
       throw error;
     }
   }
 
-  /**
-   * 2. Lấy thông tin người dùng - GET /api/user/{walletAddress}
-   */
   static async getUserInfo(walletAddress: string): Promise<ApiResponse<User>> {
     try {
-      console.log("👤 Fetching user info...", { walletAddress });
+      console.log("Fetching user info...", { walletAddress });
 
       const result = await this.get<User>(
         `${this.ENDPOINTS.USER}/${walletAddress}`,
         undefined,
-        true // Requires auth
+        true
       );
 
-      console.log("✅ User info fetched:", result);
+      console.log("User info fetched:", result);
       return result;
     } catch (error) {
-      console.error("❌ Failed to get user info:", error);
+      console.error("Failed to get user info:", error);
       throw error;
     }
   }
@@ -166,19 +163,16 @@ export class UserService extends BaseService {
     }
   }
 
-  /**
-   * 8. Lấy thống kê người dùng - GET /api/user/{walletAddress}/statistics
-   */
   static async getUserStatistics(
     walletAddress: string
   ): Promise<ApiResponse<UserStatistics>> {
     try {
-      console.log("📈 Fetching user statistics...", { walletAddress });
+      console.log("Fetching user statistics...", { walletAddress });
 
       const result = await this.get<UserStatistics>(
         `${this.ENDPOINTS.USER}/${walletAddress}/statistics`,
         undefined,
-        true // Requires auth
+        true
       );
 
       console.log("✅ User statistics fetched:", result);

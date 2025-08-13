@@ -2,11 +2,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { UserService, AuthService, NftService, ConfigService } from "@/services";
+import {
+  UserService,
+  AuthService,
+  NftService,
+  ConfigService,
+} from "@/services";
 
 export type Connected = { kind: "sol"; address: string };
-
-
 
 declare global {
   interface Window {
@@ -35,10 +38,7 @@ export type LoadingKind =
   | "sol-balance"
   | null;
 
-
-
 const SOLANA_RPC = "https://api.devnet.solana.com";
-
 
 async function getSolBalanceLamports(address: string): Promise<number> {
   const body = {
@@ -155,7 +155,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     }
 
     const sol = getSolanaProvider();
-    // Chỉ auto-login nếu Phantom đã unlock (isConnected === true)
     if (sol?.isConnected === true && sol?.publicKey) {
       const addr = sol.publicKey.toString();
       setSolAddress(addr);
@@ -191,23 +190,29 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   // Load user data từ backend - dựa trên logic index.html
   const loadUserData = useCallback(async (walletAddress: string) => {
     try {
-      console.log('📊 Loading user data...', { walletAddress });
-      
+      console.log("📊 Loading user data...", { walletAddress });
+
       // Load user statistics
       const statsResult = await UserService.getUserStatistics(walletAddress);
       if (statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
-        console.log('✅ User statistics loaded:', statsResult.data);
+        console.log("✅ User statistics loaded:", statsResult.data);
       }
 
       // Load transaction history
-      const txResult = await UserService.getTransactions(walletAddress, { limit: 50 });
+      const txResult = await UserService.getTransactions(walletAddress, {
+        limit: 50,
+      });
       if (txResult.success && txResult.data) {
         setTransactions(txResult.data);
-        console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
+        console.log(
+          "✅ Transaction history loaded:",
+          txResult.data.length,
+          "transactions"
+        );
       }
     } catch (error) {
-      console.error('⚠️ Failed to load user data:', error);
+      console.error("⚠️ Failed to load user data:", error);
     }
   }, []);
 
@@ -220,19 +225,19 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         window.open("https://phantom.app/download", "_blank");
         return;
       }
-      
-      console.log('🚀 Starting Phantom wallet connection...');
-      
+
+      console.log("🚀 Starting Phantom wallet connection...");
+
       // Bước 1: Kết nối với Phantom wallet
       const resp = await sol.connect();
       const addr = resp.publicKey.toString();
       setSolAddress(addr);
       setConnectedType("sol");
-      
-      console.log('✅ Phantom connected:', addr);
+
+      console.log("✅ Phantom connected:", addr);
 
       // Bước 2: Authenticate với backend (dựa trên logic index.html)
-      console.log('🔐 Authenticating with backend...');
+      console.log("🔐 Authenticating with backend...");
       const connectResult = await UserService.connectWallet(addr);
 
       if (connectResult.success) {
@@ -240,7 +245,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         if ((connectResult as any).data?.accessToken) {
           AuthService.setToken((connectResult as any).data.accessToken);
           setAuthToken((connectResult as any).data.accessToken);
-          console.log('🔑 JWT token saved to localStorage');
+          console.log("🔑 JWT token saved to localStorage");
         }
 
         // Bước 4: Load user data với JWT token
@@ -256,11 +261,11 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setSolLamports(0);
         }
       }, 0);
-      
+
       onConnected?.({ kind: "sol", address: addr });
-      console.log('🎉 Phantom wallet connection successful!');
+      console.log("🎉 Phantom wallet connection successful!");
     } catch (error) {
-      console.error('❌ Phantom connection failed:', error);
+      console.error("❌ Phantom connection failed:", error);
     } finally {
       setLoading(null);
     }
@@ -281,7 +286,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     setTransactions([]);
 
     window.localStorage.setItem("wallet-disconnected", "true");
-    
+
     // Cleanup JWT token từ localStorage
     AuthService.removeToken();
 
@@ -293,11 +298,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         await sol.disconnect();
       } catch {}
     }
-    
-    console.log('🔌 Wallet disconnected');
+
+    console.log("🔌 Wallet disconnected");
   }, [detachSolListeners, getSolanaProvider]);
-
-
 
   return {
     solAddress,

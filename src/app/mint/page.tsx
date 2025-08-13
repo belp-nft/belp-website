@@ -20,7 +20,7 @@ const cats = [
   "token-nft-4.svg",
 ];
 
-const RPC_URL = "https://api.devnet.solana.com"; // Sử dụng devnet cho testing
+const RPC_URL = "https://api.devnet.solana.com";
 
 const BelpyMintPage = () => {
   const router = useRouter();
@@ -45,7 +45,6 @@ const BelpyMintPage = () => {
     useState<string>("");
   const [candyMachineConfig, setCandyMachineConfig] = useState<any>(null);
 
-  // Auto-refresh stats every 30 seconds từ API
   useEffect(() => {
     if (!currentCandyMachineId) return;
 
@@ -70,12 +69,11 @@ const BelpyMintPage = () => {
       } catch (error) {
         console.error("⚠️ Failed to auto-refresh stats:", error);
       }
-    }, 30000); // Refresh every 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [currentCandyMachineId]);
 
-  // Load candy machine config từ backend - dựa trên logic index.html
   useEffect(() => {
     const loadCandyMachineConfig = async () => {
       try {
@@ -87,22 +85,19 @@ const BelpyMintPage = () => {
           setCandyMachineConfig(result.data);
           setCurrentCandyMachineId(result.data.address);
 
-          // Update stats từ backend config
           const totalProcessed = result.data.totalProcessed || 0;
-          const totalSupply = 10; // Hoặc từ config
+          const totalSupply = result.data.itemsAvailable || 10;
           const remaining = Math.max(0, totalSupply - totalProcessed);
 
           setMinted(totalProcessed);
           setSupply(totalSupply);
         } else {
           console.warn(
-            "⚠️ Failed to load candy machine config, using localStorage"
+            "Failed to load candy machine config, using localStorage"
           );
-          // Fallback to localStorage
         }
       } catch (error) {
-        console.error("❌ Error loading candy machine config:", error);
-        // Fallback to localStorage
+        console.error("Error loading candy machine config:", error);
       }
     };
 
@@ -112,22 +107,19 @@ const BelpyMintPage = () => {
   useEffect(() => {
     const fetchCandyMachine = async () => {
       try {
-        // Check if candy machine ID is configured
         if (
           !currentCandyMachineId ||
           currentCandyMachineId === "11111111111111111111111111111112"
         ) {
           console.log("CANDY_MACHINE_ID not configured, using mock data");
-          setMinted(1234); // Mock data cho demo
-          setSupply(5000); // Mock data cho demo
+          setMinted(1234);
+          setSupply(5000);
           return;
         }
 
-        // Check if this is a generated BELPY Candy Machine ID or any other candy machine
         if (currentCandyMachineId.includes("BELPY") || candyMachineConfig) {
           console.log("Using candy machine config from API");
 
-          // Get stats từ candy machine config đã load từ API
           if (candyMachineConfig) {
             const totalProcessed = candyMachineConfig.totalProcessed || 0;
             const totalSupply = candyMachineConfig.itemsAvailable || 10;
@@ -142,7 +134,6 @@ const BelpyMintPage = () => {
           return;
         }
 
-        // Validate CANDY_MACHINE_ID format
         try {
           new PublicKey(currentCandyMachineId);
         } catch (e) {
@@ -150,14 +141,13 @@ const BelpyMintPage = () => {
             "Invalid CANDY_MACHINE_ID format:",
             currentCandyMachineId
           );
-          setMinted(1234); // Fallback to mock data
+          setMinted(1234);
           setSupply(5000);
           return;
         }
 
         const connection = new Connection(RPC_URL);
 
-        // Check if account exists first
         const accountInfo = await connection.getAccountInfo(
           new PublicKey(currentCandyMachineId)
         );
@@ -179,60 +169,50 @@ const BelpyMintPage = () => {
         setMinted(candyMachine.itemsMinted || 0);
         setSupply(candyMachine.itemsAvailable || 0);
       } catch (e) {
-        console.log("🚀 ~ fetchCandyMachine ~ error:", e);
-        // Fallback to mock data on any error
+        console.log("fetchCandyMachine error:", e);
         setMinted(1234);
         setSupply(5000);
       }
     };
 
-    // Only fetch when currentCandyMachineId is available
     if (currentCandyMachineId) {
       fetchCandyMachine();
     }
   }, [currentCandyMachineId]);
 
-  // Mint NFT dựa trên logic từ index.html
   const handleMint = async () => {
     setIsMinting(true);
     setMintSuccess(false);
 
     try {
-      // Bước 1: Kiểm tra kết nối ví
       if (!solAddress) {
-        console.log("👛 Wallet not connected, attempting to connect...");
+        console.log("Wallet not connected, attempting to connect...");
         await connectPhantom();
         return;
       }
 
-      // Bước 2: Kiểm tra candy machine config
       if (!candyMachineConfig) {
-        throw new Error("Chưa tải được cấu hình Candy Machine!");
+        throw new Error("Candy Machine configuration not loaded!");
       }
 
-      console.log("🚀 Bắt đầu mint NFT...");
-      console.log("📦 Candy Machine:", candyMachineConfig.address);
-      console.log("👛 Buyer wallet:", solAddress);
+      console.log("Starting NFT mint...");
+      console.log("Candy Machine:", candyMachineConfig.address);
+      console.log("Buyer wallet:", solAddress);
 
-      // Bước 3: Tạo unsigned transaction thông qua backend
-      console.log("📝 Bước 1: Tạo unsigned transaction...");
+      console.log("Creating unsigned transaction...");
       const buildResult = await NftService.buildMintTransaction(
         candyMachineConfig.address,
         solAddress
       );
 
-      console.log("🔍 Build result:", buildResult);
+      console.log("Build result:", buildResult);
 
-      // Handle different response formats từ backend
       let unsignedTx;
       if (buildResult.unsignedTx) {
-        // Format: { unsignedTx: string, note?: string }
         unsignedTx = buildResult.unsignedTx;
       } else if (buildResult.success && buildResult.data?.unsignedTx) {
-        // Format: { success: true, data: { unsignedTx: string } }
         unsignedTx = buildResult.data.unsignedTx;
       } else {
-        // Không tìm thấy unsignedTx
         console.error("Invalid build response format:", buildResult);
         throw new Error(
           `Failed to build transaction: ${
@@ -246,36 +226,32 @@ const BelpyMintPage = () => {
       if (!unsignedTx) {
         throw new Error("Empty unsigned transaction received");
       }
-      console.log("✅ Đã tạo unsigned transaction, length:", unsignedTx.length);
+      console.log("Unsigned transaction created, length:", unsignedTx.length);
 
-      // Bước 4: Deserialize và kiểm tra transaction
-      console.log("📋 Bước 2: Kiểm tra transaction...");
+      console.log("Verifying transaction...");
       const binaryString = atob(unsignedTx);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
-      // Import Transaction từ @solana/web3.js
       const { Transaction } = await import("@solana/web3.js");
       const tx = Transaction.from(bytes);
 
       console.log("- Fee payer:", tx.feePayer?.toBase58());
-      console.log("- Số signatures:", tx.signatures.length);
-      console.log("- Số instructions:", tx.instructions.length);
+      console.log("- Number of signatures:", tx.signatures.length);
+      console.log("- Number of instructions:", tx.instructions.length);
 
-      // Bước 5: Ký transaction với wallet
-      console.log("✍️ Bước 3: Ký transaction với ví...");
+      console.log("Signing transaction with wallet...");
       const sol = getSolanaProvider();
       if (!sol || !sol.signTransaction) {
-        throw new Error("Wallet không hỗ trợ signing transaction");
+        throw new Error("Wallet does not support transaction signing");
       }
 
       const signedTransaction = await sol.signTransaction(tx);
-      console.log("✅ Đã ký transaction");
+      console.log("Transaction signed");
 
-      // Bước 6: Serialize và gửi transaction
-      console.log("📤 Bước 4: Gửi signed transaction...");
+      console.log("Sending signed transaction...");
       const signedTxBase64 = signedTransaction
         .serialize({
           requireAllSignatures: false,
@@ -291,11 +267,9 @@ const BelpyMintPage = () => {
 
       console.log("Backend send response:", sendResult);
 
-      // Handle different response formats cho send transaction
       let transactionSignature, nftAddress;
 
       if (sendResult.success && sendResult.signature) {
-        // Standard format
         transactionSignature = sendResult.signature;
         nftAddress = sendResult.nftAddress;
       } else {
@@ -306,14 +280,14 @@ const BelpyMintPage = () => {
       }
 
       if (transactionSignature) {
-        console.log("🎉 MINT THÀNH CÔNG!");
-        console.log("📝 Transaction signature:", transactionSignature);
-        console.log("🔗 Xem trên Solana Explorer:");
+        console.log("MINT SUCCESSFUL!");
+        console.log("Transaction signature:", transactionSignature);
+        console.log("View on Solana Explorer:");
         console.log(
-          `   https://explorer.solana.com/tx/${transactionSignature}?cluster=devnet`
+          `https://explorer.solana.com/tx/${transactionSignature}?cluster=devnet`
         );
 
-        console.log("🚀 ~ handleMint ~ nftAddress:", nftAddress);
+        console.log("nftAddress:", nftAddress);
 
         const realNftId = `#${nftAddress.slice(-4).toUpperCase()}`;
         setMintedNftId(realNftId);
@@ -321,77 +295,65 @@ const BelpyMintPage = () => {
         const randomCat = Math.floor(Math.random() * cats.length);
         setSelectedCat(randomCat);
 
-        // Bước 7: Lưu transaction vào backend
         if (authToken) {
           try {
-            console.log("💾 Saving transaction to backend...");
+            console.log("Saving transaction to backend...");
             await UserService.saveTransaction({
               walletAddress: solAddress,
-              transactionSignature: transactionSignature, // Sử dụng variable đã parsed
+              transactionSignature: transactionSignature,
               candyMachineAddress: candyMachineConfig.address,
               timestamp: new Date().toISOString(),
             });
-            console.log("✅ Transaction saved to backend");
+            console.log("Transaction saved to backend");
 
-            // Reload user data để cập nhật statistics
             if (loadUserData) {
               await loadUserData(solAddress);
             }
           } catch (saveError) {
-            console.error(
-              "⚠️ Failed to save transaction to backend:",
-              saveError
-            );
+            console.error("Failed to save transaction to backend:", saveError);
           }
         }
 
-        // Bước 8: Refresh SOL balance sau khi mint
         try {
-          console.log("💰 Refreshing SOL balance after mint...");
+          console.log("Refreshing SOL balance after mint...");
           await refreshSolBalance();
-          console.log("✅ SOL balance refreshed successfully");
+          console.log("SOL balance refreshed successfully");
         } catch (balanceError) {
-          console.error("⚠️ Failed to refresh SOL balance:", balanceError);
-          // Không throw error ở đây vì mint đã thành công
+          console.error("Failed to refresh SOL balance:", balanceError);
         }
 
-        // Bước 9: Lấy thông tin chi tiết NFT từ backend
         try {
-          console.log("📊 Fetching NFT details from backend...");
+          console.log("Fetching NFT details from backend...");
           const nftData = await NftService.getNftDetails(nftAddress);
 
           if (nftData && nftData.success && nftData.nft) {
-            console.log("✅ NFT details loaded:", nftData.nft);
+            console.log("NFT details loaded:", nftData.nft);
 
-            // Chỉ log thông tin NFT, không lưu gì cả
             if (nftData.nft.name) {
-              console.log("🏷️ NFT Name:", nftData.nft.name);
+              console.log("NFT Name:", nftData.nft.name);
             }
           } else {
-            console.log("⚠️ NFT details response format unexpected:", nftData);
+            console.log("NFT details response format unexpected:", nftData);
           }
         } catch (nftError) {
-          console.error("⚠️ Failed to fetch NFT details:", nftError);
-          // Không throw error ở đây vì mint đã thành công
+          console.error("Failed to fetch NFT details:", nftError);
         }
 
-        // Cập nhật stats từ API
         setMinted((prev) => {
           const newMinted = prev + 1;
 
-          // Refresh candy machine config để có stats mới nhất
           ConfigService.getCandyMachineConfig(currentCandyMachineId)
             .then((result) => {
               if (result.success && result.data) {
                 const totalProcessed = result.data.totalProcessed || newMinted;
                 setMinted(totalProcessed);
-                console.log("✅ Stats updated from API after mint:", {
+                console.log("Stats updated from API after mint:", {
                   minted: totalProcessed,
                 });
               }
             })
             .catch((error) => {
-              console.error("⚠️ Failed to refresh stats after mint:", error);
+              console.error("Failed to refresh stats after mint:", error);
             });
 
           return newMinted;
@@ -401,38 +363,36 @@ const BelpyMintPage = () => {
         setShowMintModal(false);
         setShowSuccessModal(true);
 
-        // Show success message with transaction link
         console.log(
           `View transaction: https://solscan.io/tx/${transactionSignature}?cluster=devnet`
         );
       } else {
-        console.log("❌ MINT THẤT BẠI!");
-        console.log("Lỗi:", sendResult.message);
-        throw new Error(sendResult.message || "Mint thất bại");
+        console.log("MINT FAILED!");
+        console.log("Error:", sendResult.message);
+        throw new Error(sendResult.message || "Mint failed");
       }
     } catch (error: any) {
-      console.error("\n❌ LỖI:", error.message);
+      console.error("ERROR:", error.message);
       console.error("Stack trace:", error.stack);
 
-      // Phân tích lỗi chi tiết giống như trong index.html
       let errorMessage = error.message;
       if (
         error.message.includes("0x1") ||
         error.message.includes("insufficient")
       ) {
-        errorMessage = "💡 Không đủ SOL để trả phí giao dịch";
+        errorMessage = "Insufficient SOL for transaction fee";
       } else if (
         error.message.includes("0x2") ||
         error.message.includes("empty")
       ) {
-        errorMessage = "💡 Candy machine đã hết NFT";
+        errorMessage = "Candy machine is out of NFTs";
       } else if (
         error.message.includes("0x3") ||
         error.message.includes("not live")
       ) {
-        errorMessage = "💡 Chưa đến thời gian mint";
+        errorMessage = "Mint period has not started yet";
       } else if (error.message.includes("User rejected")) {
-        errorMessage = "👤 Người dùng đã hủy giao dịch";
+        errorMessage = "User cancelled the transaction";
       } else if (
         error.message.includes("account of type [CandyMachine] was not found")
       ) {

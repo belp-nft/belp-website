@@ -13,7 +13,7 @@ export interface User {
   walletAddress: string;
   createdAt: string;
   updatedAt: string;
-  accessToken?: string; // JWT token từ connect response
+  accessToken?: string;
 }
 
 export interface ConnectWalletRequest {
@@ -57,7 +57,7 @@ export interface GetUserNftsResponse {
   nfts: NFT[];
 }
 
-// Response types for getNftDetails API  
+// Response types for getNftDetails API
 export interface GetNftDetailsResponse {
   success: boolean;
   nft: NFT;

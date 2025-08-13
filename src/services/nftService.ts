@@ -1,4 +1,4 @@
-import { BaseService } from './baseService';
+import { BaseService } from "./baseService";
 import type {
   ApiResponse,
   BuildMintTxRequest,
@@ -8,28 +8,26 @@ import type {
   CandyMachineInfo,
   GetUserNftsResponse,
   GetNftDetailsResponse,
-} from './types';
+} from "./types";
 
 /**
  * NFT Service Class - Handles all NFT Controller APIs according to documentation
  */
 export class NftService extends BaseService {
   private static readonly ENDPOINTS = {
-    BUILD_MINT_TX: '/nft/build-mint-tx',
-    SEND_SIGNED_TX: '/nft/send-signed-tx',
-    INFO: '/nft/info',
-    USER_NFTS: '/nft/user',
-    NFT_DETAILS: '/nft/details',
+    BUILD_MINT_TX: "/nft/build-mint-tx",
+    SEND_SIGNED_TX: "/nft/send-signed-tx",
+    INFO: "/nft/info",
+    USER_NFTS: "/nft/user",
+    NFT_DETAILS: "/nft/details",
   };
-  /**
-   * 1. Tạo giao dịch mint chưa ký - POST /nft/build-mint-tx
-   */
+
   static async buildMintTransaction(
     candyMachineAddress: string,
     buyerPublicKey: string
   ): Promise<BuildMintTxResponse> {
     try {
-      console.log('📝 Building mint transaction...', {
+      console.log("Building mint transaction...", {
         candyMachineAddress,
         buyerPublicKey,
       });
@@ -45,32 +43,29 @@ export class NftService extends BaseService {
         true // Requires auth
       );
 
-      console.log('🎯 Build mint transaction response:', response);
-      
+      console.log("🎯 Build mint transaction response:", response);
+
       // Return the data from ApiResponse wrapper
       if (response.data) {
         return response.data;
       }
-      
+
       // Handle case where response.data might be directly the BuildMintTxResponse
       return response as unknown as BuildMintTxResponse;
     } catch (error) {
-      console.error('❌ Failed to build mint transaction:', error);
+      console.error("❌ Failed to build mint transaction:", error);
       throw error;
     }
   }
 
-  /**
-   * 2. Gửi giao dịch đã ký - POST /nft/send-signed-tx
-   */
   static async sendSignedTransaction(
     signedTxBase64: string,
     walletAddress?: string,
     candyMachineAddress?: string
   ): Promise<SendSignedTxResponse> {
     try {
-      console.log('📤 Sending signed transaction...');
-      console.log('🔍 Signed transaction length:', signedTxBase64.length);
+      console.log("Sending signed transaction...");
+      console.log("Signed transaction length:", signedTxBase64.length);
 
       const requestData: SendSignedTxRequest = {
         signedTx: signedTxBase64,
@@ -78,7 +73,7 @@ export class NftService extends BaseService {
         candyMachineAddress,
       };
 
-      console.log('📦 Request data being sent:', requestData);
+      console.log("📦 Request data being sent:", requestData);
 
       const response = await this.post<SendSignedTxResponse>(
         this.ENDPOINTS.SEND_SIGNED_TX,
@@ -86,17 +81,17 @@ export class NftService extends BaseService {
         true // Requires auth
       );
 
-      console.log('✅ Send transaction response:', response);
-      
+      console.log("✅ Send transaction response:", response);
+
       // Return the data from ApiResponse wrapper
       if (response.data) {
         return response.data;
       }
-      
+
       // Handle case where response.data might be directly the SendSignedTxResponse
       return response as unknown as SendSignedTxResponse;
     } catch (error) {
-      console.error('❌ Failed to send signed transaction:', error);
+      console.error("❌ Failed to send signed transaction:", error);
       throw error;
     }
   }
@@ -108,7 +103,7 @@ export class NftService extends BaseService {
     candyMachineAddress: string
   ): Promise<ApiResponse<CandyMachineInfo>> {
     try {
-      console.log('📊 Fetching candy machine info...', { candyMachineAddress });
+      console.log("📊 Fetching candy machine info...", { candyMachineAddress });
 
       const result = await this.get<CandyMachineInfo>(
         this.ENDPOINTS.INFO,
@@ -116,10 +111,10 @@ export class NftService extends BaseService {
         true // Requires auth
       );
 
-      console.log('✅ Candy machine info fetched:', result);
+      console.log("✅ Candy machine info fetched:", result);
       return result;
     } catch (error) {
-      console.error('❌ Failed to get candy machine info:', error);
+      console.error("❌ Failed to get candy machine info:", error);
       throw error;
     }
   }
@@ -127,9 +122,11 @@ export class NftService extends BaseService {
   /**
    * 4. Lấy danh sách NFTs của user - GET /nft/user/:walletAddress/nfts
    */
-  static async getUserNfts(walletAddress: string): Promise<GetUserNftsResponse> {
+  static async getUserNfts(
+    walletAddress: string
+  ): Promise<GetUserNftsResponse> {
     try {
-      console.log('📊 Fetching user NFTs...', { walletAddress });
+      console.log("📊 Fetching user NFTs...", { walletAddress });
 
       const response = await this.get<GetUserNftsResponse>(
         `${this.ENDPOINTS.USER_NFTS}/${walletAddress}/nfts`,
@@ -137,17 +134,17 @@ export class NftService extends BaseService {
         true // Requires auth
       );
 
-      console.log('✅ User NFTs fetched:', response);
-      
+      console.log("✅ User NFTs fetched:", response);
+
       // Return the data from ApiResponse wrapper
       if (response.data) {
         return response.data;
       }
-      
+
       // Handle case where response.data might be directly the GetUserNftsResponse
       return response as unknown as GetUserNftsResponse;
     } catch (error) {
-      console.error('❌ Failed to get user NFTs:', error);
+      console.error("❌ Failed to get user NFTs:", error);
       throw error;
     }
   }
@@ -155,9 +152,11 @@ export class NftService extends BaseService {
   /**
    * 5. Lấy chi tiết NFT - GET /nft/details/:nftAddress
    */
-  static async getNftDetails(nftAddress: string): Promise<GetNftDetailsResponse> {
+  static async getNftDetails(
+    nftAddress: string
+  ): Promise<GetNftDetailsResponse> {
     try {
-      console.log('📊 Fetching NFT details...', { nftAddress });
+      console.log("📊 Fetching NFT details...", { nftAddress });
 
       const response = await this.get<GetNftDetailsResponse>(
         `${this.ENDPOINTS.NFT_DETAILS}/${nftAddress}`,
@@ -165,17 +164,17 @@ export class NftService extends BaseService {
         true // Requires auth
       );
 
-      console.log('✅ NFT details fetched:', response);
-      
+      console.log("✅ NFT details fetched:", response);
+
       // Return the data from ApiResponse wrapper
       if (response.data) {
         return response.data;
       }
-      
+
       // Handle case where response.data might be directly the GetNftDetailsResponse
       return response as unknown as GetNftDetailsResponse;
     } catch (error) {
-      console.error('❌ Failed to get NFT details:', error);
+      console.error("❌ Failed to get NFT details:", error);
       throw error;
     }
   }
