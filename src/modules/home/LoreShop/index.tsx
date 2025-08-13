@@ -8,19 +8,19 @@ export default function LoreShop() {
     <section
       className={clsx(
         "relative w-full min-h-[720px] overflow-hidden",
-        "bg-[#2c1a52] pt-12 pb-10"
+        "bg-[#2c1a52] pt-12 pb-10 bg-fixed"
       )}
       style={{
         backgroundImage: "url('/images/home/bg-lore-shop.png')",
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition: "center bottom",
       }}
     >
       <div
         className="pointer-events-none absolute inset-0 w-full h-full z-10"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.06) 32%, rgba(255,255,255,0.06) 68%, rgba(255,255,255,0.72) 100%)",
+            "linear-gradient(to bottom, rgba(255,255,255) 0%, rgba(255,255,255,0.06) 32%, rgba(255,255,255,0.06) 68%, rgba(255,255,255) 100%)",
         }}
       />
       <div className="flex flex-col lg:flex-row items-center justify-between w-full h-full relative z-20 gap-12 md:gap-0 main-container">
@@ -49,6 +49,9 @@ export default function LoreShop() {
             initial={{ opacity: 0, y: 48 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, type: "spring" }}
+            style={{
+              fontFamily: "var(--font-oxanium)",
+            }}
           >
             LORE SHOP
           </motion.h2>

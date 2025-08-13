@@ -5,9 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import CatCarousel from "../CatCarousel";
 
-function rand(min: number, max: number) {
-  return Math.random() * (max - min) + min;
-}
+
 
 export default function WhatlsBelp() {
   return (
@@ -16,6 +14,10 @@ export default function WhatlsBelp() {
         "relative text-center",
         "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px]"
       )}
+      style={{
+        //background linear
+        background: "linear-gradient(180deg, #f2ecf6 0%, #fff 100%)",
+      }}
     >
       <motion.h1
         className={clsx(
