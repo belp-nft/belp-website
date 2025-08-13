@@ -28,7 +28,28 @@ const BelpSection = () => {
           >
             BELPY
           </motion.h1>
-          <div className="text-responsive-lg space-y-4">
+          <motion.div
+            animate={{
+              y: [0, -32, 0, 32, 0],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              repeatType: "loop",
+              ease: "linear",
+            }}
+            className="flex md:hidden mb-10 w-full md:w-1/2 justify-center md:justify-end relative z-20 right-[-28px] md:right-[-70px]"
+          >
+            <Image
+              src="/images/home/belp-cat-1.png"
+              alt="Belp"
+              width={320}
+              height={380}
+              className="w-full max-w-[320px] sm:max-w-[420px] md:max-w-[538px] h-auto"
+              priority
+            />
+          </motion.div>
+          <div className="text-sm md:text-responsive-lg space-y-4">
             <p>
               Welcome to the world of Belpy a Web3-born feline brand built on
               cuteness, claw, and community.
@@ -55,7 +76,7 @@ const BelpSection = () => {
             repeatType: "loop",
             ease: "linear",
           }}
-          className="w-full md:w-1/2 flex justify-center md:justify-end relative z-20 right-[-28px] md:right-[-70px]"
+          className="hidden  w-full md:w-1/2 md:flex justify-center md:justify-end relative z-20 right-[-28px] md:right-[-70px]"
         >
           <Image
             src="/images/home/belp-cat-1.png"

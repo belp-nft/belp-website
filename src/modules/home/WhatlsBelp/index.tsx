@@ -33,7 +33,7 @@ export default function WhatlsBelp() {
       >
         What is BELP
       </motion.h1>
-      <p className="mb-[92px] large-text-container">
+      <p className="mb-[92px] text-sm md:large-text-container">
         Meet Belp, the adorable Web3-born character that's taking the digital
         universe by storm. Born from the cosmic dreams of creators and the
         infinite imagination of the community.

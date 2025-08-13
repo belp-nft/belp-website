@@ -84,7 +84,13 @@ export default function CatCarousel() {
         breakpoints={{
           // Mobile
           320: { 
-            slidesPerView: 1.5, 
+            slidesPerView: 2.2, 
+            spaceBetween: 2, 
+            centeredSlides: true 
+          },
+          // Mobile large
+          480: { 
+            slidesPerView: 2.5, 
             spaceBetween: 2, 
             centeredSlides: true 
           },

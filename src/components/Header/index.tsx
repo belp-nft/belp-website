@@ -46,7 +46,10 @@ export default function BelpHeader() {
               animate={{ x: 0 }}
               exit={{ x: "-105%" }}
               transition={{ type: "spring", stiffness: 300, damping: 35 }}
-              className="fixed top-0 left-0 h-full w-full max-w-[400px] bg-[#f6effb] z-[99] shadow-2xl border-r border-[#d3b0f7] flex flex-col"
+              className={clsx(
+                "fixed top-0 left-0 h-full w-full max-w-[400px] bg-[#f6effb] z-[99] shadow-2xl",
+                "border-r border-[#d3b0f7] flex flex-col"
+              )}
               style={{ minHeight: "100dvh" }}
             >
               <div className="flex flex-col items-center px-5 pt-6 pb-3 border-b border-[#c69dff] relative">
@@ -116,7 +119,7 @@ export default function BelpHeader() {
         className={clsx(
           "w-full z-50 absolute top-0 left-0 py-2 md:py-3 px-4 sm:px-6 lg:px-10",
           "flex items-center justify-between",
-          "bg-gradient-to-b from-[#FFE7FF80] to-[#FEF5FE]",
+          "md:bg-gradient-to-b md:from-[#FFE7FF80] md:to-[#FEF5FE]",
           pathname === "/" && "top-10"
         )}
         style={{ left: 0, right: 0 }}
