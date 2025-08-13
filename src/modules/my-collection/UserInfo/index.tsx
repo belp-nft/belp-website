@@ -3,6 +3,39 @@ import { BLOCKCHAIN_CONFIG } from "@/services";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { MdContentCopy, MdHistory } from "react-icons/md";
+import clsx from "clsx";
+
+const ImageLoader = ({ src, alt, className, ...props }: any) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-full" />
+      )}
+      <Image
+        {...props}
+        src={hasError ? "/avatars/user-placeholder.svg" : src}
+        alt={alt}
+        className={clsx(
+          className,
+          "transition-opacity duration-300",
+          isLoading ? "opacity-0" : "opacity-100"
+        )}
+        onLoad={() => {
+          setIsLoading(false);
+          console.log("✅ Avatar loaded successfully");
+        }}
+        onError={() => {
+          console.warn("❌ Avatar failed to load");
+          setHasError(true);
+          setIsLoading(false);
+        }}
+      />
+    </div>
+  );
+};
 
 type Props = {
   contract: string;
@@ -22,17 +55,17 @@ export default function UserInfo({
   onHistoryClick,
 }: Props) {
   const [copied, setCopied] = useState(false);
-  const [imgErr, setImgErr] = useState(false);
 
   const displayWalletFull = walletAddress ?? "—";
-  const displayWalletShort = useMemo(
-    () => shortenMiddle(displayWalletFull, 6, 6),
-    [displayWalletFull]
-  );
+
+  const avatarUrl = useMemo(() => {
+    if (!walletAddress) return "/avatars/user-placeholder.svg";
+    return `https://cdn.stamp.fyi/avatar/${walletAddress}?s=128`;
+  }, [walletAddress]);
 
   const displayContractFull = contract ?? "—";
   const displayContractShort = useMemo(
-    () => shortenMiddle(displayContractFull, 6, 6),
+    () => shortenMiddle(displayContractFull, 4, 4),
     [displayContractFull]
   );
 
@@ -56,7 +89,6 @@ export default function UserInfo({
   const openSolscan = () => {
     if (!walletAddress) return;
 
-    // Detect network (mainnet or devnet based on environment)
     const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
 
     const url = `https://solscan.io/account/${walletAddress}${
@@ -68,7 +100,6 @@ export default function UserInfo({
   const openContractOnSolscan = () => {
     if (!contract) return;
 
-    // Detect network (mainnet or devnet based on environment)
     const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
 
     const url = `https://solscan.io/token/${contract}${
@@ -78,51 +109,55 @@ export default function UserInfo({
   };
 
   return (
-    <div className="w-full flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="shrink-0 rounded-full bg-[#ede4ff] grid place-content-center overflow-hidden w-10 h-10 sm:w-12 sm:h-12">
-          <Image
-            src={
-              imgErr || !walletAddress
-                ? "/avatars/user-placeholder.svg"
-                : `https://cdn.stamp.fyi/avatar/${walletAddress}?s=96`
-            }
+    <div className="w-full flex flex-row gap-4 sm:gap-6 justify-between pt-8 sm:pt-12 relative">
+      <div className="flex gap-3 sm:gap-4 min-w-0 flex-1 overflow-hidden pr-2">
+        <div className="shrink-0 rounded-full overflow-hidden w-20 h-20 md:w-24 md:h-24 absolute -top-14 md:-top-16 left-1/2 transform md:translate-0 -translate-x-1/2 md:left-4">
+          <ImageLoader
+            src={avatarUrl}
             alt="User avatar"
-            width={48}
-            height={48}
-            className="object-cover w-full h-full"
-            onError={() => setImgErr(true)}
+            width={96}
+            height={96}
+            className="object-cover w-full h-full rounded-full"
             priority
           />
         </div>
 
-        <div className="min-w-0">
+        <div className="mt-3 min-w-0 flex-1">
           <div
-            className="font-semibold text-primary-text truncate cursor-pointer hover:text-[#7A4BD6] transition-colors"
+            className={clsx(
+              "font-semibold text-primary-text text-lg sm:text-xl md:text-2xl",
+              "cursor-pointer hover:text-[#7A4BD6] transition-colors truncate"
+            )}
             onClick={openSolscan}
             title="View on Solscan"
           >
-            <span className="sm:hidden">{displayWalletShort}</span>
-            <span className="hidden sm:inline">{displayWalletFull}</span>
+            {displayWalletFull}
           </div>
 
-          <div className="mt-0.5 text-sm text-[#7466a1] flex items-center gap-2">
-            <span className="shrink-0">Contract</span>
+          <div className="mt-1 sm:mt-2 text-xs sm:text-sm font-bold flex flex-wrap items-center gap-1 sm:gap-2">
+            <span>Contract</span>
             <code
-              className="bg-white border border-[#e9defd] rounded-md px-2 py-0.5 text-[#5b3e9e] whitespace-nowrap cursor-pointer hover:text-[#7A4BD6] hover:border-[#7A4BD6] transition-colors"
+              className={clsx(
+                "bg-white border border-[#e9defd] rounded-md px-1.5 sm:px-2 py-0.5",
+                "text-[#5b3e9e] whitespace-nowrap cursor-pointer text-xs sm:text-sm",
+                "hover:text-[#7A4BD6] hover:border-[#7A4BD6] transition-colors"
+              )}
               onClick={openContractOnSolscan}
               title="View token on Solscan"
             >
-              <span className="sm:hidden">{displayContractShort}</span>
-              <span className="hidden sm:inline">{displayContractFull}</span>
+              <span className="lg:hidden">{displayContractShort}</span>
+              <span className="hidden lg:inline">{displayContractFull}</span>
             </code>
             <button
               onClick={copy}
-              className="p-1 rounded hover:bg-[#efe7ff] text-[#5b3e9e] shrink-0 cursor-pointer"
+              className={clsx(
+                "p-1 rounded shrink-0 cursor-pointer",
+                "hover:bg-[#efe7ff] text-[#5b3e9e]"
+              )}
               aria-label="Copy contract"
               title="Copy"
             >
-              <MdContentCopy />
+              <MdContentCopy className="text-sm" />
             </button>
             {copied && (
               <span className="text-primary-accent text-xs shrink-0">
@@ -133,21 +168,29 @@ export default function UserInfo({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 self-end sm:self-auto">
+      <div className="flex items-start justify-end sm:justify-start gap-2 shrink-0">
         <button
           onClick={onHistoryClick}
-          className="sm:hidden p-2 rounded-lg bg-white border border-[#e9defd] text-[#5b3e9e] hover:bg-[#f7f2ff] cursor-pointer"
+          className={clsx(
+            "sm:hidden p-2 rounded-lg bg-white border border-[#e9defd]",
+            "text-[#5b3e9e] hover:bg-[#f7f2ff] transition-colors"
+          )}
           aria-label="History"
           title="History"
         >
-          <MdHistory />
+          <MdHistory className="text-lg" />
         </button>
 
         <button
           onClick={onHistoryClick}
-          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[#e9defd] text-[#5b3e9e] hover:bg-[#f7f2ff] cursor-pointer"
+          className={clsx(
+            "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg",
+            "bg-white border border-[#e9defd] text-[#5b3e9e] whitespace-nowrap",
+            "hover:bg-[#f7f2ff] transition-colors"
+          )}
         >
-          <MdHistory /> History
+          <MdHistory className="text-base" />
+          <span className="text-sm font-medium">History</span>
         </button>
       </div>
     </div>

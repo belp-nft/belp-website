@@ -19,9 +19,8 @@ const LoadingDemo: React.FC = () => {
     { key: "lg", label: "Large" },
   ] as const;
 
-  const handleGlobalLoading = (variant: string) => {
-    const config = variants.find((v) => v.key === variant);
-    showLoading(config?.message);
+  const handleGlobalLoading = () => {
+    showLoading();
 
     setTimeout(() => {
       hideLoading();
@@ -56,7 +55,7 @@ const LoadingDemo: React.FC = () => {
             {variants.map((variant) => (
               <button
                 key={variant.key}
-                onClick={() => handleGlobalLoading(variant.key)}
+                onClick={handleGlobalLoading}
                 disabled={isLoading}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
               >

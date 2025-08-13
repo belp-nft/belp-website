@@ -204,9 +204,16 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [userStatistics, setUserStatistics] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [transactionsLastLoaded, setTransactionsLastLoaded] =
+    useState<number>(0);
+  const [isLoadingUserStats, setIsLoadingUserStats] = useState(false);
+  const [userStatsLastLoaded, setUserStatsLastLoaded] = useState<number>(0);
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
 
   const { clearConfig } = useConfigActions();
-  const { showLoading, hideLoading, setLoadingMessage } = useLoading();
+  const { showLoading, hideLoading } = useLoading();
 
   const solBalanceText = useMemo(
     () => (solLamports === null ? "—" : formatSol(solLamports)),
@@ -240,57 +247,39 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     [solAddress]
   );
 
-  const loadUserData = useCallback(
-    async (walletAddress: string, retryAuth: boolean = false) => {
+  // Load transactions with caching and debouncing
+  const loadTransactions = useCallback(
+    async (walletAddress: string, forceRefresh: boolean = false) => {
+      // Prevent concurrent loading
+      if (isLoadingTransactions) {
+        console.log("Transactions already loading, skipping...");
+        return;
+      }
+
+      // Cache check - only reload if forced or data is older than 5 minutes
+      const now = Date.now();
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+      if (
+        !forceRefresh &&
+        transactions.length > 0 &&
+        now - transactionsLastLoaded < CACHE_DURATION
+      ) {
+        console.log("Using cached transactions data");
+        return;
+      }
+
       try {
-        console.log("Loading user data...", { walletAddress, retryAuth });
+        setIsLoadingTransactions(true);
+        console.log("Loading transaction history...");
 
-        // Load user statistics
-        const statsResult = await UserService.getUserStatistics(walletAddress);
-        if (statsResult.success && statsResult.data) {
-          setUserStatistics(statsResult.data);
-          console.log("User statistics loaded:", statsResult.data);
-        } else if (
-          statsResult.message?.includes("Unauthorized") ||
-          statsResult.message?.includes("401")
-        ) {
-          console.warn("Token may be expired, trying to re-authenticate...");
-
-          if (!retryAuth) {
-            // Try to re-authenticate and retry once
-            try {
-              const connectResult = await UserService.connectWallet(
-                walletAddress
-              );
-              if (
-                connectResult.success &&
-                (connectResult as any).data?.accessToken
-              ) {
-                AuthService.setToken((connectResult as any).data.accessToken);
-                setAuthToken((connectResult as any).data.accessToken);
-                console.log(
-                  "Re-authentication successful, retrying data load..."
-                );
-
-                // Retry loading user data
-                return loadUserData(walletAddress, true);
-              }
-            } catch (authError) {
-              console.error("Re-authentication failed:", authError);
-            }
-          } else {
-            console.error(
-              "Authentication retry failed, user needs to reconnect wallet"
-            );
-          }
-        }
-
-        // Load transaction history
         const txResult = await UserService.getTransactions(walletAddress, {
           limit: 50,
         });
+
         if (txResult.success && txResult.data) {
           setTransactions(txResult.data);
+          setTransactionsLastLoaded(now);
           console.log(
             "Transaction history loaded:",
             txResult.data.length,
@@ -301,13 +290,99 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           txResult.message?.includes("401")
         ) {
           console.warn("Token expired while loading transactions");
-          if (!retryAuth) {
-            // Already handled auth retry above, just log this case
-            console.log(
-              "Skipping transaction retry - auth was already attempted"
-            );
-          }
+          // Don't retry here - let the main auth flow handle it
         }
+      } catch (error: any) {
+        console.error("Failed to load transactions:", error);
+
+        // Handle authentication errors
+        if (
+          error.response?.status === 401 ||
+          error.message?.includes("Unauthorized")
+        ) {
+          console.warn("Authentication error while loading transactions");
+          // Clear invalid data but don't retry - main auth flow will handle
+        }
+      } finally {
+        setIsLoadingTransactions(false);
+      }
+    },
+    [isLoadingTransactions, transactions.length, transactionsLastLoaded]
+  );
+
+  // Load user statistics with caching and debouncing
+  const loadUserStatistics = useCallback(
+    async (walletAddress: string, forceRefresh: boolean = false) => {
+      // Prevent concurrent loading
+      if (isLoadingUserStats) {
+        console.log("User statistics already loading, skipping...");
+        return;
+      }
+
+      // Cache check - only reload if forced or data is older than 5 minutes
+      const now = Date.now();
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+      if (
+        !forceRefresh &&
+        userStatistics &&
+        now - userStatsLastLoaded < CACHE_DURATION
+      ) {
+        console.log("Using cached user statistics data");
+        return;
+      }
+
+      try {
+        setIsLoadingUserStats(true);
+        console.log("Loading user statistics...");
+
+        const statsResult = await UserService.getUserStatistics(walletAddress);
+
+        if (statsResult.success && statsResult.data) {
+          setUserStatistics(statsResult.data);
+          setUserStatsLastLoaded(now);
+          console.log("User statistics loaded:", statsResult.data);
+        } else if (
+          statsResult.message?.includes("Unauthorized") ||
+          statsResult.message?.includes("401")
+        ) {
+          console.warn("Token expired while loading user statistics");
+          // Don't retry here - let the main auth flow handle it
+        }
+      } catch (error: any) {
+        console.error("Failed to load user statistics:", error);
+
+        // Handle authentication errors
+        if (
+          error.response?.status === 401 ||
+          error.message?.includes("Unauthorized")
+        ) {
+          console.warn("Authentication error while loading user statistics");
+          // Clear invalid data but don't retry - main auth flow will handle
+        }
+      } finally {
+        setIsLoadingUserStats(false);
+      }
+    },
+    [isLoadingUserStats, userStatistics, userStatsLastLoaded]
+  );
+
+  const loadUserData = useCallback(
+    async (walletAddress: string, retryAuth: boolean = false) => {
+      // Prevent multiple calls during initial load
+      if (!retryAuth && isLoadingUserStats && isLoadingTransactions) {
+        console.log("User data already loading, skipping duplicate call...");
+        return;
+      }
+
+      try {
+        console.log("Loading user data...", { walletAddress, retryAuth });
+
+        // Load user statistics using optimized function
+        await loadUserStatistics(walletAddress, retryAuth);
+
+        // Load transaction history using optimized function
+        await loadTransactions(walletAddress, retryAuth);
       } catch (error: any) {
         console.error("Failed to load user data:", error);
 
@@ -326,7 +401,59 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         }
       }
     },
-    []
+    [
+      loadUserStatistics,
+      loadTransactions,
+      isLoadingUserStats,
+      isLoadingTransactions,
+    ]
+  );
+
+  // Authenticate wallet with backend - centralized function to prevent duplicate calls
+  const authenticateWallet = useCallback(
+    async (walletAddress: string): Promise<boolean> => {
+      // Prevent multiple simultaneous authentication calls
+      if (isAuthenticating) {
+        console.log("Authentication already in progress, skipping...");
+        return false;
+      }
+
+      // Check if we already have a valid token for this wallet
+      const existingToken = AuthService.getToken();
+      if (existingToken && AuthService.isTokenValid()) {
+        console.log("Valid token already exists, skipping authentication");
+        setAuthToken(existingToken);
+        return true;
+      }
+
+      try {
+        setIsAuthenticating(true);
+        console.log("🔐 Authenticating wallet with backend:", walletAddress);
+
+        const connectResult = await UserService.connectWallet(walletAddress);
+
+        if (connectResult.success && (connectResult as any).data?.accessToken) {
+          const token = (connectResult as any).data.accessToken;
+          AuthService.setToken(token);
+          setAuthToken(token);
+          console.log("✅ Authentication successful, token saved");
+
+          // Dispatch wallet connected event for AuthProvider
+          window.dispatchEvent(new CustomEvent("wallet:connected"));
+
+          return true;
+        } else {
+          console.error("❌ Authentication failed:", connectResult.message);
+          return false;
+        }
+      } catch (error) {
+        console.error("❌ Authentication error:", error);
+        return false;
+      } finally {
+        setIsAuthenticating(false);
+      }
+    },
+    [isAuthenticating]
   );
 
   // Common wallet event handlers
@@ -389,7 +516,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       try {
         setLoading(walletType);
-        showLoading(`Connecting to ${config.displayName}...`);
+        showLoading();
         window.localStorage.removeItem("wallet-disconnected");
 
         const provider = config.getProvider();
@@ -465,45 +592,24 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
         console.log(`${config.displayName} connected:`, addr);
 
-        // Authenticate with backend
-        setLoadingMessage("Authenticating with backend...");
-        console.log("Authenticating with backend...");
-        const connectResult = await UserService.connectWallet(addr);
+        // Authenticate with backend using centralized function
+        const authSuccess = await authenticateWallet(addr);
 
-        if (connectResult.success) {
-          // Save JWT token FIRST
-          if ((connectResult as any).data?.accessToken) {
-            const token = (connectResult as any).data.accessToken;
-            AuthService.setToken(token);
-            setAuthToken(token);
-            console.log("JWT token saved successfully");
+        if (authSuccess) {
+          // Wait a moment to ensure token is properly set
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
-            // Wait a moment to ensure token is properly set
-            await new Promise((resolve) => setTimeout(resolve, 100));
-
-            // Verify token is valid before proceeding
-            if (AuthService.isTokenValid()) {
-              console.log("Token validation successful");
-
-              // Now load user data with valid token
-              setLoadingMessage("Loading user data...");
-              await loadUserData(addr);
-            } else {
-              console.error("Token validation failed after setting");
-            }
-          } else {
-            console.warn("No access token received from backend");
-          }
+          // Now load user data with valid token
+          console.log("Loading user data...");
+          await loadUserData(addr);
         } else {
-          console.error(
-            "Backend authentication failed:",
-            connectResult.message
+          console.warn(
+            "Authentication failed, continuing without backend data"
           );
-          // Continue with connection but without backend authentication
         }
 
         // Load SOL balance
-        setLoadingMessage("Loading wallet balance...");
+        console.log("Loading wallet balance...");
         setTimeout(async () => {
           try {
             const lamports = await getSolBalanceLamports(addr);
@@ -541,57 +647,14 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         hideLoading();
       }
     },
-    [onConnected, loadUserData, showLoading, hideLoading, setLoadingMessage]
-  );
-
-  // Auto-connect function for trusted connections
-  const autoConnect = useCallback(
-    async (walletType: WalletType) => {
-      const config = WALLET_CONFIGS[walletType];
-      const provider = config.getProvider();
-
-      if (!provider?.isConnected || !provider?.publicKey) return null;
-
-      try {
-        console.log(`Attempting auto-connect for ${config.displayName}...`);
-
-        const response = await provider.connect({ onlyIfTrusted: true });
-        const addr = response.publicKey.toString();
-
-        setSolAddress(addr);
-        setConnectedType("sol");
-        setConnectedWallet(walletType);
-
-        console.log(`${config.displayName} auto-connect successful:`, addr);
-
-        // Authenticate with backend
-        const connectResult = await UserService.connectWallet(addr);
-
-        if (connectResult.success && (connectResult as any).data?.accessToken) {
-          AuthService.setToken((connectResult as any).data.accessToken);
-          setAuthToken((connectResult as any).data.accessToken);
-          console.log("JWT token saved from auto-connect");
-
-          // Load user data
-          await loadUserData(addr);
-
-          onConnected?.({ kind: "sol", address: addr, walletType });
-          return response;
-        }
-      } catch (error) {
-        console.log(
-          `${config.displayName} auto-connect failed, user needs to manually connect`
-        );
-      }
-
-      return null;
-    },
-    [loadUserData, onConnected]
+    [onConnected, loadUserData, showLoading, hideLoading]
   );
 
   // Check for existing connections on mount
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || isInitialLoadComplete) return;
+
+    let hasFoundConnection = false;
 
     // Setup listeners for all available wallets first
     Object.keys(WALLET_CONFIGS).forEach((walletType) => {
@@ -604,6 +667,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
     if (wasManuallyDisconnected) {
       console.log("User manually disconnected, skipping auto-connect");
+      setIsInitialLoadComplete(true);
       return () => {
         Object.keys(WALLET_CONFIGS).forEach((walletType) => {
           cleanupWalletListeners(walletType as WalletType);
@@ -615,7 +679,12 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     for (const [walletType, config] of Object.entries(WALLET_CONFIGS)) {
       const provider = config.getProvider();
 
-      if (provider?.isConnected === true && provider?.publicKey) {
+      if (
+        provider?.isConnected === true &&
+        provider?.publicKey &&
+        !hasFoundConnection
+      ) {
+        hasFoundConnection = true;
         const addr = provider.publicKey.toString();
         setSolAddress(addr);
         setConnectedType("sol");
@@ -624,49 +693,30 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
         // Always try to re-authenticate to get fresh token
         console.log(
-          `Found connected ${config.displayName}, re-authenticating...`
+          `Found connected ${config.displayName}, checking authentication...`
         );
-        UserService.connectWallet(addr)
-          .then((connectResult) => {
-            if (
-              connectResult.success &&
-              (connectResult as any).data?.accessToken
-            ) {
-              AuthService.setToken((connectResult as any).data.accessToken);
-              setAuthToken((connectResult as any).data.accessToken);
-              console.log("Re-authentication successful, token refreshed");
 
-              // Load user data with fresh token
-              loadUserData(addr).catch(console.error);
-            } else {
-              console.warn("Re-authentication failed, checking existing token");
-              // Check if existing token is valid
-              if (AuthService.validateAndCleanToken()) {
-                const existingToken = AuthService.getToken();
-                if (existingToken) {
-                  setAuthToken(existingToken);
-                  loadUserData(addr).catch(console.error);
-                }
-              } else {
-                console.warn(
-                  "No valid token available, user may need to reconnect"
-                );
-              }
-            }
-          })
-          .catch((error) => {
-            console.error("Re-authentication failed:", error);
-            // Check if existing token is valid
-            if (AuthService.validateAndCleanToken()) {
-              const existingToken = AuthService.getToken();
-              if (existingToken) {
-                setAuthToken(existingToken);
+        // Check if we already have a valid token before making API call
+        const existingToken = AuthService.getToken();
+        if (existingToken && AuthService.isTokenValid()) {
+          console.log("Valid token exists, loading user data directly");
+          setAuthToken(existingToken);
+          loadUserData(addr).catch(console.error);
+        } else {
+          console.log("No valid token, re-authenticating...");
+          authenticateWallet(addr)
+            .then((authSuccess) => {
+              if (authSuccess) {
+                console.log("Re-authentication successful");
                 loadUserData(addr).catch(console.error);
+              } else {
+                console.warn("Re-authentication failed");
               }
-            } else {
-              console.warn("No valid token available after auth failure");
-            }
-          });
+            })
+            .catch((error) => {
+              console.error("Re-authentication error:", error);
+            });
+        }
 
         onConnected?.({
           kind: "sol",
@@ -674,12 +724,66 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           walletType: walletType as WalletType,
         });
         break;
-      } else if (provider?.connect) {
-        // Try silent auto-connect for previously authorized wallets
-        autoConnect(walletType as WalletType).catch(() => {
-          console.log(`Silent connection failed for ${config.displayName}`);
-        });
       }
+    }
+
+    // If no existing connection found, try silent connection for previously authorized wallets
+    if (!hasFoundConnection) {
+      const tryTrustedConnections = async () => {
+        for (const [walletType, config] of Object.entries(WALLET_CONFIGS)) {
+          const provider = config.getProvider();
+          if (provider?.connect && !hasFoundConnection) {
+            try {
+              console.log(
+                `Trying trusted connection for ${config.displayName}...`
+              );
+
+              // Only try if provider supports trusted connections
+              if (provider.isConnected === true && provider.publicKey) {
+                console.log(
+                  `${config.displayName} already connected, skipping...`
+                );
+                continue;
+              }
+
+              const response = await provider.connect({ onlyIfTrusted: true });
+              if (response?.publicKey) {
+                hasFoundConnection = true;
+                const addr = response.publicKey.toString();
+
+                setSolAddress(addr);
+                setConnectedType("sol");
+                setConnectedWallet(walletType as WalletType);
+
+                console.log(
+                  `${config.displayName} trusted connection successful:`,
+                  addr
+                );
+
+                // Authenticate and load data
+                const authSuccess = await authenticateWallet(addr);
+                if (authSuccess) {
+                  await loadUserData(addr);
+                  onConnected?.({
+                    kind: "sol",
+                    address: addr,
+                    walletType: walletType as WalletType,
+                  });
+                }
+                break;
+              }
+            } catch {
+              console.log(
+                `Trusted connection failed for ${config.displayName}`
+              );
+            }
+          }
+        }
+        setIsInitialLoadComplete(true);
+      };
+      tryTrustedConnections();
+    } else {
+      setIsInitialLoadComplete(true);
     }
 
     return () => {
@@ -692,8 +796,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     setupWalletListeners,
     cleanupWalletListeners,
     loadUserData,
-    autoConnect,
     onConnected,
+    isInitialLoadComplete,
   ]);
 
   // Generic disconnect function
@@ -726,6 +830,12 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
+      setTransactionsLastLoaded(0); // Clear cache timestamp
+      setUserStatsLastLoaded(0); // Clear user stats cache timestamp
+      setIsInitialLoadComplete(false); // Reset initial load flag
+
+      // Dispatch wallet disconnected event for AuthProvider
+      window.dispatchEvent(new CustomEvent("wallet:disconnected"));
 
       // Clear all stores
       clearConfig();
@@ -748,6 +858,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
+      setTransactionsLastLoaded(0); // Clear cache timestamp
+      setUserStatsLastLoaded(0); // Clear user stats cache timestamp
+      setIsInitialLoadComplete(false); // Reset initial load flag
 
       // Clear all stores
       clearConfig();
@@ -841,6 +954,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     authToken,
     userStatistics,
     transactions,
+    isLoadingTransactions,
+    isLoadingUserStats,
 
     // Available wallets
     availableWallets,
@@ -848,9 +963,16 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     // Generic actions
     connectWallet,
     disconnect,
-    autoConnect,
     refreshSolBalance,
     loadUserData,
+    loadTransactions: (forceRefresh = false) =>
+      solAddress
+        ? loadTransactions(solAddress, forceRefresh)
+        : Promise.resolve(),
+    loadUserStatistics: (forceRefresh = false) =>
+      solAddress
+        ? loadUserStatistics(solAddress, forceRefresh)
+        : Promise.resolve(),
     shorten,
 
     // Specific wallet actions (backward compatibility)
