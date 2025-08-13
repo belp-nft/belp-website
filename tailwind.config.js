@@ -39,7 +39,7 @@ module.exports = {
       },
       fontFamily: {
         gmarket: ["GmarketSans", "sans-serif"],
-        oxanium: ["Oxanium", "sans-serif"],
+        oxanium: ["var(--font-oxanium)", "Oxanium", "sans-serif"],
       },
     },
   },
