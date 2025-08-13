@@ -7,7 +7,7 @@ export default function LoreShop() {
   return (
     <section
       className={clsx(
-        "relative w-full min-h-[720px] overflow-hidden",
+        "relative w-full min-h-[720px] overflow-hidden -mt-2",
         "bg-[#2c1a52] pt-12 pb-10 bg-fixed"
       )}
       style={{
@@ -29,7 +29,7 @@ export default function LoreShop() {
           whileInView={{ x: 0, scale: 1, opacity: 1 }}
           viewport={{ once: false, margin: "-100px" }}
           transition={{ duration: 1.8, ease: "easeOut" }}
-          className="flex-shrink-0 w-full md:w-1/2 flex justify-center items-end pb-8 md:pb-0"
+          className="hidden md:flex flex-shrink-0 w-full md:w-1/2  justify-center items-end pb-8 md:pb-0"
         >
           <Image
             src="/images/home/belp-cat-2.png"
@@ -44,7 +44,7 @@ export default function LoreShop() {
         <div className="w-full md:w-1/2 flex flex-col justify-center items-center md:items-end">
           <motion.h2
             className={clsx(
-              "font-extrabold mb-6 text-center md:text-left title-text text-white leading-tight text-nowrap"
+              "mt-16 md:mt-0 font-extrabold mb-6 text-center md:text-left title-text text-white leading-tight text-nowrap"
             )}
             initial={{ opacity: 0, y: 48 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -55,12 +55,29 @@ export default function LoreShop() {
           >
             LORE SHOP
           </motion.h2>
-          <div className="flex flex-col justify-center gap-5 w-full max-w-[380px]">
+          <motion.div
+            initial={{ opacity: 0, y: 48 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, type: "spring" }}
+            className="block md:hidden mb-10"
+          >
+            <Image
+              src="/images/home/belp-cat-2.png"
+              alt="Belpy UFO"
+              width={684}
+              height={700}
+              priority
+              draggable={false}
+              className="max-w-[320px] sm:max-w-[440px] md:max-w-[540px] lg:max-w-[620px] xl:max-w-[684px] h-auto"
+            />
+          </motion.div>
+          <div className="flex flex-row md:flex-col justify-center gap-5 w-full max-w-[380px]">
             <motion.button
               className={clsx(
-                "h-[54px] rounded-2xl shadow-md text-xl font-bold",
+                "md:h-[54px] rounded-xl md:rounded-2xl shadow-md text-xs md:text-xl md:font-bold",
                 "bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
-                "hover:bg-[#dfc6fd] transition-all w-full"
+                "hover:bg-[#dfc6fd] transition-all w-full",
+                "h-11"
               )}
               whileHover={{ scale: 1.03 }}
             >
@@ -69,8 +86,9 @@ export default function LoreShop() {
             <motion.button
               className={clsx(
                 "bg-[#E5CAFF] shadow-lg hover:scale-105 transition",
-                "border-2 border-[#8438CE] text-[#8438CE]",
-                "h-[54px] rounded-2xl text-xl font-bold w-full"
+                "border-1 border-[#8438CE] text-[#8438CE]",
+                "md:h-[54px] rounded-xl md:rounded-2xl text-xs md:text-xl md:font-bold w-full",
+                "h-11"
               )}
               whileHover={{ scale: 1.04 }}
             >
