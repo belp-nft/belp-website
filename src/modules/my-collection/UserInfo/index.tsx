@@ -85,7 +85,7 @@ export default function UserInfo({
             </code>
             <button
               onClick={copy}
-              className="p-1 rounded hover:bg-[#efe7ff] text-[#5b3e9e] shrink-0"
+              className="p-1 rounded hover:bg-[#efe7ff] text-[#5b3e9e] shrink-0 cursor-pointer"
               aria-label="Copy contract"
               title="Copy"
             >
@@ -103,7 +103,7 @@ export default function UserInfo({
       <div className="flex items-center gap-2 self-end sm:self-auto">
         <button
           onClick={onHistoryClick}
-          className="sm:hidden p-2 rounded-lg bg-white border border-[#e9defd] text-[#5b3e9e] hover:bg-[#f7f2ff]"
+          className="sm:hidden p-2 rounded-lg bg-white border border-[#e9defd] text-[#5b3e9e] hover:bg-[#f7f2ff] cursor-pointer"
           aria-label="History"
           title="History"
         >
@@ -112,7 +112,7 @@ export default function UserInfo({
 
         <button
           onClick={onHistoryClick}
-          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[#e9defd] text-[#5b3e9e] hover:bg-[#f7f2ff]"
+          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[#e9defd] text-[#5b3e9e] hover:bg-[#f7f2ff] cursor-pointer"
         >
           <MdHistory /> History
         </button>

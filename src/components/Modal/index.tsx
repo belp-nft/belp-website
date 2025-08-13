@@ -135,7 +135,7 @@ const Modal: React.FC<ModalProps> = ({
                   className={clsx(
                     "flex-1 py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl font-medium text-[#702EAF] border border-gray-300 bg-[#E3CEF6] hover:opacity-85 transition-colors text-sm sm:text-base",
                     secondaryButtonDisabled && "opacity-50 cursor-not-allowed",
-                    "max-w-[330px] cursor-pointer"
+                    "max-w-full md:max-w-[330px] cursor-pointer"
                   )}
                   onClick={handleSecondaryClick}
                   disabled={secondaryButtonDisabled}
@@ -149,7 +149,7 @@ const Modal: React.FC<ModalProps> = ({
                   className={clsx(
                     "flex-1 py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl font-medium text-white bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] hover:from-[#E045EF] hover:to-[#9D3BBE] transition-all shadow-md text-sm sm:text-base",
                     primaryButtonDisabled && "opacity-50 cursor-not-allowed",
-                    "max-w-[330px] cursor-pointer"
+                    "max-w-full md:max-w-[330px] cursor-pointer"
                   )}
                   onClick={onPrimaryClick}
                   disabled={primaryButtonDisabled}

@@ -28,21 +28,21 @@ const HistoryPage = () => {
     try {
       setSyncing(true);
       setError(null);
-      
-      console.log('🖼️ Loading backend NFTs for:', solAddress);
-      
+
+      console.log("🖼️ Loading backend NFTs for:", solAddress);
+
       const response = await NftService.getUserNfts(solAddress);
-      
+
       if (response.success && response.nfts) {
         setBackendNfts(response.nfts);
-        console.log('✅ Backend NFTs loaded:', response.nfts.length);
+        console.log("✅ Backend NFTs loaded:", response.nfts.length);
       } else {
-        console.warn('⚠️ Failed to load backend NFTs');
-        setError('Failed to load NFTs');
+        console.warn("⚠️ Failed to load backend NFTs");
+        setError("Failed to load NFTs");
       }
     } catch (err) {
-      console.error('❌ Error loading backend NFTs:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error("❌ Error loading backend NFTs:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setSyncing(false);
     }
@@ -55,21 +55,21 @@ const HistoryPage = () => {
     try {
       setSyncing(true);
       setError(null);
-      
-      console.log('📜 Loading transactions for:', solAddress);
-      
+
+      console.log("📜 Loading transactions for:", solAddress);
+
       const response = await UserService.getTransactions(solAddress);
-      
+
       if (response.success && response.data) {
         setTransactions(response.data);
-        console.log('✅ Transactions loaded:', response.data.length);
+        console.log("✅ Transactions loaded:", response.data.length);
       } else {
-        console.warn('⚠️ Failed to load transactions:', response.message);
-        setError(response.message || 'Failed to load transactions');
+        console.warn("⚠️ Failed to load transactions:", response.message);
+        setError(response.message || "Failed to load transactions");
       }
     } catch (err) {
-      console.error('❌ Error loading transactions:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error("❌ Error loading transactions:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setSyncing(false);
     }
@@ -92,14 +92,14 @@ const HistoryPage = () => {
 
   // Chọn data source để hiển thị
   let dataSource, sortedData;
-  
+
   if (showTransactions) {
     // Hiển thị transaction history
     dataSource = transactions || [];
     sortedData = [...dataSource].sort((a, b) => {
       const dateA = a.createdAt || a.timestamp;
       const dateB = b.createdAt || b.timestamp;
-      
+
       if (!dateA || !dateB) return 0;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
@@ -109,7 +109,7 @@ const HistoryPage = () => {
     sortedData = [...dataSource].sort((a, b) => {
       const dateA = a.createdAt;
       const dateB = b.createdAt;
-      
+
       if (!dateA || !dateB) return 0;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
@@ -214,7 +214,7 @@ const HistoryPage = () => {
                 <button
                   onClick={() => setShowTransactions(false)}
                   className={clsx(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-all",
+                    "px-3 py-2 rounded-md text-sm font-medium transition-all cursor-pointer",
                     !showTransactions
                       ? "bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] text-white shadow-sm"
                       : "text-[#7A4BD6] hover:bg-[#f8f4ff]"
@@ -225,7 +225,7 @@ const HistoryPage = () => {
                 <button
                   onClick={() => setShowTransactions(true)}
                   className={clsx(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-all",
+                    "px-3 py-2 rounded-md text-sm font-medium transition-all cursor-pointer",
                     showTransactions
                       ? "bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] text-white shadow-sm"
                       : "text-[#7A4BD6] hover:bg-[#f8f4ff]"
@@ -234,7 +234,7 @@ const HistoryPage = () => {
                   Transactions ({transactions?.length || 0})
                 </button>
               </div>
-              
+
               {syncing && (
                 <div className="flex items-center gap-2 text-[#7A4BD6] text-sm">
                   <div className="animate-spin w-4 h-4 border-2 border-[#7A4BD6] border-t-transparent rounded-full"></div>
@@ -303,14 +303,16 @@ const HistoryPage = () => {
                             Transaction
                           </div>
                           <div className="text-xs text-[#6c5a99] mt-1">
-                            {transaction.transactionSignature?.slice(0, 8)}...{transaction.transactionSignature?.slice(-8)}
+                            {transaction.transactionSignature?.slice(0, 8)}...
+                            {transaction.transactionSignature?.slice(-8)}
                           </div>
                         </div>
 
                         {/* Candy Machine */}
                         <div className="col-span-2">
                           <div className="text-sm text-[#6c5a99] font-mono">
-                            {transaction.candyMachineAddress?.slice(0, 4)}...{transaction.candyMachineAddress?.slice(-4)}
+                            {transaction.candyMachineAddress?.slice(0, 4)}...
+                            {transaction.candyMachineAddress?.slice(-4)}
                           </div>
                         </div>
 
@@ -339,10 +341,16 @@ const HistoryPage = () => {
                             {transaction.createdAt || transaction.timestamp ? (
                               <>
                                 <div>
-                                  {new Date(transaction.createdAt || transaction.timestamp).toLocaleDateString()}
+                                  {new Date(
+                                    transaction.createdAt ||
+                                      transaction.timestamp
+                                  ).toLocaleDateString()}
                                 </div>
                                 <div className="text-xs opacity-70">
-                                  {new Date(transaction.createdAt || transaction.timestamp).toLocaleTimeString()}
+                                  {new Date(
+                                    transaction.createdAt ||
+                                      transaction.timestamp
+                                  ).toLocaleTimeString()}
                                 </div>
                               </>
                             ) : (
@@ -356,69 +364,70 @@ const HistoryPage = () => {
                 } else {
                   // Hiển thị NFT item từ backend
                   const nft = item as NFT;
-                  
+
                   return (
-                <motion.div
-                  key={nft._id}
-                  className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  whileHover={{ y: -2 }}
-                >
-                  <div className="grid grid-cols-12 gap-4 items-center">
-                    {/* Image */}
-                    <div className="col-span-2">
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
-                        <Image
-                          src={nft.imageUrl}
-                          alt={nft.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    </div>
-
-                    {/* NFT Details */}
-                    <div className="col-span-3">
-                      <Link
-                        href={`/my-collection/${nft._id}`}
-                        className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
-                      >
-                        {nft.name}
-                      </Link>
-                      <div className="text-xs text-[#6c5a99] mt-1">
-                        #{nft.nftAddress.slice(-8).toUpperCase()}
-                      </div>
-                    </div>
-
-                    {/* NFT Address */}
-                    <div className="col-span-2">
-                      <div className="text-sm text-[#6c5a99] font-mono">
-                        {nft.nftAddress.slice(0, 4)}...{nft.nftAddress.slice(-4)}
-                      </div>
-                    </div>
-
-                    {/* Type */}
-                    <div className="col-span-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        NFT
-                      </span>
-                    </div>
-
-                    {/* Time */}
-                    <div className="col-span-3">
-                      <div className="text-sm text-[#6c5a99]">
-                        <div>
-                          {new Date(nft.createdAt).toLocaleDateString()}
+                    <motion.div
+                      key={nft._id}
+                      className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.1 }}
+                      whileHover={{ y: -2 }}
+                    >
+                      <div className="grid grid-cols-12 gap-4 items-center">
+                        {/* Image */}
+                        <div className="col-span-2">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
+                            <Image
+                              src={nft.imageUrl}
+                              alt={nft.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
                         </div>
-                        <div className="text-xs opacity-70">
-                          {new Date(nft.createdAt).toLocaleTimeString()}
+
+                        {/* NFT Details */}
+                        <div className="col-span-3">
+                          <Link
+                            href={`/my-collection/${nft.nftAddress}`}
+                            className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
+                          >
+                            {nft.name}
+                          </Link>
+                          <div className="text-xs text-[#6c5a99] mt-1">
+                            #{nft.nftAddress.slice(-8).toUpperCase()}
+                          </div>
+                        </div>
+
+                        {/* NFT Address */}
+                        <div className="col-span-2">
+                          <div className="text-sm text-[#6c5a99] font-mono">
+                            {nft.nftAddress.slice(0, 4)}...
+                            {nft.nftAddress.slice(-4)}
+                          </div>
+                        </div>
+
+                        {/* Type */}
+                        <div className="col-span-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            NFT
+                          </span>
+                        </div>
+
+                        {/* Time */}
+                        <div className="col-span-3">
+                          <div className="text-sm text-[#6c5a99]">
+                            <div>
+                              {new Date(nft.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs opacity-70">
+                              {new Date(nft.createdAt).toLocaleTimeString()}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
+                    </motion.div>
                   );
                 }
               })}
@@ -446,22 +455,31 @@ const HistoryPage = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
                 <div className="text-sm text-[#6c5a99]">
-                  Total {showTransactions ? 'transactions' : 'NFTs'}:{" "}
+                  Total {showTransactions ? "transactions" : "NFTs"}:{" "}
                   <span className="font-semibold text-[#7a4bd6]">
                     {dataSource.length}
                   </span>
                   {solAddress && (
                     <>
                       <span className="mx-2">•</span>
-                      Wallet: <span className="font-mono text-xs">{solAddress.slice(0, 4)}...{solAddress.slice(-4)}</span>
+                      Wallet:{" "}
+                      <span className="font-mono text-xs">
+                        {solAddress.slice(0, 4)}...{solAddress.slice(-4)}
+                      </span>
                     </>
                   )}
                   {userStatistics && (
                     <>
                       <span className="mx-2">•</span>
-                      Total NFTs: <span className="font-semibold text-[#7a4bd6]">{userStatistics.totalNfts || 0}</span>
+                      Total NFTs:{" "}
+                      <span className="font-semibold text-[#7a4bd6]">
+                        {userStatistics.totalNfts || 0}
+                      </span>
                       <span className="mx-2">•</span>
-                      Total Transactions: <span className="font-semibold text-[#7a4bd6]">{userStatistics.totalTransactions || 0}</span>
+                      Total Transactions:{" "}
+                      <span className="font-semibold text-[#7a4bd6]">
+                        {userStatistics.totalTransactions || 0}
+                      </span>
                     </>
                   )}
                 </div>

@@ -40,7 +40,8 @@ const BelpyMintPage = () => {
   const [selectedCat, setSelectedCat] = useState<number | null>(null);
   const [showMintModal, setShowMintModal] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
-  const [mintedNftId, setMintedNftId] = useState<string>("");
+  const [nftAddress, setNftAddress] = useState<string>("");
+  const [nftDetailData, setNftDetailData] = useState<any>(null);
   const [currentCandyMachineId, setCurrentCandyMachineId] =
     useState<string>("");
   const [candyMachineConfig, setCandyMachineConfig] = useState<any>(null);
@@ -267,11 +268,11 @@ const BelpyMintPage = () => {
 
       console.log("Backend send response:", sendResult);
 
-      let transactionSignature, nftAddress;
+      let transactionSignature, nftAddressResult;
 
       if (sendResult.success && sendResult.signature) {
         transactionSignature = sendResult.signature;
-        nftAddress = sendResult.nftAddress;
+        nftAddressResult = sendResult.nftAddress;
       } else {
         console.error("Invalid send response format:", sendResult);
         throw new Error(
@@ -287,10 +288,7 @@ const BelpyMintPage = () => {
           `https://explorer.solana.com/tx/${transactionSignature}?cluster=devnet`
         );
 
-        console.log("nftAddress:", nftAddress);
-
-        const realNftId = `#${nftAddress.slice(-4).toUpperCase()}`;
-        setMintedNftId(realNftId);
+        setNftAddress(nftAddressResult);
 
         const randomCat = Math.floor(Math.random() * cats.length);
         setSelectedCat(randomCat);
@@ -324,10 +322,11 @@ const BelpyMintPage = () => {
 
         try {
           console.log("Fetching NFT details from backend...");
-          const nftData = await NftService.getNftDetails(nftAddress);
+          const nftData = await NftService.getNftDetails(nftAddressResult);
 
           if (nftData && nftData.success && nftData.nft) {
             console.log("NFT details loaded:", nftData.nft);
+            setNftDetailData(nftData.nft);
 
             if (nftData.nft.name) {
               console.log("NFT Name:", nftData.nft.name);
@@ -417,7 +416,6 @@ const BelpyMintPage = () => {
     setShowSuccessModal(false);
     setMintSuccess(false);
     setSelectedCat(null);
-    setMintedNftId("");
   };
 
   const handleMintClick = () => {
@@ -442,7 +440,6 @@ const BelpyMintPage = () => {
           selectedCat={selectedCat}
           cats={cats}
           onMintClick={handleMintClick}
-          candyMachineId={currentCandyMachineId}
         />
 
         <MintConfirmModal
@@ -456,13 +453,14 @@ const BelpyMintPage = () => {
           isOpen={showSuccessModal}
           selectedCat={selectedCat}
           cats={cats}
-          mintedNftId={mintedNftId}
+          mintedNftId={nftDetailData?.name}
           onClose={handleSuccessModalClose}
           onViewDetails={() => {
-            router.push(`/my-collection/${mintedNftId.replace("#", "")}`);
+            router.push(`/my-collection/${nftAddress}`);
             handleSuccessModalClose();
           }}
           onViewHistory={() => {
+            router.push(`/my-collection/history`);
             handleSuccessModalClose();
           }}
         />
