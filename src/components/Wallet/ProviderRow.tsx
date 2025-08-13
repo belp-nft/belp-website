@@ -23,7 +23,7 @@ export default function ProviderRow({
     <button
       onClick={onClick}
       disabled={!!loading}
-      className="w-full flex items-center gap-3 p-3 rounded-xl bg-white hover:bg-[#f2eaff] border border-[#e6d9ff] transition disabled:opacity-70"
+      className="w-full flex items-center gap-3 p-3 rounded-xl bg-white hover:bg-[#f2eaff] border border-[#e6d9ff] transition disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
     >
       {logo.src.startsWith("http") ? (
         // với link remote

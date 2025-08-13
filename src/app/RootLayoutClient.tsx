@@ -5,6 +5,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 
 import BelpHeader from "@/components/Header";
+import { ConfigProvider } from "@/providers/ConfigProvider";
 import clsx from "clsx";
 import { usePathname } from "next/navigation";
 import { Oxanium } from "next/font/google";

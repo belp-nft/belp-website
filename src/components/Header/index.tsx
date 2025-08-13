@@ -59,7 +59,7 @@ export default function BelpHeader() {
                   className="mb-3"
                 />
                 <button
-                  className="absolute top-4 right-4 text-[#9933dd] rounded-full hover:bg-[#e0caff] p-2 transition"
+                  className="absolute top-4 right-4 text-[#9933dd] rounded-full hover:bg-[#e0caff] p-2 transition cursor-pointer"
                   onClick={() => setOpen(false)}
                   aria-label="Close menu"
                 >
@@ -123,7 +123,7 @@ export default function BelpHeader() {
       >
         <div className="flex flex-1 md:hidden items-center justify-between relative h-[52px]">
           <button
-            className="block md:hidden rounded-xl p-2 bg-[#f6effb] border border-[#d3b0f7] shadow-sm transition active:scale-95"
+            className="block md:hidden rounded-xl p-2 bg-[#f6effb] border border-[#d3b0f7] shadow-sm transition active:scale-95 cursor-pointer"
             aria-label="Open menu"
             onClick={() => setOpen(true)}
           >

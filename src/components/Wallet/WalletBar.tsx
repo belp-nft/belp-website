@@ -22,7 +22,7 @@ export default function WalletBar() {
       />
       {isConnected && (
         <button
-          className="text-xs px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+          className="text-xs px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 cursor-pointer"
           onClick={disconnect}
         >
           Disconnect
@@ -34,7 +34,7 @@ export default function WalletBar() {
       {error && <span className="text-xs text-red-500 ml-2">{error}</span>}
       {isConnected && (
         <button
-          className="text-xs px-2 py-1 ml-2 rounded bg-blue-100 hover:bg-blue-200"
+          className="text-xs px-2 py-1 ml-2 rounded bg-blue-100 hover:bg-blue-200 cursor-pointer"
           onClick={refresh}
         >
           Refresh

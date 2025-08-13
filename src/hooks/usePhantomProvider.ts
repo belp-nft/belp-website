@@ -14,7 +14,13 @@ export function usePhantomProvider() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const provider = window.solana;
+
+    // Check multiple provider locations for better detection
+    const provider =
+      window.solana ||
+      (window as any).phantom?.solana ||
+      (window as any).phantom;
+
     setPhantom(provider);
     if (provider?.publicKey) {
       setIsConnected(true);
@@ -43,85 +49,134 @@ export function usePhantomProvider() {
     };
   }, [phantom]);
 
-  // Load user data từ backend - dựa trên index.html
   const loadUserData = useCallback(async (walletAddress: string) => {
     try {
-      console.log('📊 Loading user data...', { walletAddress });
-      
+      console.log("Loading user data...", { walletAddress });
+
       // Load user statistics
       const statsResult = await UserService.getUserStatistics(walletAddress);
       if (statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
-        console.log('✅ User statistics loaded:', statsResult.data);
+        console.log("User statistics loaded:", statsResult.data);
       }
 
       // Load transaction history
-      const txResult = await UserService.getTransactions(walletAddress, { limit: 50 });
+      const txResult = await UserService.getTransactions(walletAddress, {
+        limit: 50,
+      });
       if (txResult.success && txResult.data) {
         setTransactions(txResult.data);
-        console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
+        console.log(
+          "Transaction history loaded:",
+          txResult.data.length,
+          "transactions"
+        );
       }
     } catch (error) {
-      console.error('⚠️ Failed to load user data:', error);
+      console.error("Failed to load user data:", error);
     }
   }, []);
 
   const connect = useCallback(async () => {
     if (!phantom?.connect) {
-      // Mở trang download Phantom nếu chưa cài đặt
-      window.open("https://phantom.app/", "_blank");
+      const currentUrl = window.location.href;
+      const isMobile =
+        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
+      if (isMobile) {
+        // Mobile: Try deep link to Phantom app first
+        const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(
+          currentUrl
+        )}?ref=belp`;
+        console.log("Trying mobile deep link:", deepLink);
+
+        // Redirect to Phantom app
+        window.location.href = deepLink;
+
+        // Fallback: Open app store after delay
+        setTimeout(() => {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const storeUrl = isIOS
+            ? "https://apps.apple.com/app/phantom-solana-wallet/1598432977"
+            : "https://play.google.com/store/apps/details?id=app.phantom";
+          window.open(storeUrl, "_blank");
+        }, 3000);
+      } else {
+        // Desktop: Open extension download page with return URL
+        const downloadUrl = `https://phantom.app/download?utm_source=belp&utm_medium=web&return_url=${encodeURIComponent(
+          currentUrl
+        )}`;
+        window.open(downloadUrl, "_blank");
+      }
       return null;
     }
-    
+
     try {
       setLoading(true);
-      console.log('🚀 Starting Phantom wallet connection...');
-      
-      // Bước 1: Kết nối với Phantom wallet
+      console.log("Starting Phantom wallet connection...");
+
+      // Connect to Phantom wallet
       const resp = await phantom.connect();
       const walletAddress = resp.publicKey?.toString?.() || null;
-      
+
       if (!walletAddress) {
-        throw new Error('Không thể lấy địa chỉ ví');
+        throw new Error("Failed to get wallet address");
       }
 
       setIsConnected(true);
       setPublicKey(walletAddress);
-      console.log('✅ Phantom connected:', walletAddress);
+      console.log("Phantom connected:", walletAddress);
 
-      // Bước 2: Authenticate với backend (dựa trên logic index.html)
-      console.log('🔐 Authenticating with backend...');
+      // Authenticate with backend
+      console.log("Authenticating with backend...");
       const connectResult = await UserService.connectWallet(walletAddress);
 
       if (!connectResult.success) {
-        throw new Error(connectResult.message || 'Backend authentication failed');
+        throw new Error(
+          connectResult.message || "Backend authentication failed"
+        );
       }
 
-      // Bước 3: Lưu JWT token vào localStorage (dựa trên index.html)
-      // Backend trả về accessToken trong data object, không phải trong User object
+      // Save JWT token to localStorage
       if ((connectResult as any).data?.accessToken) {
         AuthService.setToken((connectResult as any).data.accessToken);
         setAuthToken((connectResult as any).data.accessToken);
-        console.log('🔑 JWT token saved to localStorage');
+        console.log("JWT token saved");
       } else {
-        console.warn('⚠️ No JWT token received from backend');
+        console.warn("No JWT token received from backend");
       }
 
-      // Bước 4: Load user data với JWT token
+      // Load user data with JWT token
       await loadUserData(walletAddress);
 
-      console.log('🎉 Phantom wallet connection successful!');
+      console.log("Phantom wallet connection successful!");
       return resp;
-      
     } catch (error: any) {
-      console.error('❌ Phantom connection failed:', error);
-      
-      // Cleanup nếu có lỗi
+      console.error("Phantom connection failed:", error);
+
+      // Cleanup on error
       setIsConnected(false);
       setPublicKey(null);
       setAuthToken(null);
       AuthService.removeToken();
-      
+
+      // Handle specific errors
+      if (error.message?.includes("User rejected") || error.code === 4001) {
+        console.log("User cancelled the connection");
+      } else if (error.code === -32002) {
+        alert(
+          "Connection request is already pending. Please check your Phantom wallet."
+        );
+      } else {
+        alert(
+          `Connection failed: ${
+            error.message || "Unknown error"
+          }. Please try again.`
+        );
+      }
+
       throw error;
     } finally {
       setLoading(false);
@@ -133,7 +188,7 @@ export function usePhantomProvider() {
       if (phantom?.disconnect) {
         await phantom.disconnect();
       }
-      
+
       // Cleanup tất cả state và localStorage
       setIsConnected(false);
       setPublicKey(null);
@@ -141,45 +196,44 @@ export function usePhantomProvider() {
       setUserStatistics(null);
       setTransactions([]);
       AuthService.removeToken();
-      
-      console.log('🔌 Phantom wallet disconnected');
+
+      console.log("Phantom wallet disconnected");
     } catch (error) {
-      console.error('Error disconnecting phantom:', error);
+      console.error("Error disconnecting phantom:", error);
     }
   }, [phantom]);
 
-  // Auto-connect function (dựa trên logic index.html window.addEventListener('load'))
   const autoConnect = useCallback(async () => {
     if (!phantom?.isConnected || !phantom?.publicKey) return null;
-    
+
     try {
-      console.log('🔄 Attempting auto-connect...');
-      
-      // Thử connect với onlyIfTrusted
+      console.log("Attempting auto-connect...");
+
+      // Try connect with onlyIfTrusted
       const response = await phantom.connect({ onlyIfTrusted: true });
       const walletAddress = response.publicKey.toString();
-      
+
       setIsConnected(true);
       setPublicKey(walletAddress);
-      console.log('✅ Auto-connect successful:', walletAddress);
+      console.log("Auto-connect successful:", walletAddress);
 
-      // Authenticate với backend
+      // Authenticate with backend
       const connectResult = await UserService.connectWallet(walletAddress);
 
       if (connectResult.success && (connectResult as any).data?.accessToken) {
         AuthService.setToken((connectResult as any).data.accessToken);
         setAuthToken((connectResult as any).data.accessToken);
-        console.log('🔑 JWT token saved from auto-connect');
+        console.log("JWT token saved from auto-connect");
 
         // Load user data
         await loadUserData(walletAddress);
-        
+
         return response;
       }
     } catch (error) {
-      console.log('Auto-connect failed, user needs to manually connect');
+      console.log("Auto-connect failed, user needs to manually connect");
     }
-    
+
     return null;
   }, [phantom, loadUserData]);
 

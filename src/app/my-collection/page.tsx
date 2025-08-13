@@ -8,6 +8,11 @@ import { useWallet } from "@/hooks/useWallet";
 import { NftService } from "@/services/nftService";
 import type { NFT } from "@/services/types";
 import NftGrid from "@/modules/my-collection//NftGrid";
+import {
+  useCollectionAddress,
+  useConfig,
+  useConfigStore,
+} from "@/stores/config";
 
 const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -17,6 +22,8 @@ const MyCollectionPage = () => {
   const router = useRouter();
 
   const { solAddress } = useWallet();
+
+  const collectionAddress = useCollectionAddress();
 
   const items = nfts.slice(0, visible);
   const totalCount = nfts.length;
@@ -37,20 +44,20 @@ const MyCollectionPage = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🖼️ Loading NFTs for wallet:', solAddress);
-        
+        console.log("🖼️ Loading NFTs for wallet:", solAddress);
+
         const response = await NftService.getUserNfts(solAddress);
-        
+
         if (response.success) {
           setNfts(response.nfts || []);
-          console.log('✅ NFTs loaded:', response.nfts?.length || 0);
+          console.log("✅ NFTs loaded:", response.nfts?.length || 0);
         } else {
-          setError('Failed to load NFTs');
-          console.error('❌ Failed to load NFTs');
+          setError("Failed to load NFTs");
+          console.error("❌ Failed to load NFTs");
         }
       } catch (err) {
-        console.error('❌ Error loading NFTs:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error("❌ Error loading NFTs:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
       }
@@ -142,13 +149,13 @@ const MyCollectionPage = () => {
 
       <section className="main-container mt-4">
         <UserInfo
-          contract="sm6LqSRQLkM29bMqct9QBRX5HZMEXYgELgwCXpump"
+          contract={collectionAddress || ""}
           walletAddress={solAddress || undefined}
           onHistoryClick={handleHistoryClick}
         />
       </section>
 
-      <section className="main-container mt-6">
+      <section className="main-container pt-10 pb-20">
         {totalCount === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎨</div>
@@ -160,7 +167,7 @@ const MyCollectionPage = () => {
             </p>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl"
+              className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl cursor-pointer"
               onClick={() => (window.location.href = "/mint")}
             >
               Mint Your First BELPY
@@ -178,7 +185,7 @@ const MyCollectionPage = () => {
               <div className="flex justify-center py-8">
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-primary-accent font-semibold shadow-md hover:shadow-lg transition"
+                  className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-primary-accent font-semibold shadow-md hover:shadow-lg transition cursor-pointer"
                   onClick={() =>
                     setVisible((v) => Math.min(v + 20, totalCount))
                   }

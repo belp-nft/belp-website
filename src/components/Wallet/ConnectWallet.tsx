@@ -112,7 +112,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
             <a
               href="/my-collection"
               className={
-                `block px-2 py-2 rounded-lg transition ` +
+                `block px-2 py-2 rounded-lg transition cursor-pointer ` +
                 (pathname === "/my-collection"
                   ? "bg-[#F6F0FF] font-bold"
                   : "hover:bg-[#F6F0FF] font-medium")
@@ -123,7 +123,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
             </a>
             <div className="my-2 border-t border-[#E3D6F6]" />
             <button
-              className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium"
+              className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium cursor-pointer"
               onClick={handleDisconnect}
             >
               Disconnect

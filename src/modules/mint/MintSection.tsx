@@ -13,7 +13,6 @@ interface MintSectionProps {
   selectedCat: number | null;
   cats: string[];
   onMintClick: () => void;
-  candyMachineId?: string; // Add this prop
 }
 
 const MintSection: React.FC<MintSectionProps> = ({
@@ -24,7 +23,6 @@ const MintSection: React.FC<MintSectionProps> = ({
   selectedCat,
   cats,
   onMintClick,
-  candyMachineId,
 }) => {
   const getScaleAndSize = (text: string) => {
     // Simplified to use consistent title-text class
