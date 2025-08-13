@@ -21,7 +21,7 @@ export default function LorePage() {
           objectPosition: "center",
         }}
       >
-        <source src="/videos/bg-lore.mp4" type="video/mp4" />
+        <source src="/videos/bg-lore.webm" type="video/mp4" />
       </video>
 
       <div
