@@ -4,10 +4,8 @@ import PageLoading from "@/components/PageLoading";
 
 interface LoadingContextType {
   isLoading: boolean;
-  loadingMessage?: string;
-  showLoading: (message?: string) => void;
+  showLoading: () => void;
   hideLoading: () => void;
-  setLoadingMessage: (message: string) => void;
 }
 
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
@@ -28,28 +26,19 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   children,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState<string | undefined>();
 
-  const showLoading = useCallback((message?: string) => {
-    setLoadingMessage(message);
+  const showLoading = useCallback(() => {
     setIsLoading(true);
   }, []);
 
   const hideLoading = useCallback(() => {
     setIsLoading(false);
-    setLoadingMessage(undefined);
-  }, []);
-
-  const updateLoadingMessage = useCallback((message: string) => {
-    setLoadingMessage(message);
   }, []);
 
   const value: LoadingContextType = {
     isLoading,
-    loadingMessage,
     showLoading,
     hideLoading,
-    setLoadingMessage: updateLoadingMessage,
   };
 
   return (

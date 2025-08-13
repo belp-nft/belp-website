@@ -42,7 +42,7 @@ const BelpyMintPage = () => {
   const candyMachineConfig = useConfig();
   const candyMachineAddress = useCandyMachineAddress();
   const { minted, supply } = useMintStats();
-  const { fetchConfig, refreshStats, incrementMinted } = useConfigActions();
+  const { refreshStats, incrementMinted } = useConfigActions();
 
   // Local state
   const [isMinting, setIsMinting] = useState<boolean>(false);

@@ -8,21 +8,17 @@ import { useWallet } from "@/hooks/useWallet";
 import { NftService } from "@/services/nftService";
 import type { NFT } from "@/services/types";
 import NftGrid from "@/modules/my-collection//NftGrid";
-import PageLoading from "@/components/PageLoading";
-import {
-  useCollectionAddress,
-  useConfig,
-  useConfigStore,
-} from "@/stores/config";
+import { useLoading } from "@/providers/LoadingProvider";
+import { useCollectionAddress } from "@/stores/config";
 
 const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(20);
   const router = useRouter();
 
   const { solAddress } = useWallet();
+  const { showLoading, hideLoading } = useLoading();
 
   const collectionAddress = useCollectionAddress();
 
@@ -37,13 +33,11 @@ const MyCollectionPage = () => {
   useEffect(() => {
     const loadNfts = async () => {
       if (!solAddress) {
-        setNfts([]);
-        setLoading(false);
         return;
       }
 
       try {
-        setLoading(true);
+        showLoading();
         setError(null);
         console.log("🖼️ Loading NFTs for wallet:", solAddress);
 
@@ -60,12 +54,12 @@ const MyCollectionPage = () => {
         console.error("❌ Error loading NFTs:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
-        setLoading(false);
+        hideLoading();
       }
     };
 
     loadNfts();
-  }, [solAddress]);
+  }, [solAddress, showLoading, hideLoading]);
 
   return (
     <main className="min-h-screen">
@@ -88,7 +82,7 @@ const MyCollectionPage = () => {
         />
       </section>
 
-      <section className="main-container pt-10 pb-20">
+      <section className="main-container pt-5 md:pt-10 pb-20">
         {totalCount === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎨</div>
