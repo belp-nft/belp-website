@@ -3,14 +3,16 @@
     "eslint:recommended",
     "plugin:react/recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
+    "plugin:tailwindcss/recommended"
   ],
   "plugins": [
     "react",
     "@typescript-eslint",
     "prettier",
     "import",
-    "unused-imports"
+    "unused-imports",
+    "tailwindcss"
   ],
   "parser": "@typescript-eslint/parser",
   "rules": {
@@ -40,9 +42,18 @@
         "jsxSingleQuote": false,
         "tabWidth": 2,
         "trailingComma": "es5",
-        "semi": true
+        "semi": true,
+        "printWidth": 80
       }
     ],
+    // Tailwind CSS rules
+    "tailwindcss/classnames-order": "warn",
+    "tailwindcss/enforces-negative-arbitrary-values": "warn",
+    "tailwindcss/enforces-shorthand": "warn",
+    "tailwindcss/migration-from-tailwind-2": "warn",
+    "tailwindcss/no-arbitrary-value": "off",
+    "tailwindcss/no-custom-classname": "off",
+    "tailwindcss/no-contradicting-classname": "error",
     "import/order": [
       "error",
       {
@@ -68,8 +79,9 @@
   "settings": {
     "react": { "version": "detect" },
     "tailwindcss": {
-      "callees": ["clsx"],
-      "classRegex": "^(class(Name)|theme)?$"
+      "callees": ["clsx", "cn", "cva"],
+      "classRegex": "^(class(Name)|theme)?$",
+      "config": "tailwind.config.js"
     },
     "import/resolver": { "typescript": {} }
   },

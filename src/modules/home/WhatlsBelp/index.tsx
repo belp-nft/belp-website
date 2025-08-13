@@ -14,7 +14,7 @@ export default function WhatlsBelp() {
     <section
       className={clsx(
         "relative text-center",
-        "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px] mt-10"
+        "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px]"
       )}
     >
       <motion.h1
@@ -25,6 +25,9 @@ export default function WhatlsBelp() {
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
+        style={{
+          fontFamily: "var(--font-oxanium)",
+        }}
       >
         What is BELP
       </motion.h1>

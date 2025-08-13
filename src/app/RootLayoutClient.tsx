@@ -7,6 +7,12 @@ import "swiper/css/navigation";
 import BelpHeader from "@/components/Header";
 import clsx from "clsx";
 import { usePathname } from "next/navigation";
+import { Oxanium } from "next/font/google";
+
+const oxanium = Oxanium({
+  subsets: ["latin"],
+  variable: "--font-oxanium",
+});
 
 export default function RootLayoutClient({
   children,
@@ -17,7 +23,7 @@ export default function RootLayoutClient({
 
   return (
     <html lang="en">
-      <body className="font-gmarket antialiased">
+      <body className={clsx("font-gmarket antialiased", oxanium.variable)}>
         <BelpHeader />
         <div
           className={clsx(

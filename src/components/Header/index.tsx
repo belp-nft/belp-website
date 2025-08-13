@@ -167,7 +167,7 @@ export default function BelpHeader() {
                   <Link
                     href={item.href}
                     className={clsx(
-                      "uppercase text-[16px] lg:text-[20px] xl:text-[24px] font-bold tracking-[.08em] transition-all duration-150 px-1",
+                      "uppercase text-[16px] lg:text-[20px] xl:text-[24px] font-bold tracking-[.08em] transition-all duration-150 px-1 bg-gradient-to-b from-[#a44bfd] to-[#1C007C] bg-clip-text text-transparent",
                       clsx(
                         "hover:text-[#5B357D]",
                         isActive &&

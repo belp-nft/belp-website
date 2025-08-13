@@ -1,10 +1,14 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper";
-import { Navigation } from "swiper/modules";
+import { Navigation, Autoplay } from "swiper/modules";
 import clsx from "clsx";
 
-const cats = [
+// Import Swiper styles
+import "swiper/css";
+import "swiper/css/navigation";
+
+const baseCats = [
   "token-nft-1.svg",
   "token-nft-2.svg",
   "token-nft-3.svg",
@@ -12,86 +16,134 @@ const cats = [
   "token-nft-5.svg",
 ];
 
+// Tạo loop bằng cách duplicate slides để transition mượt hơn
+const cats = [...baseCats, ...baseCats, ...baseCats];
+
 export default function CatCarousel() {
   const swiperRef = useRef<SwiperType | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [dir, setDir] = useState<"next" | "prev">("next");
-  const [isPause, setIsPause] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(2);
 
+  const handleMouseEnter = useCallback(() => {
+    setIsPaused(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsPaused(false);
+  }, []);
+
+  // Auto-resume after manual interaction
   useEffect(() => {
-    if (isPause || !swiperRef.current) return;
-    intervalRef.current = setInterval(() => {
-      const swiper = swiperRef.current;
-      if (!swiper) return;
-      if (swiper.activeIndex === cats.length - 1) {
-        setDir("prev");
-        swiper.slidePrev();
-      } else if (swiper.activeIndex === 0) {
-        setDir("next");
-        swiper.slideNext();
-      } else {
-        dir === "next" ? swiper.slideNext() : swiper.slidePrev();
-      }
-    }, 1800);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [dir, isPause]);
+    if (!isPaused && swiperRef.current?.autoplay) {
+      const timer = setTimeout(() => {
+        swiperRef.current?.autoplay.start();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPaused, currentSlide]);
+
+  const handleSlideClick = useCallback((index: number) => {
+    if (swiperRef.current) {
+      swiperRef.current.slideTo(index);
+      setCurrentSlide(index);
+    }
+  }, []);
+
+  const handleSlideChange = useCallback((swiper: SwiperType) => {
+    setCurrentSlide(swiper.activeIndex);
+  }, []);
 
   return (
     <div
-      className="flex flex-col items-center"
-      onMouseEnter={() => setIsPause(true)}
-      onMouseLeave={() => setIsPause(false)}
+      className="flex flex-col items-center w-full"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <Swiper
-        modules={[Navigation]}
-        centeredSlides
-        initialSlide={2}
-        loop={false}
-        speed={600}
-        className="w-full wide-container select-none"
+        modules={[Navigation, Autoplay]}
+        centeredSlides={true}
+        initialSlide={Math.floor(cats.length / 2)}
+        loop={true}
+        speed={800}
+        watchSlidesProgress={true}
+        grabCursor={true}
+        autoplay={{
+          delay: 2000,
+          disableOnInteraction: false,
+          pauseOnMouseEnter: true,
+          reverseDirection: false,
+          stopOnLastSlide: false,
+          waitForTransition: true,
+        }}
+        className="w-full max-w-7xl select-none"
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
+        onSlideChange={handleSlideChange}
         breakpoints={{
-          // width >= 0px
-          0: { slidesPerView: 1, spaceBetween: 8, centeredSlides: true },
-          // width >= 640px
-          640: { slidesPerView: 3, spaceBetween: 12, centeredSlides: true },
-          // width >= 1024px
-          1024: { slidesPerView: 5, spaceBetween: 18, centeredSlides: true },
+          // Mobile
+          320: { 
+            slidesPerView: 1.5, 
+            spaceBetween: 2, 
+            centeredSlides: true 
+          },
+          // Tablet
+          640: { 
+            slidesPerView: 3, 
+            spaceBetween: 2, 
+            centeredSlides: true 
+          },
+          // Desktop
+          1024: { 
+            slidesPerView: 5, 
+            spaceBetween: 2, 
+            centeredSlides: true 
+          },
+          // Large Desktop
+          1440: { 
+            slidesPerView: 7, 
+            spaceBetween: 2, 
+            centeredSlides: true 
+          },
         }}
       >
-        {cats.map((src, i) => (
-          <SwiperSlide key={i}>
-            {({ isActive, isPrev, isNext }) => (
-              <div
-                className={clsx(
-                  "rounded-xl overflow-hidden flex items-center justify-center cursor-pointer transition-all duration-300"
-                )}
-                style={{
-                  width: 170,
-                  height: 200,
-                  opacity: isActive ? 1 : isPrev || isNext ? 0.7 : 0.23,
-                  transition: "opacity .3s, box-shadow .3s",
-                }}
-                onClick={() => {
-                  swiperRef.current && swiperRef.current.slideTo(i);
-                }}
-              >
-                <img
-                  src={`/icons/${src}`}
-                  alt="token-nft"
-                  draggable={false}
-                  className="object-contain w-full h-full"
+        {cats.map((src, index) => (
+          <SwiperSlide key={`${src}-${index}`}>
+            {({ isActive, isPrev, isNext }) => {
+              const isAdjacent = isPrev || isNext;
+              const opacity = isActive ? 1 : isAdjacent ? 0.8 : 0.4;
+              const scale = isActive ? 1 : isAdjacent ? 0.95 : 0.85;
+              
+              return (
+                <div
+                  className={clsx(
+                    "overflow-hidden flex items-center justify-center cursor-pointer transition-all duration-500 ease-out",
+                    "hover:scale-105 hover:shadow-lg",
+                  )}
                   style={{
-                    opacity: 1,
-                    transition: "opacity .3s",
+                    width: "100%",
+                    maxWidth: 180,
+                    opacity,
+                    transform: `scale(${scale})`,
+                    transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
-                />
-              </div>
-            )}
+                  onClick={() => handleSlideClick(index)}
+                >
+                  <img
+                    src={`/icons/${src}`}
+                    alt={`Belp Cat NFT ${index + 1}`}
+                    draggable={false}
+                    className="object-contain w-full h-full"
+                    loading="lazy"
+                    style={{
+                      filter: isActive ? "none" : "brightness(0.9)",
+                      transition: "filter 0.3s ease",
+                    }}
+                  />
+                </div>
+              );
+            }}
           </SwiperSlide>
         ))}
       </Swiper>
