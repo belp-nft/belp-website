@@ -4,6 +4,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import CatGrid from "./CatGrid";
+import { useAuth } from "@/providers/AuthProvider";
+import ConnectWallet from "@/components/Wallet/ConnectWallet";
 
 interface MintSectionProps {
   minted: number;
@@ -24,6 +26,8 @@ const MintSection: React.FC<MintSectionProps> = ({
   cats,
   onMintClick,
 }) => {
+  const { isAuthenticated } = useAuth();
+
   const getScaleAndSize = (text: string) => {
     // Simplified to use consistent title-text class
     return {
@@ -89,37 +93,52 @@ const MintSection: React.FC<MintSectionProps> = ({
           </div>
         </motion.div>
 
-        <motion.button
-          className={clsx(
-            "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-bold py-3 px-8 rounded-2xl text-lg sm:text-xl w-full max-w-xs shadow-md",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
-            "cursor-pointer"
-          )}
+        <motion.div
+          className="w-full max-w-xs"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.6 }}
-          whileHover={{ scale: isMinting ? 1 : 1.05 }}
-          whileTap={{ scale: isMinting ? 1 : 0.95 }}
-          onClick={onMintClick}
-          disabled={isMinting}
         >
-          {isMinting ? (
-            <div className="flex items-center justify-center gap-2">
-              <motion.div
-                className={clsx(
-                  "w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                )}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-              Minting...
-            </div>
-          ) : mintSuccess ? (
-            "Minted Successfully! 🎉"
+          {isAuthenticated ? (
+            <motion.button
+              className={clsx(
+                "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-bold py-3 px-8 rounded-2xl text-lg sm:text-xl w-full shadow-md",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "cursor-pointer"
+              )}
+              whileHover={{ scale: isMinting ? 1 : 1.05 }}
+              whileTap={{ scale: isMinting ? 1 : 0.95 }}
+              onClick={onMintClick}
+              disabled={isMinting}
+            >
+              {isMinting ? (
+                <div className="flex items-center justify-center gap-2">
+                  <motion.div
+                    className={clsx(
+                      "w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                    )}
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  />
+                  Minting...
+                </div>
+              ) : mintSuccess ? (
+                "Minted Successfully! 🎉"
+              ) : (
+                "MINT BELPY"
+              )}
+            </motion.button>
           ) : (
-            "MINT BELPY"
+            <ConnectWallet
+              className="!w-full py-3 px-8"
+              onConnected={(info) => console.log("Connected:", info)}
+            />
           )}
-        </motion.button>
+        </motion.div>
 
         <CatGrid
           cats={cats}

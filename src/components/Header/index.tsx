@@ -171,7 +171,7 @@ export default function BelpHeader() {
                       clsx(
                         "hover:text-[#5B357D]",
                         isActive &&
-                          "underline underline-offset-[9px] decoration-2 decoration-[#1C007C]"
+                          "underline underline-offset-[9px] decoration-2 decoration-[#5B357D]"
                       )
                     )}
                     style={{ letterSpacing: 2 }}

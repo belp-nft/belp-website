@@ -89,7 +89,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
 
   return (
     <>
-      <div className="relative inline-block">
+      <div className="w-full relative inline-block">
         <WalletButton
           isOpen={showMenu}
           label={label}
