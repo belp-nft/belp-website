@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/hooks/useWallet";
+import { usePageLoading } from "@/hooks/usePageLoading";
+import PageLoading from "@/components/PageLoading";
 
 import { NftService, UserService } from "@/services";
 import {
@@ -30,7 +32,8 @@ const BelpyMintPage = () => {
     solAddress,
     connectPhantom,
     refreshSolBalance,
-    getSolanaProvider,
+    connectedWallet,
+    getWalletProvider,
     authToken,
     loadUserData,
   } = useWallet();
@@ -133,7 +136,10 @@ const BelpyMintPage = () => {
       console.log("- Number of instructions:", tx.instructions.length);
 
       console.log("Signing transaction with wallet...");
-      const sol = getSolanaProvider();
+      if (!connectedWallet) {
+        throw new Error("No wallet connected");
+      }
+      const sol = getWalletProvider(connectedWallet);
       if (!sol || !sol.signTransaction) {
         throw new Error("Wallet does not support transaction signing");
       }
