@@ -21,7 +21,7 @@ export default function HeroSection() {
         <div className="main-container py-20 md:py-24 lg:py-[100px] mt-20">
           <motion.h1
             className={clsx(
-              "font-oxanium font-bold mb-4 title-text",
+              "font-oxanium font-bold mb-4 text-3xl md:title-text",
               "bg-gradient-to-b from-[#ED00FF] to-[#FFC3F9] bg-clip-text text-transparent leading-tight"
             )}
             initial={{ opacity: 0, y: 20 }}
@@ -34,7 +34,12 @@ export default function HeroSection() {
             Create Your Own BELPY
             <br />& Find New Universe
           </motion.h1>
-          <p className={clsx("text-white", "medium-text-container mb-8")}>
+          <p
+            className={clsx(
+              "text-white",
+              "text-xs md:medium-text-container mb-8"
+            )}
+          >
             The first limited collection of unique NFT tokens,
             <br />
             there are amazing adventure and exploration.
@@ -42,14 +47,14 @@ export default function HeroSection() {
 
           <div
             className={clsx(
-              "flex flex-col md:flex-row gap-5 sm:gap-8 justify-center items-center font-bold w-full mt-4 mb-20",
+              "flex flex-row gap-5 sm:gap-8 justify-center items-center font-bold w-full mt-4 mb-20",
               "text-sm sm:text-base md:text-lg lg:text-xl"
             )}
           >
             <Link href="/mint" className="w-full">
               <button
                 className={clsx(
-                  "w-full min-w-[200px] sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
+                  "w-full sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
                   "h-[48px] sm:h-[56px] md:h-[64px]",
                   "rounded-2xl bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
                   "shadow-lg hover:scale-105 transition"
@@ -60,7 +65,7 @@ export default function HeroSection() {
             </Link>
             <button
               className={clsx(
-                "w-full min-w-[200px] sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
+                "w-full sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
                 "h-[48px] sm:h-[56px] md:h-[64px]",
                 "rounded-2xl bg-[#E5CAFF] shadow-lg hover:scale-105 transition",
                 "border-2 border-[#8438CE] text-[#8438CE]"
