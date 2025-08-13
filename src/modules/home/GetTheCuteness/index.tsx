@@ -161,8 +161,8 @@ function DesktopCarousel() {
 
 export default function GetTheCuteness() {
   return (
-    <div className="relative">
-      <section className="main-container my-10 py-10 lg:py-32 w-full">
+    <div className="relative -mt-2 bg-white">
+      <section className="main-container py-20 lg:py-32 w-full">
         <div className="w-full flex flex-col items-stretch md:hidden">
           <h2
             className="font-bold text-[28px] xs:text-[34px] sm:text-[40px] mb-4

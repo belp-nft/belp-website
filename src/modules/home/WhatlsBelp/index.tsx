@@ -11,7 +11,7 @@ export default function WhatlsBelp() {
   return (
     <section
       className={clsx(
-        "relative text-center",
+        "relative text-center -mt-2 bg-white",
         "px-6 sm:px-10 md:px-20 lg:px-[224px] py-12 md:py-16 lg:py-[60px]"
       )}
       style={{
@@ -33,7 +33,7 @@ export default function WhatlsBelp() {
       >
         What is BELP
       </motion.h1>
-      <p className="mb-[92px] large-text-container">
+      <p className="mb-[92px] text-sm md:large-text-container">
         Meet Belp, the adorable Web3-born character that's taking the digital
         universe by storm. Born from the cosmic dreams of creators and the
         infinite imagination of the community.

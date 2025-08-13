@@ -10,6 +10,12 @@ import { LoadingProvider } from "@/providers/LoadingProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import clsx from "clsx";
 import { usePathname } from "next/navigation";
+import { Oxanium } from "next/font/google";
+
+const oxanium = Oxanium({
+  subsets: ["latin"],
+  variable: "--font-oxanium",
+});
 
 export default function RootLayoutClient({
   children,
@@ -20,7 +26,7 @@ export default function RootLayoutClient({
 
   return (
     <html lang="en">
-      <body className="font-gmarket antialiased">
+      <body className={clsx("font-gmarket antialiased", oxanium.variable)}>
         <LoadingProvider>
           <AuthProvider>
             <ConfigProvider>
