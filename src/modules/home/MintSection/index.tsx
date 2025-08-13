@@ -60,6 +60,7 @@ export default function MintSection() {
             width={400}
             height={300}
             priority
+            unoptimized
             className="w-full h-auto object-contain"
           />
         </div>
