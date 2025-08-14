@@ -31,7 +31,6 @@ export default function LorePage() {
             src="/images/lore/hero-background.svg"
             alt="Hero Background"
             fill
-            priority
             className="object-cover object-center"
             sizes="100vw"
             quality={85}
