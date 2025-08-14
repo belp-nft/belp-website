@@ -54,14 +54,14 @@ export function usePhantomProvider() {
       console.log("Loading user data...", { walletAddress });
 
       // Load user statistics
-      const statsResult = await UserService.getUserStatistics(walletAddress);
+      const statsResult = await UserService.getUserStatistics();
       if (statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
         console.log("User statistics loaded:", statsResult.data);
       }
 
       // Load transaction history
-      const txResult = await UserService.getTransactions(walletAddress, {
+      const txResult = await UserService.getTransactions({
         limit: 50,
       });
       if (txResult.success && txResult.data) {

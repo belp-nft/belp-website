@@ -52,14 +52,14 @@ export function useBackpackProvider() {
       console.log('📊 Loading user data for Backpack...', { walletAddress });
       
       // Load user statistics
-      const statsResult = await UserService.getUserStatistics(walletAddress);
+      const statsResult = await UserService.getUserStatistics();
       if (statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
         console.log('✅ User statistics loaded:', statsResult.data);
       }
 
       // Load transaction history
-      const txResult = await UserService.getTransactions(walletAddress, { limit: 50 });
+      const txResult = await UserService.getTransactions({ limit: 50 });
       if (txResult.success && txResult.data) {
         setTransactions(txResult.data);
         console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');

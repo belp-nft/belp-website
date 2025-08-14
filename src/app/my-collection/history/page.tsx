@@ -72,7 +72,7 @@ const HistoryPage = () => {
 
       console.log("📜 Loading transactions for:", solAddress);
 
-      const response = await UserService.getTransactions(solAddress);
+      const response = await UserService.getTransactions();
 
       if (response.success && response.data) {
         setTransactions(response.data);

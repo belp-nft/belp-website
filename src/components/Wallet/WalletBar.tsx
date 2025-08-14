@@ -1,23 +1,32 @@
 "use client";
-import { usePhantomProvider } from "@/hooks/usePhantomProvider";
-import { useSolanaBalance } from "@/hooks/useSolanaBalance";
+import { useWallet } from "@/hooks/useWallet";
 import WalletButton from "./WalletButton";
 
 export default function WalletBar() {
-  const { publicKey, isConnected, connect, disconnect } = usePhantomProvider();
-  const { sol, loading, error, refresh } = useSolanaBalance(publicKey);
+  const { 
+    solAddress, 
+    connectedWallet,
+    solBalanceText, 
+    loading, 
+    connectWallet, 
+    disconnect,
+    refreshSolBalance,
+    shorten 
+  } = useWallet();
+
+  const isConnected = !!solAddress;
+  const isLoadingBalance = loading === "sol-balance";
 
   return (
     <div className="flex items-center gap-4">
       <WalletButton
-        label={
-          isConnected && publicKey
-            ? `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`
-            : undefined
-        }
-        balance={sol || undefined}
+        label={isConnected ? shorten(solAddress) : undefined}
+        balance={solBalanceText !== "—" ? solBalanceText : undefined}
         onClick={() => {
-          if (!isConnected) connect();
+          if (!isConnected) {
+            // Default to phantom if available, otherwise show wallet selection
+            connectWallet("phantom");
+          }
         }}
       />
       {isConnected && (
@@ -28,14 +37,13 @@ export default function WalletBar() {
           Disconnect
         </button>
       )}
-      {loading && (
+      {isLoadingBalance && (
         <span className="text-xs text-gray-500 ml-2">Loading...</span>
       )}
-      {error && <span className="text-xs text-red-500 ml-2">{error}</span>}
       {isConnected && (
         <button
           className="text-xs px-2 py-1 ml-2 rounded bg-blue-100 hover:bg-blue-200 cursor-pointer"
-          onClick={refresh}
+          onClick={() => refreshSolBalance()}
         >
           Refresh
         </button>
