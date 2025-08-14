@@ -28,7 +28,7 @@ const PageLoading: React.FC<PageLoadingProps> = ({ size = "md" }) => {
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70">
-      <Image src="/loading.gif" alt="Loading" width={650} height={650} />
+      <Image unoptimized src="/loading.gif" alt="Loading" width={650} height={650} />
     </div>
   );
 };

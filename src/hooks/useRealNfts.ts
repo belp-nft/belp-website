@@ -28,7 +28,7 @@ export function useRealNfts(walletAddress?: string | null) {
       setSyncing(true);
       console.log("Loading NFTs from backend...", { walletAddress });
 
-      const result = await UserService.getNfts(walletAddress, { limit: 100 });
+      const result = await UserService.getNfts({ limit: 100 });
       if (result.success && result.data) {
         setBackendNfts(result.data);
         console.log("✅ Backend NFTs loaded:", result.data.length, "NFTs");
