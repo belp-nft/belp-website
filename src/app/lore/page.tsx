@@ -20,22 +20,29 @@ export default function LorePage() {
           objectFit: "cover",
           objectPosition: "center",
         }}
-        ref={(video) => {
-          if (video) {
-            video.playbackRate = 1.2;
-          }
-        }}
       >
-        <source src="/videos/bg-lore.mp4" type="video/mp4" />
+        <source src="/videos/bg-lore.webm" type="video/webm" />
       </video>
 
-      <div
-        className={clsx(
-          "relative z-20 min-h-screen top-36",
-          "bg-[url('/images/lore/hero-background.svg')] bg-no-repeat bg-cover bg-center"
-        )}
-      >
-        <HeroSection />
+      <div className="relative z-20 min-h-screen top-36">
+        {/* Optimized background image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/lore/hero-background.svg"
+            alt="Hero Background"
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
+            quality={85}
+            loading="lazy"
+          />
+        </div>
+
+        {/* Content layer */}
+        <div className="relative z-10">
+          <HeroSection />
+        </div>
       </div>
 
       <div className="relative z-20 bg-gradient-to-b from-pink-100 to-purple-100">
