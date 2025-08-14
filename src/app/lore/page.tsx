@@ -20,8 +20,13 @@ export default function LorePage() {
           objectFit: "cover",
           objectPosition: "center",
         }}
+        ref={(video) => {
+          if (video) {
+            video.playbackRate = 1.2;
+          }
+        }}
       >
-        <source src="/videos/bg-lore.webm" type="video/mp4" />
+        <source src="/videos/bg-lore.mp4" type="video/mp4" />
       </video>
 
       <div
