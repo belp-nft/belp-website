@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 
 const stories = [
@@ -25,6 +26,13 @@ const stories = [
 ];
 
 export default function OriginStorySection() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <section className="py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-pink-100 to-purple-100 mb-24">
       <div className="mx-auto">
@@ -35,10 +43,9 @@ export default function OriginStorySection() {
               "font-oxanium font-bold mb-4 title-text",
               "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
             )}
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             style={{
               fontFamily: "var(--font-oxanium)",
             }}
@@ -53,13 +60,12 @@ export default function OriginStorySection() {
             <motion.div
               key={story.id}
               className="text-center"
-              initial={{ opacity: 0, y: 100 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.3 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
               transition={{
-                duration: 0.8,
+                duration: 0.5,
                 ease: "easeOut",
-                delay: index * 0.2,
+                delay: index * 0.1,
               }}
             >
               {/* Story Image */}
@@ -67,9 +73,11 @@ export default function OriginStorySection() {
                 <div className="relative w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48">
                   <Image
                     src={story.image}
-                    alt={story.image}
+                    alt={`Story ${story.id}`}
                     fill
                     className="object-contain"
+                    loading="lazy"
+                    quality={75}
                   />
                 </div>
               </div>

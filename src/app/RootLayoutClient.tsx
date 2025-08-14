@@ -16,6 +16,8 @@ import { Oxanium } from "next/font/google";
 const oxanium = Oxanium({
   subsets: ["latin"],
   variable: "--font-oxanium",
+  display: "swap",
+  preload: true,
 });
 
 export default function RootLayoutClient({
