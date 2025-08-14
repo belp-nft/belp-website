@@ -89,48 +89,46 @@ export default function ConnectWallet({ className, onConnected }: Props) {
 
   return (
     <>
-      <div className="w-full relative inline-block">
-        <WalletButton
-          isOpen={showMenu}
-          label={label}
-          balance={solAddress ? solBalanceText : undefined}
-          onClick={() => {
-            if (solAddress) {
-              setShowMenu((prev) => !prev);
-            } else {
-              setOpen(true);
-              setShowMenu(false);
+      <WalletButton
+        isOpen={showMenu}
+        label={label}
+        balance={solAddress ? solBalanceText : undefined}
+        onClick={() => {
+          if (solAddress) {
+            setShowMenu((prev) => !prev);
+          } else {
+            setOpen(true);
+            setShowMenu(false);
+          }
+        }}
+        className={className}
+      />
+      {solAddress && showMenu && (
+        <div
+          ref={menuRef}
+          className="absolute right-0 mt-2 w-56 rounded-2xl bg-white shadow-xl border border-[#B6A3E6] z-50 p-3"
+        >
+          <a
+            href="/my-collection"
+            className={
+              `block px-2 py-2 rounded-lg transition cursor-pointer ` +
+              (pathname === "/my-collection"
+                ? "bg-[#F6F0FF] font-bold"
+                : "hover:bg-[#F6F0FF] font-medium")
             }
-          }}
-          className={className}
-        />
-        {solAddress && showMenu && (
-          <div
-            ref={menuRef}
-            className="absolute right-0 mt-2 w-56 rounded-2xl bg-white shadow-xl border border-[#B6A3E6] z-50 p-3"
+            onClick={() => setShowMenu(false)}
           >
-            <a
-              href="/my-collection"
-              className={
-                `block px-2 py-2 rounded-lg transition cursor-pointer ` +
-                (pathname === "/my-collection"
-                  ? "bg-[#F6F0FF] font-bold"
-                  : "hover:bg-[#F6F0FF] font-medium")
-              }
-              onClick={() => setShowMenu(false)}
-            >
-              My collection
-            </a>
-            <div className="my-2 border-t border-[#E3D6F6]" />
-            <button
-              className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium cursor-pointer"
-              onClick={handleDisconnect}
-            >
-              Disconnect
-            </button>
-          </div>
-        )}
-      </div>
+            My collection
+          </a>
+          <div className="my-2 border-t border-[#E3D6F6]" />
+          <button
+            className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium cursor-pointer"
+            onClick={handleDisconnect}
+          >
+            Disconnect
+          </button>
+        </div>
+      )}
 
       <WalletModal
         open={open}

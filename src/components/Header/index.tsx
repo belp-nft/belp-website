@@ -47,7 +47,7 @@ export default function BelpHeader() {
               exit={{ x: "-105%" }}
               transition={{ type: "spring", stiffness: 300, damping: 35 }}
               className={clsx(
-                "fixed top-0 left-0 h-full w-full max-w-[400px] bg-[#f6effb] z-[99] shadow-2xl",
+                "fixed top-0 left-0 h-full w-full sm:max-w-[400px] bg-[#f6effb] z-[99] shadow-2xl",
                 "border-r border-[#d3b0f7] flex flex-col"
               )}
               style={{ minHeight: "100dvh" }}
@@ -69,7 +69,7 @@ export default function BelpHeader() {
                   <MdClose size={28} />
                 </button>
               </div>
-              <div className="flex flex-col items-center mt-4 mb-5">
+              <div className="flex items-center justify-center my-5 w-full">
                 <ConnectWallet
                   onConnected={(info) => console.log("Connected:", info)}
                 />
