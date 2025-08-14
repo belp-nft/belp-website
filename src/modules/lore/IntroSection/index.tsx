@@ -64,7 +64,7 @@ export default function IntroSection() {
             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
           >
             {/* Icon and Title */}
-            <div className="flex items-end gap-4 mb-6 lg:mb-8">
+            <div className="flex items-end justify-center lg:justify-end gap-4 mb-6 lg:mb-8">
               <div className="relative w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] md:w-[157px] lg:h-[157px] flex-shrink-0">
                 <Image
                   src="/images/lore/intro-cat.svg"
@@ -94,40 +94,29 @@ export default function IntroSection() {
             {/* Description */}
             <div className="space-y-4">
               <motion.p
-                className="text-gray-700 text-sm sm:text-base lg:text-lg leading-relaxed text-center sm:text-left"
+                className="text-sm sm:text-base lg:text-lg leading-relaxed text-center lg:text-end"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, amount: 0.3 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
               >
-                Meet the adorable characters that live in Belpy World! Each one
-                has their own unique personality and special abilities that make
-                them perfect companions for any adventure.
+                Born out of creative rebellion and feline mischief, Belpy wasn't
+                just another cute collectible. She represented a new movement —
+                one that champions{" "}
+                <span className="font-bold">
+                  creativity, comfort, humor, and internet-native storytelling.
+                </span>
               </motion.p>
 
               <motion.p
-                className="text-gray-700 text-sm sm:text-base lg:text-lg leading-relaxed text-center sm:text-left"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: false, amount: 0.3 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-              >
-                From the playful purple cats to the wise rainbow friends,
-                discover the magical world where friendship and wonder never
-                end. Every character has a story to tell and dreams to share
-                with you!
-              </motion.p>
-
-              <motion.p
-                className="text-gray-700 text-sm sm:text-base lg:text-lg leading-relaxed text-center sm:text-left"
+                className="text-sm sm:text-base lg:text-lg leading-relaxed text-center lg:text-end"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: false, amount: 0.3 }}
                 transition={{ duration: 0.6, delay: 1.0 }}
               >
-                Join us in this incredible journey through Belpy World, where
-                every day brings new surprises and endless possibilities for fun
-                and friendship.
+                BELP is the counterpunch from the cat kingdom, a cultural
+                uprising built on warmth, weirdness, and Web3 tech.
               </motion.p>
             </div>
           </motion.div>

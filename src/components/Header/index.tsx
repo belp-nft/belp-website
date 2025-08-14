@@ -8,7 +8,6 @@ import {
   MdHome,
   MdShoppingBag,
   MdDescription,
-  MdGridView,
   MdClose,
   MdMenu,
   MdSmartButton,
@@ -20,7 +19,11 @@ const menu = [
   { label: "HOME", href: "/", icon: <MdHome size={22} /> },
   { label: "MINT", href: "/mint", icon: <MdSmartButton size={22} /> },
   { label: "LORE", href: "/lore", icon: <MdShoppingBag size={22} /> },
-  { label: "DOC", href: "/doc", icon: <MdDescription size={22} /> },
+  {
+    label: "DOC",
+    href: "https://maindocs.gitbook.io/belp/documentation",
+    icon: <MdDescription size={22} />,
+  },
 ];
 
 export default function BelpHeader() {
@@ -95,6 +98,12 @@ export default function BelpHeader() {
                         <Link
                           href={item.href}
                           onClick={() => setOpen(false)}
+                          target={item.label === "DOC" ? "_blank" : undefined}
+                          rel={
+                            item.label === "DOC"
+                              ? "noopener noreferrer"
+                              : undefined
+                          }
                           className={clsx(
                             "flex items-center gap-3 py-2 px-2 rounded-lg font-semibold uppercase tracking-wider text-[18px]",
                             isActive
@@ -169,6 +178,10 @@ export default function BelpHeader() {
                 <li key={item.label}>
                   <Link
                     href={item.href}
+                    target={item.label === "DOC" ? "_blank" : undefined}
+                    rel={
+                      item.label === "DOC" ? "noopener noreferrer" : undefined
+                    }
                     className={clsx(
                       "uppercase text-[16px] lg:text-[20px] xl:text-[24px] font-bold tracking-[.08em] transition-all duration-150 px-1 bg-gradient-to-b from-[#a44bfd] to-[#1C007C] bg-clip-text text-transparent",
                       clsx(
