@@ -2,6 +2,7 @@
 
 import BreadCrumbs from "@/components/Breadcrumb";
 import { useWallet } from "@/hooks/useWallet";
+import { useLoading } from "@/providers/LoadingProvider";
 import { UserService } from "@/services/userService";
 import { NftService } from "@/services/nftService";
 import { BLOCKCHAIN_CONFIG } from "@/services";
@@ -14,9 +15,9 @@ import { useState, useEffect } from "react";
 
 const HistoryPage = () => {
   const { solAddress, userStatistics } = useWallet();
+  const { showLoading, hideLoading } = useLoading();
   const [backendNfts, setBackendNfts] = useState<NFT[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(10);
@@ -91,9 +92,8 @@ const HistoryPage = () => {
   // Auto-refresh backend data khi có wallet address
   useEffect(() => {
     if (solAddress) {
-      setLoading(true);
       Promise.all([loadBackendNfts(), loadTransactions()]).finally(() => {
-        setLoading(false);
+        hideLoading();
       });
     } else {
       // Reset data khi không có wallet
@@ -129,74 +129,6 @@ const HistoryPage = () => {
   }
 
   const visibleData = sortedData.slice(0, visible);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f8f4ff] via-white to-[#f0e6ff]">
-        <div className="text-center">
-          {/* Simple History Icon */}
-          <motion.div
-            className="relative w-20 h-20 mx-auto mb-8"
-            animate={{
-              rotate: [0, 360],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#F356FF] to-[#AE4DCE] p-1">
-              <div className="w-full h-full bg-white rounded-xl flex items-center justify-center">
-                <motion.span
-                  className="text-2xl"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  📋
-                </motion.span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Clean text */}
-          <motion.h2
-            className="text-2xl font-bold text-[#2b1a5e] mb-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Loading History
-          </motion.h2>
-
-          {/* Loading dots */}
-          <div className="flex justify-center gap-1">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 bg-[#7A4BD6] rounded-full"
-                animate={{
-                  y: [0, -8, 0],
-                }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  delay: i * 0.15,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#ede9f6] py-8">

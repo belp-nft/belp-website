@@ -38,7 +38,6 @@ const MyCollectionPage = () => {
       }
 
       try {
-        showLoading();
         setError(null);
         console.log("🖼️ Loading NFTs for wallet:", solAddress);
 
