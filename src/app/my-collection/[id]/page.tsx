@@ -18,7 +18,7 @@ const NftDetailPage = () => {
   const [nft, setNft] = useState<NFT | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { hideLoading } = useLoading();
+  const { showLoading, hideLoading } = useLoading();
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
@@ -39,6 +39,7 @@ const NftDetailPage = () => {
       }
 
       try {
+        showLoading();
         setError(null);
         console.log("🖼️ Loading NFT details for:", id);
 
@@ -61,7 +62,7 @@ const NftDetailPage = () => {
     };
 
     loadNftDetails();
-  }, [id]);
+  }, [id, showLoading, hideLoading]);
 
   if (error || !nft) {
     return (
@@ -107,18 +108,16 @@ const NftDetailPage = () => {
         </motion.h1>
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Left: Image + Info */}
-          <div className="flex flex-col gap-4 w-full md:w-[340px]">
-            <div className="rounded-2xl border-2 border-[#7a4bd6] bg-black/80 p-2 w-full h-[320px] flex items-center justify-center shadow-lg">
-              <Image
-                src={nft.imageUrl}
-                alt={nft.name}
-                width={260}
-                height={260}
-                className="rounded-xl object-contain"
-              />
-            </div>
+          <div className="flex flex-col gap-4 w-full md:w-[340px] items-center">
+            <Image
+              src={nft.imageUrl}
+              alt={nft.name}
+              width={260}
+              height={260}
+              className="rounded-xl object-contain w-full"
+            />
             {/* Backstory */}
-            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2">
+            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2 w-full">
               <HiOutlineInformationCircle size={20} />
               <div>
                 <div className="font-bold mb-1">Backstory</div>
@@ -185,23 +184,23 @@ const NftDetailPage = () => {
                 Trait
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {/* Show some default traits for minted NFTs */}
-                {[
-                  { label: "TYPE", value: "Genesis BELPY" },
-                  { label: "RARITY", value: "Common" },
-                  { label: "SPECIAL", value: "Minted" },
-                  { label: "NETWORK", value: "Solana" },
-                ].map((trait) => (
-                  <div
-                    key={trait.label}
-                    className="bg-white rounded-lg px-3 py-2 text-sm flex flex-col items-start border border-[#e9defd]"
-                  >
-                    <span className="text-[#d3c0e4] font-semibold mb-1">
-                      {trait.label}
-                    </span>
-                    <span className="text-base">{trait.value}</span>
+                {nft.attributes
+                  ?.filter((i: any) => i.value.toLowerCase() !== "none")
+                  ?.map((trait: any) => (
+                    <div
+                      key={trait.trait_type}
+                      className="bg-white rounded-lg px-3 pt-2 pb-1 text-sm flex flex-col items-start border border-[#e9defd]"
+                    >
+                      <p className="text-[#d3c0e4] font-semibold mb-[6px]">
+                        {trait.trait_type}
+                      </p>
+                      <span className="text-base">{trait.value}</span>
+                    </div>
+                  )) || (
+                  <div className="col-span-full text-center text-gray-500">
+                    No traits available
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
