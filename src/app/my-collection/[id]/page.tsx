@@ -10,17 +10,15 @@ import type { NFT } from "@/services/types";
 import { BiStar } from "react-icons/bi";
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import {
-  HiInformationCircle,
-  HiOutlineInformationCircle,
-  HiViewGrid,
-} from "react-icons/hi";
+import { HiOutlineInformationCircle, HiViewGrid } from "react-icons/hi";
+import { useLoading } from "@/providers/LoadingProvider";
 
 const NftDetailPage = () => {
   const { id } = useParams();
   const [nft, setNft] = useState<NFT | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { hideLoading } = useLoading();
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
@@ -36,12 +34,11 @@ const NftDetailPage = () => {
   useEffect(() => {
     const loadNftDetails = async () => {
       if (!id || typeof id !== "string") {
-        setLoading(false);
+        hideLoading();
         return;
       }
 
       try {
-        setLoading(true);
         setError(null);
         console.log("🖼️ Loading NFT details for:", id);
 
@@ -59,80 +56,12 @@ const NftDetailPage = () => {
         setError(err instanceof Error ? err.message : "Unknown error");
         setNft(null);
       } finally {
-        setLoading(false);
+        hideLoading();
       }
     };
 
     loadNftDetails();
   }, [id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f8f4ff] via-white to-[#f0e6ff]">
-        <div className="text-center">
-          {/* Clean NFT Frame */}
-          <motion.div
-            className="relative w-24 h-24 mx-auto mb-8"
-            animate={{
-              rotate: [0, 360],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#F356FF] to-[#AE4DCE] p-1">
-              <div className="w-full h-full bg-white rounded-xl flex items-center justify-center">
-                <motion.span
-                  className="text-3xl"
-                  animate={{
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  🖼️
-                </motion.span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Simple text */}
-          <motion.h2
-            className="text-2xl font-bold text-[#2b1a5e] mb-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Loading NFT
-          </motion.h2>
-
-          {/* Loading dots */}
-          <div className="flex justify-center gap-1">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 bg-[#7A4BD6] rounded-full"
-                animate={{
-                  y: [0, -8, 0],
-                }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  delay: i * 0.15,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (error || !nft) {
     return (
