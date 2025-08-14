@@ -54,10 +54,10 @@ export default function Roadmap() {
           >
             Road map
           </motion.h2>
-          <div className="text-[#411A7A] text-responsive-lg font-medium mb-5 text-center">
+          <div className="font-medium mb-5 text-center">
             The Expanding BELPY Universe
           </div>
-          <div className="text-[#401B79] text-responsive mb-16 text-center">
+          <div className="mb-16 text-center">
             BELPY NFTs are your key to a growing Web3 ecosystem where digital
             culture meets real-world experiences
           </div>
@@ -92,9 +92,7 @@ export default function Roadmap() {
                   <span className="font-bold text-[#401B79] text-lg md:text-xl">
                     {item.label}
                   </span>
-                  <div className="text-[#431b73] text-sm md:text-base font-medium">
-                    {item.desc}
-                  </div>
+                  <div className="text-[#431b73] font-medium">{item.desc}</div>
                 </div>
                 {item.icon && (
                   <motion.div

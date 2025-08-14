@@ -6,6 +6,11 @@ import { LoadingKind } from "@/hooks/useWallet";
 type Props = {
   open: boolean;
   onClose: () => void;
+  title?: string;
+  subtitle?: string;
+  showGoHomeButton?: boolean;
+  goHomeButtonText?: string;
+  onGoHome?: () => void;
   hasPhantom: boolean;
   hasSolflare?: boolean;
   hasBackpack?: boolean;
@@ -22,6 +27,11 @@ type Props = {
 export default function WalletModal({
   open,
   onClose,
+  title = "Connect wallet",
+  subtitle = "Choose a wallet provider to continue.",
+  showGoHomeButton = false,
+  goHomeButtonText = "Go to Home",
+  onGoHome,
   hasPhantom,
   hasSolflare,
   hasBackpack,
@@ -55,12 +65,8 @@ export default function WalletModal({
             aria-modal="true"
           >
             <div className="mb-4">
-              <h3 className="text-[#411A7A] text-xl font-extrabold">
-                Connect wallet
-              </h3>
-              <p className="text-[#6B6475] text-sm">
-                Choose a wallet provider to continue.
-              </p>
+              <h3 className="text-[#411A7A] text-xl font-extrabold">{title}</h3>
+              <p className="text-[#6B6475] text-sm">{subtitle}</p>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -105,6 +111,18 @@ export default function WalletModal({
                 installedHint={hasOKX ? null : "Install"}
               />
             </div>
+
+            {/* Go to Home Button */}
+            {showGoHomeButton && onGoHome && (
+              <div className="mt-4 pt-3 border-t border-[#E3D6F6]">
+                <button
+                  onClick={onGoHome}
+                  className="w-full py-2.5 px-4 rounded-lg border border-[#d9c2ff] bg-white text-[#6B6475] hover:bg-[#f6effb] hover:text-[#411A7A] transition-colors text-sm font-medium"
+                >
+                  {goHomeButtonText}
+                </button>
+              </div>
+            )}
           </motion.div>
         </>
       )}

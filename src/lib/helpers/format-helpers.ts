@@ -6,10 +6,10 @@ export function formatNumber(
 ): string {
   if (!number) return "0";
 
+  let cleanNumber = number.toString().replace(/,/g, ".");
+
   return new Intl.NumberFormat("en", {
     maximumFractionDigits,
-
-    // @ts-ignore
-    roundingMode: "floor",
-  }).format(parseFloat(number as string));
+    minimumFractionDigits: 0,
+  }).format(parseFloat(cleanNumber));
 }

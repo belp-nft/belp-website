@@ -93,6 +93,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
         isOpen={showMenu}
         label={label}
         balance={solAddress ? solBalanceText : undefined}
+        loadingBalance={loading === "sol-balance"}
         onClick={() => {
           if (solAddress) {
             setShowMenu((prev) => !prev);

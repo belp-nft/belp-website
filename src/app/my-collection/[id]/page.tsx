@@ -10,17 +10,15 @@ import type { NFT } from "@/services/types";
 import { BiStar } from "react-icons/bi";
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import {
-  HiInformationCircle,
-  HiOutlineInformationCircle,
-  HiViewGrid,
-} from "react-icons/hi";
+import { HiOutlineInformationCircle, HiViewGrid } from "react-icons/hi";
+import { useLoading } from "@/providers/LoadingProvider";
 
 const NftDetailPage = () => {
   const { id } = useParams();
   const [nft, setNft] = useState<NFT | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { showLoading, hideLoading } = useLoading();
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
@@ -36,12 +34,12 @@ const NftDetailPage = () => {
   useEffect(() => {
     const loadNftDetails = async () => {
       if (!id || typeof id !== "string") {
-        setLoading(false);
+        hideLoading();
         return;
       }
 
       try {
-        setLoading(true);
+        showLoading();
         setError(null);
         console.log("🖼️ Loading NFT details for:", id);
 
@@ -59,80 +57,12 @@ const NftDetailPage = () => {
         setError(err instanceof Error ? err.message : "Unknown error");
         setNft(null);
       } finally {
-        setLoading(false);
+        hideLoading();
       }
     };
 
     loadNftDetails();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f8f4ff] via-white to-[#f0e6ff]">
-        <div className="text-center">
-          {/* Clean NFT Frame */}
-          <motion.div
-            className="relative w-24 h-24 mx-auto mb-8"
-            animate={{
-              rotate: [0, 360],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#F356FF] to-[#AE4DCE] p-1">
-              <div className="w-full h-full bg-white rounded-xl flex items-center justify-center">
-                <motion.span
-                  className="text-3xl"
-                  animate={{
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  🖼️
-                </motion.span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Simple text */}
-          <motion.h2
-            className="text-2xl font-bold text-[#2b1a5e] mb-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Loading NFT
-          </motion.h2>
-
-          {/* Loading dots */}
-          <div className="flex justify-center gap-1">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 bg-[#7A4BD6] rounded-full"
-                animate={{
-                  y: [0, -8, 0],
-                }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  delay: i * 0.15,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [id, showLoading, hideLoading]);
 
   if (error || !nft) {
     return (
@@ -178,18 +108,16 @@ const NftDetailPage = () => {
         </motion.h1>
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Left: Image + Info */}
-          <div className="flex flex-col gap-4 w-full md:w-[340px]">
-            <div className="rounded-2xl border-2 border-[#7a4bd6] bg-black/80 p-2 w-full h-[320px] flex items-center justify-center shadow-lg">
-              <Image
-                src={nft.imageUrl}
-                alt={nft.name}
-                width={260}
-                height={260}
-                className="rounded-xl object-contain"
-              />
-            </div>
+          <div className="flex flex-col gap-4 w-full md:w-[340px] items-center">
+            <Image
+              src={nft.imageUrl}
+              alt={nft.name}
+              width={260}
+              height={260}
+              className="rounded-xl object-contain w-full"
+            />
             {/* Backstory */}
-            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2">
+            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2 w-full">
               <HiOutlineInformationCircle size={20} />
               <div>
                 <div className="font-bold mb-1">Backstory</div>
@@ -256,23 +184,23 @@ const NftDetailPage = () => {
                 Trait
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {/* Show some default traits for minted NFTs */}
-                {[
-                  { label: "TYPE", value: "Genesis BELPY" },
-                  { label: "RARITY", value: "Common" },
-                  { label: "SPECIAL", value: "Minted" },
-                  { label: "NETWORK", value: "Solana" },
-                ].map((trait) => (
-                  <div
-                    key={trait.label}
-                    className="bg-white rounded-lg px-3 py-2 text-sm flex flex-col items-start border border-[#e9defd]"
-                  >
-                    <span className="text-[#d3c0e4] font-semibold mb-1">
-                      {trait.label}
-                    </span>
-                    <span className="text-base">{trait.value}</span>
+                {nft.attributes
+                  ?.filter((i: any) => i.value.toLowerCase() !== "none")
+                  ?.map((trait: any) => (
+                    <div
+                      key={trait.trait_type}
+                      className="bg-white rounded-lg px-3 pt-2 pb-1 text-sm flex flex-col items-start border border-[#e9defd]"
+                    >
+                      <p className="text-[#d3c0e4] font-semibold mb-[6px]">
+                        {trait.trait_type}
+                      </p>
+                      <span className="text-base">{trait.value}</span>
+                    </div>
+                  )) || (
+                  <div className="col-span-full text-center text-gray-500">
+                    No traits available
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

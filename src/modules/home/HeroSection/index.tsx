@@ -21,7 +21,7 @@ export default function HeroSection() {
         <div className="main-container py-10 sm:py-20 md:py-24 lg:py-[100px] mt-20">
           <motion.h1
             className={clsx(
-              "font-oxanium font-bold mb-4 text-4xl md:text-5xl md:title-text",
+              "font-oxanium font-bold mb-4 text-4xl md:text-6xl md:title-text",
               "bg-gradient-to-b from-[#ED00FF] to-[#FFC3F9] bg-clip-text text-transparent leading-tight"
             )}
             initial={{ opacity: 0, y: 20 }}
@@ -35,10 +35,7 @@ export default function HeroSection() {
             <br />& Find New Universe
           </motion.h1>
           <p
-            className={clsx(
-              "text-white",
-              "text-xs md:medium-text-container mb-8"
-            )}
+            className={clsx("text-white", "text-sm md:text-responsive-lg mb-8")}
           >
             The first limited collection of unique NFT tokens,
             <br />

@@ -6,7 +6,6 @@
 // Log để kiểm tra biến môi trường trong quá trình build và runtime
 console.log("🔧 Environment Variables Check:");
 console.log("- NEXT_PUBLIC_API_URI:", process.env.NEXT_PUBLIC_API_URI);
-console.log("- NEXT_PUBLIC_SOLANA_RPC:", process.env.NEXT_PUBLIC_SOLANA_RPC);
 console.log("- NODE_ENV:", process.env.NODE_ENV);
 
 /**
@@ -34,7 +33,7 @@ export const API_CONFIG = {
 export const BLOCKCHAIN_CONFIG = {
   // Solana RPC endpoint
   SOLANA_RPC:
-    process.env.NEXT_PUBLIC_SOLANA_RPC || "https://api.devnet.solana.com",
+    process.env.NODE_ENV === "production" ? "https://api.mainnet-beta.solana.com" : "https://api.devnet.solana.com",
 
   // Network type
   NETWORK: process.env.NODE_ENV === "production" ? "mainnet" : "devnet",
