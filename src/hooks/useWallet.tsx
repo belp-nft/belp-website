@@ -7,6 +7,7 @@ import {
   AuthService,
   NftService,
   ConfigService,
+  BLOCKCHAIN_CONFIG,
 } from "@/services";
 import { useConfigActions } from "@/stores/config";
 import { useLoading } from "@/providers/LoadingProvider";
@@ -58,8 +59,6 @@ export interface WalletConfig {
   getProvider: () => any;
   isAvailable: () => boolean;
 }
-
-const SOLANA_RPC = "https://api.devnet.solana.com";
 
 const WALLET_CONFIGS: Record<WalletType, WalletConfig> = {
   phantom: {
@@ -167,23 +166,6 @@ const WALLET_CONFIGS: Record<WalletType, WalletConfig> = {
   },
 };
 
-async function getSolBalanceLamports(address: string): Promise<number> {
-  const body = {
-    jsonrpc: "2.0",
-    id: 1,
-    method: "getBalance",
-    params: [address, { commitment: "processed" }],
-  };
-  const res = await fetch(SOLANA_RPC, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json();
-  if (json?.error) throw new Error(json.error?.message || "RPC error");
-  return json?.result?.value ?? 0;
-}
-
 function formatSol(lamports: number): string {
   const sol = lamports / 1_000_000_000;
   return sol.toLocaleString(undefined, {
@@ -236,15 +218,37 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       if (!target) return;
       try {
         setLoading("sol-balance");
-        const lamports = await getSolBalanceLamports(target);
-        setSolLamports(lamports);
-      } catch {
+        
+        // Use the new API method if authenticated
+        if (authToken && AuthService.isTokenValid()) {
+          console.log("💰 Using API to fetch wallet balance...");
+          const balanceResult = await UserService.getWalletBalance();
+          if (balanceResult.success && balanceResult.data) {
+            // Check for different possible response structures
+            const lamports = balanceResult.data.lamports || 
+                           balanceResult.data.balance || 
+                           balanceResult.data.solBalance ||
+                           0;
+            setSolLamports(lamports);
+            console.log("✅ Balance loaded from API:", lamports);
+          } else {
+            // If API fails, set to 0
+            console.warn("API balance fetch failed:", balanceResult.message || "Unknown error");
+            setSolLamports(0);
+          }
+        } else {
+          // When not authenticated, set balance to 0 (user needs to login to see balance)
+          console.log("Not authenticated, setting balance to 0");
+          setSolLamports(0);
+        }
+      } catch (error) {
+        console.error("Failed to refresh SOL balance:", error);
         setSolLamports(0);
       } finally {
         setLoading((l) => (l === "sol-balance" ? null : l));
       }
     },
-    [solAddress]
+    [solAddress, authToken]
   );
 
   // Load transactions with caching and debouncing
@@ -612,8 +616,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         console.log("Loading wallet balance...");
         setTimeout(async () => {
           try {
-            const lamports = await getSolBalanceLamports(addr);
-            setSolLamports(lamports);
+            // Trigger balance refresh which will use the API if authenticated
+            await refreshSolBalance(addr);
           } catch {
             setSolLamports(0);
           }

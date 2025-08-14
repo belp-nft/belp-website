@@ -23,6 +23,7 @@ export class UserService extends BaseService {
     NFT: "/api/user/nft",
     STATISTICS: "/api/user/statistics",
     OVERVIEW_STATISTICS: "/api/user/statistics/overview",
+    BALANCE: "/api/user/balance",
   };
   /**
    * 1. Kết nối ví (Public) - POST /api/user/connect
@@ -201,6 +202,27 @@ export class UserService extends BaseService {
       return result;
     } catch (error) {
       console.error("❌ Failed to delete transactions:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 10. Lấy Solana balance của wallet - GET /api/user/balance
+   */
+  static async getWalletBalance(): Promise<ApiResponse<any>> {
+    try {
+      console.log("💰 Fetching wallet balance...");
+
+      const result = await this.get<any>(
+        this.ENDPOINTS.BALANCE,
+        undefined,
+        true // Requires auth
+      );
+
+      console.log("✅ Wallet balance fetched:", result);
+      return result;
+    } catch (error) {
+      console.error("❌ Failed to get wallet balance:", error);
       throw error;
     }
   }
