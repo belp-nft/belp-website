@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import UserInfo from "@/modules/my-collection//UserInfo";
@@ -10,6 +11,7 @@ import type { NFT } from "@/services/types";
 import NftGrid from "@/modules/my-collection//NftGrid";
 import { useLoading } from "@/providers/LoadingProvider";
 import { useCollectionAddress } from "@/stores/config";
+import { themeClasses } from "@/providers/ThemeProvider";
 
 const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -29,7 +31,6 @@ const MyCollectionPage = () => {
     router.push("/my-collection/history");
   };
 
-  // Load NFTs từ service
   useEffect(() => {
     const loadNfts = async () => {
       if (!solAddress) {
@@ -62,7 +63,7 @@ const MyCollectionPage = () => {
   }, [solAddress, showLoading, hideLoading]);
 
   return (
-    <main className="min-h-screen">
+    <main className={clsx("min-h-screen", themeClasses.bg.page)}>
       <section className="relative w-full h-[414px] overflow-hidden">
         <Image
           src="/images/my-collection/collection-banner.png"
@@ -84,17 +85,27 @@ const MyCollectionPage = () => {
 
       <section className="main-container pt-5 md:pt-10 pb-20">
         {totalCount === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎨</div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+          <div className="text-center flex flex-col items-center pb-12">
+            <Image
+              src="/images/mint/random-cat.svg"
+              width={200}
+              height={200}
+              alt="Random Cat"
+              className="opacity-50"
+            />
+
+            <h3 className={clsx("text-xl font-semibold my-2")}>
               No NFTs in your collection yet
             </h3>
-            <p className="text-gray-600 mb-6">
-              Start minting some BELPY NFTs to see them here!
+            <p className={clsx("mb-6")}>
+              Collect your first BELPY and watch your gallery grow.
             </p>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl cursor-pointer"
+              className={clsx(
+                "px-6 py-3 font-semibold rounded-2xl cursor-pointer",
+                themeClasses.button.gradient
+              )}
               onClick={() => (window.location.href = "/mint")}
             >
               Mint Your First BELPY
@@ -112,7 +123,10 @@ const MyCollectionPage = () => {
               <div className="flex justify-center py-8">
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-primary-accent font-semibold shadow-md hover:shadow-lg transition cursor-pointer"
+                  className={clsx(
+                    "px-8 py-3 rounded-2xl font-semibold shadow-md hover:shadow-lg transition cursor-pointer",
+                    themeClasses.button.accent
+                  )}
                   onClick={() =>
                     setVisible((v) => Math.min(v + 20, totalCount))
                   }

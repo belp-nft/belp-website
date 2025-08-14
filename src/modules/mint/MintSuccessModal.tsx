@@ -3,6 +3,7 @@
 import React from "react";
 import clsx from "clsx";
 import Modal from "@/components/Modal";
+import { motion } from "framer-motion";
 
 interface MintSuccessModalProps {
   isOpen: boolean;
@@ -53,9 +54,20 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
         </div>
 
         <div className="text-center">
-          <h3 className="text-xl font-bold text-gray-800 mb-2">
+          <motion.h1
+            className={clsx(
+              "font-oxanium font-bold mb-4 text-3xl md:title-text",
+              "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
+            )}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            style={{
+              fontFamily: "var(--font-oxanium)",
+            }}
+          >
             BELPY {mintedNftId}
-          </h3>
+          </motion.h1>
           <div
             className={clsx(
               "inline-block bg-gradient-to-r from-[#F356FF] to-[#AE4DCE]",

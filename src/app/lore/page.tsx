@@ -5,7 +5,6 @@ import OriginStorySection from "@/modules/lore/OriginStorySection";
 import IntroSection from "@/modules/lore/IntroSection";
 import MissionSection from "@/modules/lore/MissionSection";
 import BelpFooter from "@/components/Footer";
-import clsx from "clsx";
 
 export default function LorePage() {
   return (
@@ -39,7 +38,7 @@ export default function LorePage() {
         </div>
 
         {/* Content layer */}
-        <div className="relative z-10">
+        <div className="relative z-10 bottom-20 md:bottom-10">
           <HeroSection />
         </div>
       </div>

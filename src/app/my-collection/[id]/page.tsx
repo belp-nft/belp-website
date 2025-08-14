@@ -9,6 +9,12 @@ import { BLOCKCHAIN_CONFIG } from "@/services";
 import type { NFT } from "@/services/types";
 import { BiStar } from "react-icons/bi";
 import { motion } from "framer-motion";
+import clsx from "clsx";
+import {
+  HiInformationCircle,
+  HiOutlineInformationCircle,
+  HiViewGrid,
+} from "react-icons/hi";
 
 const NftDetailPage = () => {
   const { id } = useParams();
@@ -19,7 +25,6 @@ const NftDetailPage = () => {
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
 
-    // Detect network (mainnet or devnet based on environment)
     const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
 
     const url = `https://solscan.io/token/${tokenAddress}${
@@ -28,7 +33,6 @@ const NftDetailPage = () => {
     window.open(url, "_blank");
   };
 
-  // Load NFT details từ service
   useEffect(() => {
     const loadNftDetails = async () => {
       if (!id || typeof id !== "string") {
@@ -157,9 +161,21 @@ const NftDetailPage = () => {
             { label: "NFT details" },
           ]}
         />
-        <h1 className="mt-6 mb-4 text-[2rem] font-extrabold text-[#6c3ad6] tracking-tight">
+
+        <motion.h1
+          className={clsx(
+            "font-oxanium font-bold mb-4 mt-5 text-3xl md:text-5xl md:title-text",
+            "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
+          )}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          style={{
+            fontFamily: "var(--font-oxanium)",
+          }}
+        >
           {nft.name}
-        </h1>
+        </motion.h1>
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Left: Image + Info */}
           <div className="flex flex-col gap-4 w-full md:w-[340px]">
@@ -174,19 +190,10 @@ const NftDetailPage = () => {
             </div>
             {/* Backstory */}
             <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="#7a4bd6"
-                  strokeWidth="2"
-                />
-                <path d="M12 8v4l3 1" stroke="#7a4bd6" strokeWidth="2" />
-              </svg>
+              <HiOutlineInformationCircle size={20} />
               <div>
-                <div className="font-bold text-[#2b1a5e] mb-1">Backstory</div>
-                <div className="text-[#7466a1] text-sm leading-relaxed">
+                <div className="font-bold mb-1">Backstory</div>
+                <div className="leading-relaxed">
                   {nft.description ||
                     `${nft.name} was born under the Moon of Whisker Hollow. Known
                   for its mysterious glow and trickster nature, this BELPY has a
@@ -197,34 +204,28 @@ const NftDetailPage = () => {
 
             {/* Blockchain details */}
             <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2 w-full">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                <rect
-                  x="4"
-                  y="4"
-                  width="16"
-                  height="16"
-                  rx="2"
-                  stroke="#7a4bd6"
-                  strokeWidth="2"
-                />
-                <path d="M8 8h8v8H8z" stroke="#7a4bd6" strokeWidth="2" />
-              </svg>
+              <HiViewGrid size={20} />
               <div className="flex-1">
-                <div className="font-bold text-[#2b1a5e] mb-1">
-                  Blockchain details
-                </div>
-                <div className="text-[#7466a1] text-sm space-y-1">
+                <div className="font-bold mb-1">Blockchain details</div>
+                <div className="text-sm space-y-1">
                   <div className="flex justify-between">
                     <strong>Token ID</strong> {nft.name}
                   </div>
-                  <div className="flex justify-between">
-                    <strong>Token Address</strong>
+                  <div className="flex justify-between gap-2">
+                    <strong className="text-nowrap">Token Address</strong>
                     <span
                       className="cursor-pointer hover:text-[#7A4BD6] transition-colors"
                       onClick={() => openTokenOnSolscan(nft.nftAddress)}
                       title="View token on Solscan"
                     >
-                      {nft.nftAddress.slice(0, 8)}...{nft.nftAddress.slice(-8)}
+                      <span className="sm:hidden">
+                        {nft.nftAddress.slice(0, 4)}...
+                        {nft.nftAddress.slice(-4)}
+                      </span>
+                      <span className="hidden sm:inline">
+                        {nft.nftAddress.slice(0, 8)}...
+                        {nft.nftAddress.slice(-8)}
+                      </span>
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -250,7 +251,7 @@ const NftDetailPage = () => {
               GENESIS BELPY !
             </button>
             <div className="bg-[#E3CEF6] rounded-xl p-4">
-              <div className="font-bold text-[#2b1a5e] mb-2 flex items-center gap-2 text-base">
+              <div className="font-bold mb-2 flex items-center gap-2 text-base">
                 <BiStar />
                 Trait
               </div>
@@ -266,12 +267,10 @@ const NftDetailPage = () => {
                     key={trait.label}
                     className="bg-white rounded-lg px-3 py-2 text-sm flex flex-col items-start border border-[#e9defd]"
                   >
-                    <span className="text-[#6c5a99] font-semibold mb-1">
+                    <span className="text-[#d3c0e4] font-semibold mb-1">
                       {trait.label}
                     </span>
-                    <span className="font-bold text-[#7a4bd6] text-base">
-                      {trait.value}
-                    </span>
+                    <span className="text-base">{trait.value}</span>
                   </div>
                 ))}
               </div>

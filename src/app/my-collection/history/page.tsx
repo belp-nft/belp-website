@@ -267,11 +267,11 @@ const HistoryPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              <h3 className="text-xl font-semibold mb-2">
                 No transaction history
               </h3>
-              <p className="text-gray-600 mb-6">
-                Start minting NFTs to see your transaction history!
+              <p className="mb-6">
+                Collect your first BELPY and watch your gallery grow.
               </p>
               <motion.button
                 whileTap={{ scale: 0.95 }}

@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/**/*.{js,ts,jsx,tsx,mdx}"],
-  darkMode: "class", // Enable class-based dark mode
   theme: {
     extend: {
       colors: {
@@ -53,9 +52,6 @@ module.exports = {
         body: {
           fontSize: "1rem",
           color: "#1C007C !important", // Force default text color
-        },
-        ".dark body": {
-          color: "white !important", // Force dark mode text color
         },
         // Make text-base responsive by default
         ".text-base": {
