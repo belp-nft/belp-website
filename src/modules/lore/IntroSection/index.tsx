@@ -2,8 +2,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination, EffectFade } from "swiper/modules";
+import { useState, useEffect } from "react";
 
 export default function IntroSection() {
   const images = [
@@ -12,11 +11,20 @@ export default function IntroSection() {
     "/images/lore/intro-story-3.svg",
   ];
 
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % images.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [images.length]);
+
   return (
     <section className="py-16 sm:py-20 lg:py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-          {/* Left side - Swiper */}
           <motion.div
             className="relative order-2 lg:order-1"
             initial={{ opacity: 0, x: -50 }}
@@ -24,38 +32,51 @@ export default function IntroSection() {
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <div className="relative aspect-square max-w-sm sm:max-w-md lg:max-w-lg mx-auto rounded-2xl overflow-hidden">
-              <Swiper
-                modules={[Autoplay, Pagination, EffectFade]}
-                spaceBetween={0}
-                slidesPerView={1}
-                autoplay={{
-                  delay: 3000,
-                  disableOnInteraction: false,
-                }}
-                effect="fade"
-                fadeEffect={{ crossFade: true }}
-                loop={true}
-                className="h-full rounded-2xl"
-              >
-                {images.map((image, index) => (
-                  <SwiperSlide key={index}>
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={image}
-                        alt={`Belpy Story ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        priority={index === 0}
-                      />
-                    </div>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+            <div className="flex items-center justify-center gap-2 max-w-sm sm:max-w-md lg:max-w-lg mx-auto h-[300px] sm:h-[350px] lg:h-[400px]">
+              {images.map((image, index) => {
+                const isActive = index === activeIndex;
+                return (
+                  <motion.div
+                    key={index}
+                    className="relative rounded-2xl overflow-hidden cursor-pointer"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{
+                      width: isActive ? "100%" : "50px",
+                      opacity: 1,
+                      scale: 1,
+                    }}
+                    transition={{
+                      duration: 0.6,
+                      ease: "easeInOut",
+                    }}
+                    whileHover={{
+                      scale: isActive ? 1.02 : 1.05,
+                    }}
+                    onClick={() => setActiveIndex(index)}
+                    style={{
+                      height: "100%",
+                    }}
+                  >
+                    <Image
+                      src={image}
+                      alt={`Belpy Story ${index + 1}`}
+                      fill
+                      className={clsx(
+                        "object-cover transition-all duration-500",
+                        !isActive && index === 0 && "object-left",
+                        !isActive && index === 2 && "object-right"
+                      )}
+                      priority={index === 0}
+                    />
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-black/20" />
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
 
-          {/* Right side - Content */}
           <motion.div
             className="space-y-6 order-1 lg:order-2"
             initial={{ opacity: 0, x: 50 }}
