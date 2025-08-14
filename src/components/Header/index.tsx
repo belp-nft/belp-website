@@ -8,7 +8,6 @@ import {
   MdHome,
   MdShoppingBag,
   MdDescription,
-  MdGridView,
   MdClose,
   MdMenu,
   MdSmartButton,
@@ -20,7 +19,11 @@ const menu = [
   { label: "HOME", href: "/", icon: <MdHome size={22} /> },
   { label: "MINT", href: "/mint", icon: <MdSmartButton size={22} /> },
   { label: "LORE", href: "/lore", icon: <MdShoppingBag size={22} /> },
-  { label: "DOC", href: "/doc", icon: <MdDescription size={22} /> },
+  {
+    label: "DOC",
+    href: "https://maindocs.gitbook.io/belp/documentation",
+    icon: <MdDescription size={22} />,
+  },
 ];
 
 export default function BelpHeader() {
@@ -47,7 +50,7 @@ export default function BelpHeader() {
               exit={{ x: "-105%" }}
               transition={{ type: "spring", stiffness: 300, damping: 35 }}
               className={clsx(
-                "fixed top-0 left-0 h-full w-full max-w-[400px] bg-[#f6effb] z-[99] shadow-2xl",
+                "fixed top-0 left-0 h-full w-full sm:max-w-[400px] bg-[#f6effb] z-[99] shadow-2xl",
                 "border-r border-[#d3b0f7] flex flex-col"
               )}
               style={{ minHeight: "100dvh" }}
@@ -69,7 +72,7 @@ export default function BelpHeader() {
                   <MdClose size={28} />
                 </button>
               </div>
-              <div className="flex flex-col items-center mt-4 mb-5">
+              <div className="flex items-center justify-center my-5 w-full">
                 <ConnectWallet
                   onConnected={(info) => console.log("Connected:", info)}
                 />
@@ -95,6 +98,12 @@ export default function BelpHeader() {
                         <Link
                           href={item.href}
                           onClick={() => setOpen(false)}
+                          target={item.label === "DOC" ? "_blank" : undefined}
+                          rel={
+                            item.label === "DOC"
+                              ? "noopener noreferrer"
+                              : undefined
+                          }
                           className={clsx(
                             "flex items-center gap-3 py-2 px-2 rounded-lg font-semibold uppercase tracking-wider text-[18px]",
                             isActive
@@ -169,6 +178,10 @@ export default function BelpHeader() {
                 <li key={item.label}>
                   <Link
                     href={item.href}
+                    target={item.label === "DOC" ? "_blank" : undefined}
+                    rel={
+                      item.label === "DOC" ? "noopener noreferrer" : undefined
+                    }
                     className={clsx(
                       "uppercase text-[16px] lg:text-[20px] xl:text-[24px] font-bold tracking-[.08em] transition-all duration-150 px-1 bg-gradient-to-b from-[#a44bfd] to-[#1C007C] bg-clip-text text-transparent",
                       clsx(

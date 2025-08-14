@@ -1,102 +1,118 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  FaTelegramPlane,
-  FaWhatsapp,
-  FaInstagram,
-  FaTwitter,
-  FaFacebookF,
-} from "react-icons/fa";
+import { useState } from "react";
+
+const subject = encodeURIComponent("Contact BELPY — Let’s talk");
+const body = encodeURIComponent(
+  "Hi BELPY team,\n\nI’d like to discuss: [topic]\n\nName: \nContact: "
+);
 
 export default function BelpFooter() {
+  const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
+
+  const socialIcons = [
+    {
+      name: "mail",
+      icon: "/icons/mail.svg",
+      tooltip: "Contact us",
+      href: `https://mail.google.com/mail/?view=cm&to=ir@belpy.xyz&su=${subject}&body=${body}`,
+    },
+    {
+      name: "document",
+      icon: "/icons/document.svg",
+      tooltip: "Whitepaper",
+      href: "https://maindocs.gitbook.io/belp/documentation",
+    },
+    {
+      name: "twitter",
+      icon: "/icons/twitter.svg",
+      tooltip: "X (Twitter)",
+      href: "#",
+    },
+    {
+      name: "telegram",
+      icon: "/icons/telegram.svg",
+      tooltip: "Telegram",
+      href: "#",
+    },
+    {
+      name: "discord",
+      icon: "/icons/discord.svg",
+      tooltip: "Discord",
+      href: "#",
+    },
+  ];
   return (
     <footer className="bg-[#690078] pt-12 pb-6 w-full">
       <div className="footer-container w-full">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-8 md:gap-0">
-          <div className="flex flex-col sm:flex-row gap-10 md:gap-16 w-full md:w-auto px-5 sm:px-10">
-            <div>
-              <h4 className="font-bold text-white mb-2 text-lg">About</h4>
-              <ul className="text-white/80 space-y-2 text-base">
-                <li>
-                  <Link href="#">Contact Us</Link>
-                </li>
-                <li>
-                  <Link href="#">Terms Of Service</Link>
-                </li>
-                <li>
-                  <Link href="#">Privacy Policy</Link>
-                </li>
-              </ul>
-              <div className="hidden md:flex gap-4 mt-5">
-                <Link href="#">
-                  <FaTelegramPlane className="text-xl text-white/80 hover:text-[#B373FD]" />
-                </Link>
-                <Link href="#">
-                  <FaWhatsapp className="text-xl text-white/80 hover:text-[#B373FD]" />
-                </Link>
-                <Link href="#">
-                  <FaInstagram className="text-xl text-white/80 hover:text-[#B373FD]" />
-                </Link>
-                <Link href="#">
-                  <FaTwitter className="text-xl text-white/80 hover:text-[#B373FD]" />
-                </Link>
-                <Link href="#">
-                  <FaFacebookF className="text-xl text-white/80 hover:text-[#B373FD]" />
-                </Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-2 text-lg">Help</h4>
-              <ul className="text-white/80 space-y-2 text-base">
-                <li>
-                  <Link href="#">Customer Support</Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-2 text-lg">Developer</h4>
-              <ul className="text-white/80 space-y-2 text-base">
-                <li>
-                  <Link href="#">Github</Link>
-                </li>
-              </ul>
-            </div>
-          </div>
+        <Image
+          src="/belp-logo-2.svg"
+          alt="belp"
+          width={160}
+          height={70}
+          className="rounded-full mx-auto"
+        />
+        <hr className="border-t border-white mt-10" />
 
-          <div className="hidden md:flex flex-col items-center md:items-end mt-8 md:mt-0 w-full md:w-auto">
-            <div className="flex items-center gap-2">
-              <Image
-                src="/belp-logo.svg"
-                alt="belp"
-                width={87}
-                height={36}
-                className="rounded-full"
-              />
-            </div>
-          </div>
-        </div>
-        <hr className="border-t border-white/20 my-10 hidden md:block" />
-        <div className="text-white/40 text-sm text-center hidden md:block">
-          © {new Date().getFullYear()} belp. All rights reserved.
-        </div>
+        <div className="flex gap-3 sm:gap-5 md:gap-[30px] py-5 items-center justify-center relative">
+          {socialIcons.map((social) => (
+            <div
+              key={social.name}
+              className="relative"
+              onMouseEnter={() => setHoveredIcon(social.name)}
+              onMouseLeave={() => setHoveredIcon(null)}
+            >
+              {social.href !== "#" ? (
+                social.href.startsWith("mailto:") ? (
+                  <a
+                    href={social.href}
+                    className="block hover:scale-110 transition-transform duration-200 cursor-pointer"
+                  >
+                    <Image
+                      src={social.icon}
+                      alt={social.tooltip}
+                      width={50}
+                      height={50}
+                      className="w-full h-full object-contain filter"
+                    />
+                  </a>
+                ) : (
+                  <Link
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block hover:scale-110 transition-transform duration-200 cursor-pointer"
+                  >
+                    <Image
+                      src={social.icon}
+                      alt={social.tooltip}
+                      width={50}
+                      height={50}
+                      className="w-full h-full object-contain filter"
+                    />
+                  </Link>
+                )
+              ) : (
+                <div className="block hover:scale-110 transition-transform duration-200 cursor-default opacity-85">
+                  <Image
+                    src={social.icon}
+                    alt={social.tooltip}
+                    width={50}
+                    height={50}
+                    className="w-full h-full object-contain filter"
+                  />
+                </div>
+              )}
 
-        <div className="md:hidden flex gap-4 mt-5 pb-10 px-5 sm:px-10">
-          <Link href="#">
-            <FaTelegramPlane className="text-xl text-white/80 hover:text-[#B373FD]" />
-          </Link>
-          <Link href="#">
-            <FaWhatsapp className="text-xl text-white/80 hover:text-[#B373FD]" />
-          </Link>
-          <Link href="#">
-            <FaInstagram className="text-xl text-white/80 hover:text-[#B373FD]" />
-          </Link>
-          <Link href="#">
-            <FaTwitter className="text-xl text-white/80 hover:text-[#B373FD]" />
-          </Link>
-          <Link href="#">
-            <FaFacebookF className="text-xl text-white/80 hover:text-[#B373FD]" />
-          </Link>
+              {hoveredIcon === social.name && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 text-white text-xs rounded whitespace-nowrap z-10">
+                  {social.tooltip}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/80"></div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </footer>

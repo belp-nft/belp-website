@@ -1,5 +1,44 @@
 @import "tailwindcss";
 
+/* Force light mode only - disable all dark mode */
+html {
+  color-scheme: light only;
+}
+
+/* Prevent dark mode activation */
+html.dark,
+html[data-theme="dark"],
+.dark {
+  filter: none !important;
+  background: white !important;
+  color: #1c007c !important;
+}
+
+/* Override any dark mode media queries */
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background: white !important;
+    color: #1c007c !important;
+  }
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
 @font-face {
   font-family: "GmarketSans";
   src: url("/fonts/GmarketSans-Regular.woff") format("woff");
@@ -24,11 +63,34 @@
 
 body {
   font-family: "GmarketSans", Arial, Helvetica, sans-serif;
+  background-color: white; /* Force light background */
+  font-size: 16px; /* Mobile base */
   color: #1c007c;
 }
 
-.dark body {
-  color: white;
+/* Responsive font sizes for body */
+@media (min-width: 640px) {
+  body {
+    font-size: 18px; /* Large mobile */
+  }
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 20px; /* Tablet */
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 22px; /* Desktop */
+  }
+}
+
+@media (min-width: 1280px) {
+  body {
+    font-size: 24px; /* Large desktop */
+  }
 }
 
 /* Main container utility class */

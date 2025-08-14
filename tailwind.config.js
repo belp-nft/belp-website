@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/**/*.{js,ts,jsx,tsx,mdx}"],
-  darkMode: "class", // Enable class-based dark mode
   theme: {
     extend: {
       colors: {
@@ -48,27 +47,76 @@ module.exports = {
       // Set responsive base font size for html and body
       addBase({
         html: {
-          fontSize: "16px",
+          fontSize: "16px", // Default mobile size - sẽ được override bởi breakpoints
         },
         body: {
           fontSize: "1rem",
           color: "#1C007C !important", // Force default text color
         },
-        ".dark body": {
-          color: "white !important", // Force dark mode text color
+        // Apply base styles to all text elements
+        "p, span, div, a, li, td, th, label, input, textarea, button": {
+          fontSize: "1rem", // Will scale with html font-size
+          color: "#1C007C", // Default text color
+        },
+        // Headings with relative sizes
+        h1: {
+          fontSize: "2.5rem",
+          fontWeight: "700",
+          color: "#1C007C",
+        },
+        h2: {
+          fontSize: "2rem",
+          fontWeight: "600",
+          color: "#1C007C",
+        },
+        h3: {
+          fontSize: "1.5rem",
+          fontWeight: "600",
+          color: "#1C007C",
+        },
+        h4: {
+          fontSize: "1.25rem",
+          fontWeight: "500",
+          color: "#1C007C",
+        },
+        h5: {
+          fontSize: "1.125rem",
+          fontWeight: "500",
+          color: "#1C007C",
+        },
+        h6: {
+          fontSize: "1rem",
+          fontWeight: "500",
+          color: "#1C007C",
         },
         // Make text-base responsive by default
         ".text-base": {
           fontSize: "1rem", // Will scale with html font-size
         },
+        // Mobile first approach - từ nhỏ đến lớn
+        "@media (max-width: 639px)": {
+          html: {
+            fontSize: "16px", // Mobile
+          },
+        },
+        "@screen sm": {
+          html: {
+            fontSize: "18px", // Large mobile
+          },
+        },
         "@screen md": {
           html: {
-            fontSize: "18px",
+            fontSize: "20px", // Tablet
+          },
+        },
+        "@screen lg": {
+          html: {
+            fontSize: "22px", // Desktop
           },
         },
         "@screen xl": {
           html: {
-            fontSize: "20px",
+            fontSize: "24px", // Large desktop
           },
         },
       });
