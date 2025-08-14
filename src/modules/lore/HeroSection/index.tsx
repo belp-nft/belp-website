@@ -1,44 +1,52 @@
 "use client";
 import { motion } from "framer-motion";
-import clsx from "clsx";
 
 export default function HeroSection() {
   return (
     <section>
       <div className="text-center px-4 sm:px-6 lg:px-8">
-        <div
-          className={clsx("font-oxanium font-bold title-text leading-none")}
-          style={{
-            fontFamily: "var(--font-oxanium)",
-            lineHeight: "1.2",
-          }}
-        >
-          <motion.span
-            className="block text-[#F356FF] text-[72px] md:text-[80px] lg:text-[96px]"
-            initial={{ opacity: 0, y: 300 }}
-            whileInView={{ opacity: 1, y: 0 }}
+        <div className="lore-hero-title">
+          <motion.div
+            className="lore-hero-belpy"
+            initial={{ opacity: 0, y: -50, scale: 0.8 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{
-              duration: 1,
+              duration: 0.8,
               ease: "easeOut",
-              delay: 0.2,
+              type: "spring",
+              stiffness: 100,
+              damping: 15,
+            }}
+            whileHover={{
+              scale: 1.05,
+              rotate: [-1, 1, -1, 0],
+              transition: { duration: 0.6 },
             }}
           >
             BELPY
-          </motion.span>
-          <motion.span
-            className="block text-[#AE4DCE] text-[80px] md:text-[96px] lg:text-[124px]"
-            initial={{ opacity: 0, y: 100 }}
-            whileInView={{ opacity: 1, y: 0 }}
+          </motion.div>
+          <motion.div
+            className="lore-hero-world"
+            initial={{ opacity: 0, y: 50, scale: 0.8 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{
-              duration: 1,
+              duration: 0.8,
               ease: "easeOut",
-              delay: 0.6,
+              delay: 0.3,
+              type: "spring",
+              stiffness: 100,
+              damping: 15,
+            }}
+            whileHover={{
+              scale: 1.05,
+              rotate: [1, -1, 1, 0],
+              transition: { duration: 0.6 },
             }}
           >
             WORLD
-          </motion.span>
+          </motion.div>
         </div>
       </div>
     </section>

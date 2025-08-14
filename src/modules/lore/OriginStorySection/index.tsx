@@ -26,8 +26,20 @@ const stories = [
 
 export default function OriginStorySection() {
   return (
-    <section className="py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-pink-100 to-purple-100 mb-24">
-      <div className="mx-auto">
+    <motion.section
+      className="py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-pink-100 to-purple-100"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={{ duration: 1.0, ease: "easeOut" }}
+    >
+      <motion.div
+        className="mx-auto"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+      >
         {/* Section Title */}
         <div className="text-center mb-12 lg:mb-16">
           <motion.h1
@@ -35,10 +47,14 @@ export default function OriginStorySection() {
               "font-oxanium font-bold mb-4 title-text",
               "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
             )}
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
+            initial={{ opacity: 0, y: 50, scale: 0.8 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
+            whileHover={{
+              scale: 1.05,
+              transition: { duration: 0.3 },
+            }}
             style={{
               fontFamily: "var(--font-oxanium)",
             }}
@@ -53,37 +69,88 @@ export default function OriginStorySection() {
             <motion.div
               key={story.id}
               className="text-center"
-              initial={{ opacity: 0, y: 100 }}
+              initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.3 }}
+              viewport={{ once: true, amount: 0.2 }}
               transition={{
                 duration: 0.8,
                 ease: "easeOut",
                 delay: index * 0.2,
               }}
+              whileHover={{
+                y: -10,
+                transition: { duration: 0.3 },
+              }}
             >
               {/* Story Image */}
-              <div className="mb-10 flex justify-center">
+              <motion.div
+                className="mb-10 flex justify-center"
+                initial={{ opacity: 0, y: 80, scale: 0.5 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{
+                  duration: 1.0,
+                  ease: "easeOut",
+                  delay: index * 0.3,
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15,
+                }}
+                whileHover={{
+                  scale: 1.1,
+                  rotate: [0, -5, 5, 0],
+                  transition: {
+                    duration: 0.5,
+                    rotate: { duration: 0.6, ease: "easeInOut" },
+                  },
+                }}
+              >
                 <div className="relative w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48">
-                  <Image
-                    src={story.image}
-                    alt={story.image}
-                    fill
-                    className="object-contain"
-                  />
+                  <motion.div
+                    whileHover={{
+                      filter:
+                        "drop-shadow(0 20px 25px rgba(243, 86, 255, 0.4))",
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Image
+                      src={story.image}
+                      alt={`Story ${story.id}`}
+                      fill
+                      className="object-contain"
+                      loading="lazy"
+                      quality={75}
+                    />
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Story Content */}
-              <div className="space-y-4">
-                <p className="leading-relaxed max-w-xs mx-auto">
+              <motion.div
+                className="space-y-4"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{
+                  duration: 0.6,
+                  ease: "easeOut",
+                  delay: index * 0.2 + 0.4,
+                }}
+              >
+                <motion.p
+                  className="leading-relaxed max-w-xs mx-auto"
+                  whileHover={{
+                    scale: 1.02,
+                    transition: { duration: 0.2 },
+                  }}
+                >
                   {story.description}
-                </p>
-              </div>
+                </motion.p>
+              </motion.div>
             </motion.div>
           ))}
         </div>
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   );
 }
