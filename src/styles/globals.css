@@ -64,32 +64,32 @@ html[data-theme="dark"],
 body {
   font-family: "GmarketSans", Arial, Helvetica, sans-serif;
   background-color: white; /* Force light background */
-  font-size: 16px; /* Mobile base */
+  font-size: 14px; /* Mobile base - giảm từ 16px */
   color: #1c007c;
 }
 
 /* Responsive font sizes for body */
 @media (min-width: 640px) {
   body {
-    font-size: 18px; /* Large mobile */
+    font-size: 15px; /* Large mobile - giảm từ 18px */
   }
 }
 
 @media (min-width: 768px) {
   body {
-    font-size: 20px; /* Tablet */
+    font-size: 16px; /* Tablet - giảm từ 20px */
   }
 }
 
 @media (min-width: 1024px) {
   body {
-    font-size: 22px; /* Desktop */
+    font-size: 17px; /* Desktop - giảm từ 22px */
   }
 }
 
 @media (min-width: 1280px) {
   body {
-    font-size: 24px; /* Large desktop */
+    font-size: 18px; /* Large desktop - giảm từ 24px */
   }
 }
 

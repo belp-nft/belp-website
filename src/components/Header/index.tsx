@@ -128,8 +128,7 @@ export default function BelpHeader() {
         className={clsx(
           "w-full z-50 absolute top-0 left-0 py-2 md:py-3 px-4 sm:px-6 lg:px-10",
           "flex items-center justify-between",
-          "md:bg-gradient-to-b md:from-[#FFE7FF80] md:to-[#FEF5FE]",
-          pathname === "/" && "top-10"
+          "md:bg-gradient-to-b md:from-[#FFE7FF80] md:to-[#FEF5FE]"
         )}
         style={{ left: 0, right: 0 }}
       >

@@ -35,7 +35,7 @@ export default function HeroSection() {
             <br />& Find New Universe
           </motion.h1>
           <p
-            className={clsx("text-white", "text-sm md:text-responsive-lg mb-8")}
+            className={clsx("text-white", "sm:text-responsive-lg mb-8")}
           >
             The first limited collection of unique NFT tokens,
             <br />

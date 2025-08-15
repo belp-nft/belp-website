@@ -174,7 +174,7 @@ export default function GetTheCuteness() {
           >
             Get the cuteness
           </h2>
-          <div className="text-sm md:text-responsive-lg">
+          <div className="sm:text-responsive-lg">
             Belpy consists of 100 rare Genesis NFTs and 9,900 General collection
             NFTs, featuring over 550 customizable traits and meticulously
             handcrafted, high-quality designs.
@@ -199,7 +199,7 @@ export default function GetTheCuteness() {
               Get the cuteness
             </motion.h2>
             <motion.p
-              className="text-sm md:text-responsive-lg mb-8 max-w-xl"
+              className="sm:text-responsive-lg mb-8 max-w-xl"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -209,7 +209,7 @@ export default function GetTheCuteness() {
               meticulously handcrafted, high-quality designs.
             </motion.p>
             <motion.p
-              className="text-sm md:text-responsive-lg max-w-xl"
+              className="sm:text-responsive-lg max-w-xl"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.2 }}

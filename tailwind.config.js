@@ -47,7 +47,7 @@ module.exports = {
       // Set responsive base font size for html and body
       addBase({
         html: {
-          fontSize: "16px", // Default mobile size - sẽ được override bởi breakpoints
+          fontSize: "14px", // Default mobile size - giảm từ 16px
         },
         body: {
           fontSize: "1rem",
@@ -96,27 +96,27 @@ module.exports = {
         // Mobile first approach - từ nhỏ đến lớn
         "@media (max-width: 639px)": {
           html: {
-            fontSize: "16px", // Mobile
+            fontSize: "14px", // Mobile - giảm từ 16px
           },
         },
         "@screen sm": {
           html: {
-            fontSize: "18px", // Large mobile
+            fontSize: "15px", // Large mobile - giảm từ 18px
           },
         },
         "@screen md": {
           html: {
-            fontSize: "20px", // Tablet
+            fontSize: "16px", // Tablet - giảm từ 20px
           },
         },
         "@screen lg": {
           html: {
-            fontSize: "22px", // Desktop
+            fontSize: "17px", // Desktop - giảm từ 22px
           },
         },
         "@screen xl": {
           html: {
-            fontSize: "24px", // Large desktop
+            fontSize: "18px", // Large desktop - giảm từ 24px
           },
         },
       });

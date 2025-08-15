@@ -49,7 +49,7 @@ const BelpSection = () => {
               priority
             />
           </motion.div>
-          <div className="text-sm md:text-responsive-lg space-y-4">
+          <div className="sm:text-responsive-lg space-y-4">
             <p>
               Welcome to the world of Belpy a Web3-born feline brand built on
               cuteness, claw, and community.

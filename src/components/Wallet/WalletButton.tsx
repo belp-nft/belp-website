@@ -25,7 +25,7 @@ export default function WalletButton({
     <button
       onClick={onClick}
       className={clsx(
-        "w-fit font-bold text-lg hover:scale-105 transition-all duration-200 flex items-center gap-2 cursor-pointer",
+        "w-fit font-bold sm:text-responsive-lg hover:scale-105 transition-all duration-200 flex items-center gap-2 cursor-pointer",
         !label &&
           "bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] py-2 px-8 rounded-2xl shadow-lg",
         className
