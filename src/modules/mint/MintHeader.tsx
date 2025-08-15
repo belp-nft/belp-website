@@ -23,6 +23,10 @@ const MintHeader: React.FC<MintHeaderProps> = ({
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, delay: 0.2 }}
+        style={{
+          fontFamily: "var(--font-oxanium)",
+          fontSize: "clamp(2rem, 8vw, 4rem)",
+        }}
       >
         {title}
       </motion.h1>
