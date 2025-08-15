@@ -23,11 +23,6 @@ const cats = [
   "tokens/3.png",
   "tokens/4.png",
   "tokens/5.png",
-  "tokens/6.png",
-  "tokens/7.png",
-  "tokens/8.png",
-  "tokens/9.png",
-  "tokens/10.png",
 ];
 
 const MintSection: React.FC<MintSectionProps> = ({
@@ -39,7 +34,7 @@ const MintSection: React.FC<MintSectionProps> = ({
   onMintClick,
 }) => {
   const { isAuthenticated } = useAuth();
-  const { nftPricing, isLoadingPricing, pricingError, refreshPricing } =
+  const { nftPricing, isLoadingPricing, pricingError } =
     useSettings();
 
   console.log("Debug MintSection:", {
@@ -59,6 +54,15 @@ const MintSection: React.FC<MintSectionProps> = ({
 
   const mintText =
     minted !== null && supply !== null ? `${minted}/${supply}` : "—";
+
+  // Determine round type based on nftPricing
+  const getRoundTitle = () => {
+    if (isLoadingPricing) return "Loading...";
+    if (pricingError) return "Genesis Round"; // Default fallback
+    if (!nftPricing) return "Genesis Round"; // Default fallback
+    
+    return nftPricing.priceType === "genesis" ? "Genesis Round" : "General Round";
+  };
 
   const { scale, sizeClasses } = getScaleAndSize(mintText);
   return (
@@ -88,7 +92,7 @@ const MintSection: React.FC<MintSectionProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.2 }}
         >
-          Genesis Round
+          {getRoundTitle()}
         </motion.p>
 
         <motion.div

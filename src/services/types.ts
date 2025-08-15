@@ -196,16 +196,10 @@ export interface NFTPricingResponse {
   success: boolean;
   data: {
     currentPrice: number;
-    isGenesisRound: boolean;
     genesisPrice: number;
     generalPrice: number;
-    genesisRound: {
-      startDate: string;
-      endDate: string;
-      durationDays: number;
-      isActive: boolean;
-    };
     priceType: "genesis" | "general";
+    roundMode: string
   };
 }
 
