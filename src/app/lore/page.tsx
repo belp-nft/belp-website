@@ -1,54 +1,58 @@
 "use client";
 import Image from "next/image";
 import { Suspense } from "react";
-import Head from "next/head";
+import dynamic from "next/dynamic";
 import HeroSection from "@/modules/lore/HeroSection";
-import OriginStorySection from "@/modules/lore/OriginStorySection";
-import IntroSection from "@/modules/lore/IntroSection";
-import MissionSection from "@/modules/lore/MissionSection";
-import BelpFooter from "@/components/Footer";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import VideoPreloader from "@/components/VideoPreloader";
 import CriticalLoreCSS from "@/components/CriticalLoreCSS";
+import PageLoading from "@/components/PageLoading";
+
+// Dynamic imports cho non-critical components
+const OriginStorySection = dynamic(() => import("@/modules/lore/OriginStorySection"), {
+  loading: () => <PageLoading />,
+  ssr: true,
+});
+
+const IntroSection = dynamic(() => import("@/modules/lore/IntroSection"), {
+  loading: () => <PageLoading />,
+  ssr: true,
+});
+
+const MissionSection = dynamic(() => import("@/modules/lore/MissionSection"), {
+  loading: () => <PageLoading />,
+  ssr: true,
+});
+
+const BelpFooter = dynamic(() => import("@/components/Footer"), {
+  loading: () => <PageLoading />,
+  ssr: true,
+});
 
 export default function LorePage() {
   return (
-    <>
-      <Head>
-        <link
-          rel="preload"
-          href="/videos/bg-lore.webm"
-          as="video"
-          type="video/webm"
-        />
-        <link
-          rel="preload"
-          href="/images/lore/hero-background.svg"
-          as="image"
-        />
-      </Head>
-      <main className="relative min-h-screen">
-        <CriticalLoreCSS />
-        <PerformanceMonitor />
+    <main className="relative min-h-screen">
+      <CriticalLoreCSS />
+      <PerformanceMonitor />
 
-        <VideoPreloader src="/videos/bg-lore.webm">
-          {/* Optimized video with better loading strategy */}
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="none"
-            className="fixed inset-0 w-full h-full object-cover object-center z-0"
-            style={{
-              objectFit: "cover",
-              objectPosition: "center",
-            }}
-          >
-            <source src="/videos/bg-lore.webm" type="video/webm" />
-            <source src="/videos/bg-lore.mp4" type="video/mp4" />
-          </video>
-        </VideoPreloader>
+      <VideoPreloader src="/videos/bg-lore.webm">
+        {/* Optimized video with better loading strategy */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="fixed inset-0 w-full h-full object-cover object-center z-0"
+          style={{
+            objectFit: "cover",
+            objectPosition: "center",
+          }}
+        >
+          <source src="/videos/bg-lore.webm" type="video/webm" />
+          <source src="/videos/bg-lore.mp4" type="video/mp4" />
+        </video>
+      </VideoPreloader>
 
         <div className="relative z-20 min-h-screen top-36">
           {/* Critical background image - load immediately */}
@@ -72,25 +76,13 @@ export default function LorePage() {
 
         <div className="relative z-20 bg-gradient-to-b from-pink-100 to-purple-100">
           <div className="main-container py-16">
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
-              }
-            >
+            <Suspense fallback={<PageLoading />}>
               <OriginStorySection />
             </Suspense>
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
-              }
-            >
+            <Suspense fallback={<PageLoading />}>
               <IntroSection />
             </Suspense>
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
-              }
-            >
+            <Suspense fallback={<PageLoading />}>
               <MissionSection />
             </Suspense>
           </div>
@@ -105,13 +97,10 @@ export default function LorePage() {
               quality={75}
             />
           </div>
-          <Suspense
-            fallback={<div className="h-32 bg-gray-100 animate-pulse" />}
-          >
+          <Suspense fallback={<PageLoading />}>
             <BelpFooter />
           </Suspense>
         </div>
       </main>
-    </>
-  );
-}
+    );
+  }

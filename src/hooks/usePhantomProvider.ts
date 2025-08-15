@@ -66,7 +66,7 @@ export function usePhantomProvider() {
       });
       if (txResult.success && txResult.data) {
         setTransactions(txResult.data);
-        // console.log(
+        console.log(
           "Transaction history loaded:",
           txResult.data.length,
           "transactions"
