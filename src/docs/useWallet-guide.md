@@ -96,9 +96,9 @@ Tự động kết nối nếu wallet đã được ủy quyền trước đó:
 ```typescript
 const result = await autoConnect('phantom');
 if (result) {
-  console.log('Auto-connect thành công');
+  // console.log('Auto-connect thành công');
 } else {
-  console.log('Cần kết nối thủ công');
+  // console.log('Cần kết nối thủ công');
 }
 ```
 

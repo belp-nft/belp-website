@@ -6,6 +6,7 @@ import clsx from "clsx";
 import CatGrid from "./CatGrid";
 import { useAuth } from "@/providers/AuthProvider";
 import ConnectWallet from "@/components/Wallet/ConnectWallet";
+import { useSettings } from "@/providers/SettingsProvider";
 
 interface MintSectionProps {
   minted: number;
@@ -13,9 +14,16 @@ interface MintSectionProps {
   isMinting: boolean;
   mintSuccess: boolean;
   selectedCat: number | null;
-  cats: string[];
   onMintClick: () => void;
 }
+
+const cats = [
+  "tokens/1.png",
+  "tokens/2.png",
+  "tokens/3.png",
+  "tokens/4.png",
+  "tokens/5.png",
+];
 
 const MintSection: React.FC<MintSectionProps> = ({
   minted,
@@ -23,10 +31,18 @@ const MintSection: React.FC<MintSectionProps> = ({
   isMinting,
   mintSuccess,
   selectedCat,
-  cats,
   onMintClick,
 }) => {
   const { isAuthenticated } = useAuth();
+  const { nftPricing, isLoadingPricing, pricingError } =
+    useSettings();
+
+  console.log("Debug MintSection:", {
+    isAuthenticated,
+    nftPricing,
+    isLoadingPricing,
+    pricingError,
+  });
 
   const getScaleAndSize = (text: string) => {
     // Simplified to use consistent title-text class
@@ -38,6 +54,15 @@ const MintSection: React.FC<MintSectionProps> = ({
 
   const mintText =
     minted !== null && supply !== null ? `${minted}/${supply}` : "—";
+
+  // Determine round type based on nftPricing
+  const getRoundTitle = () => {
+    if (isLoadingPricing) return "Loading...";
+    if (pricingError) return "Genesis Round"; // Default fallback
+    if (!nftPricing) return "Genesis Round"; // Default fallback
+    
+    return nftPricing.priceType === "genesis" ? "Genesis Round" : "General Round";
+  };
 
   const { scale, sizeClasses } = getScaleAndSize(mintText);
   return (
@@ -51,7 +76,7 @@ const MintSection: React.FC<MintSectionProps> = ({
         <img
           src="/gifs/cat-play-ball.gif"
           alt="Cat playing with ball"
-          style={{ aspectRatio: "4/3" }}
+          style={{ aspectRatio: "5/3" }}
         />
       </div>
 
@@ -67,7 +92,7 @@ const MintSection: React.FC<MintSectionProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.2 }}
         >
-          Genesis Round
+          {getRoundTitle()}
         </motion.p>
 
         <motion.div
@@ -129,7 +154,7 @@ const MintSection: React.FC<MintSectionProps> = ({
               ) : mintSuccess ? (
                 "Minted Successfully! 🎉"
               ) : (
-                "MINT BELPY"
+                <>MINT BELPY</>
               )}
             </motion.button>
           ) : (

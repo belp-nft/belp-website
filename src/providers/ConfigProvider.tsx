@@ -14,9 +14,6 @@ export const ConfigProvider = ({ children }: ConfigProviderProps) => {
 
   // Fetch config once when the app starts
   useEffect(() => {
-    console.log(
-      "🔧 ConfigProvider: Fetching candy machine config on app start"
-    );
     fetchConfig().catch((error: any) => {
       console.error(
         "❌ ConfigProvider: Failed to fetch initial config:",
@@ -28,9 +25,6 @@ export const ConfigProvider = ({ children }: ConfigProviderProps) => {
   // Fetch config again when user is authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      console.log(
-        "🔧 ConfigProvider: User authenticated - fetching config with auth"
-      );
       fetchConfig().catch((error: any) => {
         console.error(
           "❌ ConfigProvider: Failed to fetch authenticated config:",

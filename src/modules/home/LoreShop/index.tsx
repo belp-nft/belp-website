@@ -85,12 +85,12 @@ export default function LoreShop() {
             </motion.button>
             <motion.button
               className={clsx(
-                "bg-[#E5CAFF] shadow-lg hover:scale-105 transition",
+                "bg-[#E5CAFF] shadow-lg transition",
                 "border-1 border-[#8438CE] text-[#8438CE]",
                 "md:h-[54px] rounded-xl md:rounded-2xl text-xs md:text-xl md:font-bold w-full",
                 "h-11"
               )}
-              whileHover={{ scale: 1.04 }}
+              whileHover={{ scale: 1.03 }}
             >
               Start your Collection
             </motion.button>

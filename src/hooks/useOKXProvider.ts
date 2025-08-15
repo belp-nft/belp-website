@@ -45,20 +45,20 @@ export function useOKXProvider() {
   // Load user data từ backend
   const loadUserData = useCallback(async (walletAddress: string) => {
     try {
-      console.log('📊 Loading user data for OKX...', { walletAddress });
+      // console.log('📊 Loading user data for OKX...', { walletAddress });
       
       // Load user statistics
       const statsResult = await UserService.getUserStatistics();
       if (statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
-        console.log('✅ User statistics loaded:', statsResult.data);
+        // console.log('✅ User statistics loaded:', statsResult.data);
       }
 
       // Load transaction history
       const txResult = await UserService.getTransactions({ limit: 50 });
       if (txResult.success && txResult.data) {
         setTransactions(txResult.data);
-        console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
+        // console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
       }
     } catch (error) {
       console.error('⚠️ Failed to load user data:', error);
@@ -74,7 +74,7 @@ export function useOKXProvider() {
     
     try {
       setLoading(true);
-      console.log('🚀 Starting OKX wallet connection...');
+      // console.log('🚀 Starting OKX wallet connection...');
       
       // Bước 1: Kết nối với OKX wallet
       const resp = await okx.connect();
@@ -86,10 +86,10 @@ export function useOKXProvider() {
 
       setIsConnected(true);
       setPublicKey(walletAddress);
-      console.log('✅ OKX connected:', walletAddress);
+      // console.log('✅ OKX connected:', walletAddress);
 
       // Bước 2: Authenticate với backend
-      console.log('🔐 Authenticating with backend...');
+      // console.log('🔐 Authenticating with backend...');
       const connectResult = await UserService.connectWallet(walletAddress);
 
       if (!connectResult.success) {
@@ -100,7 +100,7 @@ export function useOKXProvider() {
       if ((connectResult as any).data?.accessToken) {
         AuthService.setToken((connectResult as any).data.accessToken);
         setAuthToken((connectResult as any).data.accessToken);
-        console.log('🔑 JWT token saved to localStorage');
+        // console.log('🔑 JWT token saved to localStorage');
       } else {
         console.warn('⚠️ No JWT token received from backend');
       }
@@ -108,7 +108,7 @@ export function useOKXProvider() {
       // Bước 4: Load user data với JWT token
       await loadUserData(walletAddress);
 
-      console.log('🎉 OKX wallet connection successful!');
+      // console.log('🎉 OKX wallet connection successful!');
       return resp;
       
     } catch (error: any) {
@@ -138,7 +138,7 @@ export function useOKXProvider() {
     setTransactions([]);
     AuthService.removeToken();
     
-    console.log('🔌 OKX wallet disconnected');
+    // console.log('🔌 OKX wallet disconnected');
   }, [okx]);
 
   return {

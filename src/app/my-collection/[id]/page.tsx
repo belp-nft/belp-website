@@ -41,13 +41,11 @@ const NftDetailPage = () => {
       try {
         showLoading();
         setError(null);
-        console.log("🖼️ Loading NFT details for:", id);
 
         const response = await NftService.getNftDetails(id);
 
         if (response.success && response.nft) {
           setNft(response.nft);
-          console.log("✅ NFT details loaded:", response.nft);
         } else {
           setError("NFT not found");
           console.error("❌ Failed to load NFT details");
@@ -106,7 +104,7 @@ const NftDetailPage = () => {
         >
           {nft.name}
         </motion.h1>
-        <div className="flex flex-col md:flex-row gap-6 items-start">
+        <div className="flex flex-col md:flex-row gap-6 items-start text-lg">
           {/* Left: Image + Info */}
           <div className="flex flex-col gap-4 w-full md:w-[340px] items-center">
             <Image
@@ -121,7 +119,7 @@ const NftDetailPage = () => {
               <HiOutlineInformationCircle size={20} />
               <div>
                 <div className="font-bold mb-1">Backstory</div>
-                <div className="leading-relaxed">
+                <div className="text-lg">
                   {nft.description ||
                     `${nft.name} was born under the Moon of Whisker Hollow. Known
                   for its mysterious glow and trickster nature, this BELPY has a

@@ -52,7 +52,7 @@ export default function Roadmap() {
               fontFamily: "var(--font-oxanium) !important",
             }}
           >
-            Road map
+            Next Step
           </motion.h2>
           <div className="font-medium mb-5 text-center">
             The Expanding BELPY Universe

@@ -106,22 +106,14 @@ export default function OriginStorySection() {
                 }}
               >
                 <div className="relative w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48">
-                  <motion.div
-                    whileHover={{
-                      filter:
-                        "drop-shadow(0 20px 25px rgba(243, 86, 255, 0.4))",
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Image
-                      src={story.image}
-                      alt={`Story ${story.id}`}
-                      fill
-                      className="object-contain"
-                      loading="lazy"
-                      quality={75}
-                    />
-                  </motion.div>
+                  <Image
+                    src={story.image}
+                    alt={`Story ${story.id}`}
+                    fill
+                    className="object-contain"
+                    loading="lazy"
+                    quality={75}
+                  />
                 </div>
               </motion.div>
 

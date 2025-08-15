@@ -4,9 +4,6 @@
  */
 
 // Log để kiểm tra biến môi trường trong quá trình build và runtime
-console.log("🔧 Environment Variables Check:");
-console.log("- NEXT_PUBLIC_API_URI:", process.env.NEXT_PUBLIC_API_URI);
-console.log("- NODE_ENV:", process.env.NODE_ENV);
 
 /**
  * API Configuration
@@ -33,7 +30,9 @@ export const API_CONFIG = {
 export const BLOCKCHAIN_CONFIG = {
   // Solana RPC endpoint
   SOLANA_RPC:
-    process.env.NODE_ENV === "production" ? "https://api.mainnet-beta.solana.com" : "https://api.devnet.solana.com",
+    process.env.NODE_ENV === "production"
+      ? "https://api.mainnet-beta.solana.com"
+      : "https://api.devnet.solana.com",
 
   // Network type
   NETWORK: process.env.NODE_ENV === "production" ? "mainnet" : "devnet",
@@ -63,13 +62,6 @@ export function validateEnvironmentVariables() {
   if (missingVars.length > 0) {
     console.warn("⚠️ Missing environment variables:", missingVars);
   }
-
-  // Log cấu hình hiện tại
-  console.log("✅ Environment Configuration Loaded:");
-  console.log("- API Base URL:", API_CONFIG.BASE_URL);
-  console.log("- Solana RPC:", BLOCKCHAIN_CONFIG.SOLANA_RPC);
-  console.log("- Network:", BLOCKCHAIN_CONFIG.NETWORK);
-  console.log("- Environment:", APP_CONFIG.NODE_ENV);
 }
 
 // Gọi validation khi import file này

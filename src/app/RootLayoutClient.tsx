@@ -8,6 +8,7 @@ import BelpHeader from "@/components/Header";
 import { ConfigProvider } from "@/providers/ConfigProvider";
 import { LoadingProvider } from "@/providers/LoadingProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { SettingsProvider } from "@/providers/SettingsProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import clsx from "clsx";
 import { usePathname } from "next/navigation";
@@ -35,18 +36,20 @@ export default function RootLayoutClient({
       >
         <LoadingProvider>
           <AuthProvider>
-            <ConfigProvider>
-              <ThemeProvider>
-                <BelpHeader />
-                <div
-                  className={clsx(
-                    !["/", "/my-collection"].includes(pathname) && "mt-16"
-                  )}
-                >
-                  {children}
-                </div>
-              </ThemeProvider>
-            </ConfigProvider>
+            <SettingsProvider>
+              <ConfigProvider>
+                <ThemeProvider>
+                  <BelpHeader />
+                  <div
+                    className={clsx(
+                      !["/", "/my-collection"].includes(pathname) && "mt-16"
+                    )}
+                  >
+                    {children}
+                  </div>
+                </ThemeProvider>
+              </ConfigProvider>
+            </SettingsProvider>
           </AuthProvider>
         </LoadingProvider>
       </body>

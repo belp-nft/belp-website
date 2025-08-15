@@ -10,8 +10,6 @@ export default function PerformanceMonitor() {
         const lastEntry = entries[entries.length - 1];
 
         if (lastEntry) {
-          console.log("LCP candidate:", lastEntry.startTime);
-          // Mark when we have a meaningful LCP
           performance.mark("lcp-found");
         }
       });
@@ -19,7 +17,7 @@ export default function PerformanceMonitor() {
       try {
         observer.observe({ type: "largest-contentful-paint", buffered: true });
       } catch (e) {
-        console.log("LCP observer not supported");
+        // console.log("LCP observer not supported");
       }
 
       return () => observer.disconnect();

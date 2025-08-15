@@ -4,6 +4,7 @@ export * from "./types";
 // Re-export specific classes for convenience
 export { UserService } from "./userService";
 export { NftService } from "./nftService";
+export { SettingService } from "./settingService";
 export { ConfigService } from "./configService";
 export { AuthService } from "./authService";
 export { BaseService, ApiErrorException } from "./baseService";

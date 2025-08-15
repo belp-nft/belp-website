@@ -43,13 +43,10 @@ const HistoryPage = () => {
       setSyncing(true);
       setError(null);
 
-      console.log("🖼️ Loading backend NFTs for:", solAddress);
-
       const response = await NftService.getUserNfts(solAddress);
 
       if (response.success && response.nfts) {
         setBackendNfts(response.nfts);
-        console.log("✅ Backend NFTs loaded:", response.nfts.length);
       } else {
         console.warn("⚠️ Failed to load backend NFTs");
         setError("Failed to load NFTs");
@@ -70,13 +67,10 @@ const HistoryPage = () => {
       setSyncing(true);
       setError(null);
 
-      console.log("📜 Loading transactions for:", solAddress);
-
       const response = await UserService.getTransactions();
 
       if (response.success && response.data) {
         setTransactions(response.data);
-        console.log("✅ Transactions loaded:", response.data.length);
       } else {
         console.warn("⚠️ Failed to load transactions:", response.message);
         setError(response.message || "Failed to load transactions");

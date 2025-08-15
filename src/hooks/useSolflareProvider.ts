@@ -46,20 +46,20 @@ export function useSolflareProvider() {
   // Load user data từ backend
   const loadUserData = useCallback(async (walletAddress: string) => {
     try {
-      console.log('📊 Loading user data for Solflare...', { walletAddress });
+      // console.log('📊 Loading user data for Solflare...', { walletAddress });
       
       // Load user statistics
       const statsResult = await UserService.getUserStatistics();
       if (statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
-        console.log('✅ User statistics loaded:', statsResult.data);
+        // console.log('✅ User statistics loaded:', statsResult.data);
       }
 
       // Load transaction history
       const txResult = await UserService.getTransactions({ limit: 50 });
       if (txResult.success && txResult.data) {
         setTransactions(txResult.data);
-        console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
+        // console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
       }
     } catch (error) {
       console.error('⚠️ Failed to load user data:', error);
@@ -75,7 +75,7 @@ export function useSolflareProvider() {
     
     try {
       setLoading(true);
-      console.log('🚀 Starting Solflare wallet connection...');
+      // console.log('🚀 Starting Solflare wallet connection...');
       
       // Bước 1: Kết nối với Solflare wallet
       const resp = await solflare.connect();
@@ -87,10 +87,10 @@ export function useSolflareProvider() {
 
       setIsConnected(true);
       setPublicKey(walletAddress);
-      console.log('✅ Solflare connected:', walletAddress);
+      // console.log('✅ Solflare connected:', walletAddress);
 
       // Bước 2: Authenticate với backend
-      console.log('🔐 Authenticating with backend...');
+      // console.log('🔐 Authenticating with backend...');
       const connectResult = await UserService.connectWallet(walletAddress);
 
       if (!connectResult.success) {
@@ -101,7 +101,7 @@ export function useSolflareProvider() {
       if ((connectResult as any).data?.accessToken) {
         AuthService.setToken((connectResult as any).data.accessToken);
         setAuthToken((connectResult as any).data.accessToken);
-        console.log('🔑 JWT token saved to localStorage');
+        // console.log('🔑 JWT token saved to localStorage');
       } else {
         console.warn('⚠️ No JWT token received from backend');
       }
@@ -109,7 +109,7 @@ export function useSolflareProvider() {
       // Bước 4: Load user data với JWT token
       await loadUserData(walletAddress);
 
-      console.log('🎉 Solflare wallet connection successful!');
+      // console.log('🎉 Solflare wallet connection successful!');
       return resp;
       
     } catch (error: any) {
@@ -139,7 +139,7 @@ export function useSolflareProvider() {
     setTransactions([]);
     AuthService.removeToken();
     
-    console.log('🔌 Solflare wallet disconnected');
+    // console.log('🔌 Solflare wallet disconnected');
   }, [solflare]);
 
   return {

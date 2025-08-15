@@ -24,7 +24,7 @@ export class ConfigService extends BaseService {
     address?: string
   ): Promise<ApiResponse<CandyMachineConfig>> {
     try {
-      console.log('⚙️ Fetching candy machine config...', { address });
+      // console.log('⚙️ Fetching candy machine config...', { address });
 
       const params = address ? { address } : undefined;
       
@@ -34,7 +34,7 @@ export class ConfigService extends BaseService {
         false // Public API - không cần auth
       );
 
-      console.log('✅ Config fetched successfully:', result);
+      // console.log('✅ Config fetched successfully:', result);
       return result;
     } catch (error) {
       console.error('❌ Failed to get candy machine config:', error);
