@@ -6,6 +6,7 @@ import clsx from "clsx";
 import CatGrid from "./CatGrid";
 import { useAuth } from "@/providers/AuthProvider";
 import ConnectWallet from "@/components/Wallet/ConnectWallet";
+import { useSettings } from "@/providers/SettingsProvider";
 
 interface MintSectionProps {
   minted: number;
@@ -13,9 +14,21 @@ interface MintSectionProps {
   isMinting: boolean;
   mintSuccess: boolean;
   selectedCat: number | null;
-  cats: string[];
   onMintClick: () => void;
 }
+
+const cats = [
+  "tokens/1.png",
+  "tokens/2.png",
+  "tokens/3.png",
+  "tokens/4.png",
+  "tokens/5.png",
+  "tokens/6.png",
+  "tokens/7.png",
+  "tokens/8.png",
+  "tokens/9.png",
+  "tokens/10.png",
+];
 
 const MintSection: React.FC<MintSectionProps> = ({
   minted,
@@ -23,10 +36,18 @@ const MintSection: React.FC<MintSectionProps> = ({
   isMinting,
   mintSuccess,
   selectedCat,
-  cats,
   onMintClick,
 }) => {
   const { isAuthenticated } = useAuth();
+  const { nftPricing, isLoadingPricing, pricingError, refreshPricing } =
+    useSettings();
+
+  console.log("Debug MintSection:", {
+    isAuthenticated,
+    nftPricing,
+    isLoadingPricing,
+    pricingError,
+  });
 
   const getScaleAndSize = (text: string) => {
     // Simplified to use consistent title-text class
@@ -51,7 +72,7 @@ const MintSection: React.FC<MintSectionProps> = ({
         <img
           src="/gifs/cat-play-ball.gif"
           alt="Cat playing with ball"
-          style={{ aspectRatio: "4/3" }}
+          style={{ aspectRatio: "5/3" }}
         />
       </div>
 
@@ -129,7 +150,7 @@ const MintSection: React.FC<MintSectionProps> = ({
               ) : mintSuccess ? (
                 "Minted Successfully! 🎉"
               ) : (
-                "MINT BELPY"
+                <>MINT BELPY</>
               )}
             </motion.button>
           ) : (

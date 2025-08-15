@@ -52,10 +52,10 @@ export default function RandomCloud() {
       const items: CloudItem[] = [];
       
       // Chỉ tạo 3-5 mây
-      const cloudCount = Math.floor(Math.random() * 50) + 100;
+      const cloudCount = Math.floor(Math.random() * 10) + 20;
       
       // Log kích thước parent để debug
-      console.log('Parent size:', parentSize);
+      // console.log('Parent size:', parentSize);
       
       // Tính toán vùng phân bố dựa trên kích thước thực tế của parent
       const { width: parentWidth, height: parentHeight } = parentSize;
@@ -118,7 +118,7 @@ export default function RandomCloud() {
   return (
     <div 
       ref={containerRef}
-      className="absolute inset-0 overflow-hidden pointer-events-none z-50 w-full h-full top-0 left-0"
+      className="absolute inset-0 overflow-hidden pointer-events-none w-full h-full top-0 left-0"
     >
       {cloudItems.map((cloud) => (
         <motion.div

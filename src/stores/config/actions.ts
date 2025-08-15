@@ -9,8 +9,6 @@ export const createConfigActions = (
     set({ loading: true, error: null });
 
     try {
-      console.log("🔄 Fetching candy machine config...", { address });
-
       const result = await ConfigService.getCandyMachineConfig(address);
 
       if (result.success && result.data) {
@@ -24,13 +22,6 @@ export const createConfigActions = (
           candyMachineAddress: config.address || null,
           totalMinted: config.totalProcessed || 0,
           totalSupply: config.itemsAvailable || 0,
-        });
-
-        console.log("✅ Candy machine config loaded:", {
-          address: config.address,
-          collectionAddress: config.collectionAddress,
-          totalMinted: config.totalProcessed,
-          totalSupply: config.itemsAvailable,
         });
       } else {
         throw new Error(
@@ -62,10 +53,6 @@ export const createConfigActions = (
     }
 
     try {
-      console.log("🔄 Refreshing candy machine stats...", {
-        address: targetAddress,
-      });
-
       const result = await ConfigService.getCandyMachineConfig(targetAddress);
 
       if (result.success && result.data) {
@@ -75,11 +62,6 @@ export const createConfigActions = (
         set({
           totalMinted: totalProcessed,
           totalSupply: totalSupply,
-        });
-
-        console.log("✅ Stats refreshed:", {
-          minted: totalProcessed,
-          supply: totalSupply,
         });
       }
     } catch (error) {
@@ -96,23 +78,16 @@ export const createConfigActions = (
       totalSupply: config.itemsAvailable || 0,
       error: null,
     });
-
-    console.log("✅ Config set manually:", {
-      address: config.address,
-      collectionAddress: config.collectionAddress,
-    });
   },
 
   updateMintedCount: (newCount: number) => {
     set({ totalMinted: newCount });
-    console.log("📊 Minted count updated:", newCount);
   },
 
   incrementMinted: () => {
     const state = get();
     const newCount = state.totalMinted + 1;
     set({ totalMinted: newCount });
-    console.log("📈 Minted count incremented:", newCount);
   },
 
   clearConfig: () => {
@@ -125,7 +100,5 @@ export const createConfigActions = (
       totalMinted: 0,
       totalSupply: 0,
     });
-
-    console.log("🗑️ Config cleared");
   },
 });

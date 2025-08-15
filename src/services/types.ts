@@ -149,6 +149,66 @@ export interface PaginationParams {
   skip?: number;
 }
 
+// Settings related types
+export interface Setting {
+  _id: string;
+  key: string;
+  value: string;
+  type: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SettingsData {
+  GENESIS_NFT_PRICE?: string;
+  GENERAL_NFT_PRICE?: string;
+  GENESIS_ROUND_STARTDATE?: string;
+  GENESIS_ROUND_DAYS?: string;
+}
+
+export interface SettingsDataResponse {
+  success: boolean;
+  data: SettingsData;
+  meta?: {
+    isGenesisRoundActive: boolean;
+  };
+}
+
+export interface SettingResponse {
+  success: boolean;
+  data: {
+    key: string;
+    value: string;
+  };
+}
+
+export interface GenesisStatusResponse {
+  success: boolean;
+  data: {
+    isActive: boolean;
+    now: string;
+  };
+}
+
+// NFT Pricing types
+export interface NFTPricingResponse {
+  success: boolean;
+  data: {
+    currentPrice: number;
+    isGenesisRound: boolean;
+    genesisPrice: number;
+    generalPrice: number;
+    genesisRound: {
+      startDate: string;
+      endDate: string;
+      durationDays: number;
+      isActive: boolean;
+    };
+    priceType: "genesis" | "general";
+  };
+}
+
 // Error types
 export interface ApiError {
   statusCode: number;

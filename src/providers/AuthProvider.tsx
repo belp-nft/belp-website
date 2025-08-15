@@ -58,13 +58,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const currentToken = AuthService.getToken();
     const isValid = AuthService.isTokenValid();
 
-    console.log("🔍 Auth check details:", {
-      hasToken: !!currentToken,
-      tokenLength: currentToken?.length || 0,
-      isValid,
-      tokenPreview: currentToken ? `${currentToken.slice(0, 20)}...` : null,
-    });
-
     setToken(currentToken);
     setIsAuthenticated(!!currentToken && isValid);
 

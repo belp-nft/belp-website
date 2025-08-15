@@ -145,7 +145,7 @@ export default function CatCarouselCuteness() {
                   className={clsx(
                     "flex items-center justify-center cursor-pointer transition-all duration-500 ease-out",
                     "hover:scale-105 hover:shadow-lg",
-                    "h-48"
+                    "h-60"
                   )}
                   style={{
                     width: "100%",

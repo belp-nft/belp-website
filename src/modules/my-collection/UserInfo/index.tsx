@@ -25,7 +25,7 @@ const ImageLoader = ({ src, alt, className, ...props }: any) => {
         )}
         onLoad={() => {
           setIsLoading(false);
-          console.log("✅ Avatar loaded successfully");
+          // console.log("✅ Avatar loaded successfully");
         }}
         onError={() => {
           console.warn("❌ Avatar failed to load");

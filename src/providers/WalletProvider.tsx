@@ -31,7 +31,7 @@ export function WalletProvider({ children, config = {} }: WalletProviderProps) {
 
   const onConnected = (info: Connected) => {
     if (enableDebug) {
-      console.log('WalletProvider: Wallet connected', info);
+      // console.log('WalletProvider: Wallet connected', info);
     }
     
     if (!isReady) {

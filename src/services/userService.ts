@@ -34,7 +34,7 @@ export class UserService extends BaseService {
     walletAddress: string
   ): Promise<ApiResponse<User>> {
     try {
-      console.log("🔗 Connecting wallet...", { walletAddress });
+      // console.log("🔗 Connecting wallet...", { walletAddress });
 
       const requestData: ConnectWalletRequest = {
         walletAddress,
@@ -46,7 +46,7 @@ export class UserService extends BaseService {
         false
       );
 
-      console.log("Wallet connected successfully", result);
+      // console.log("Wallet connected successfully", result);
       return result;
     } catch (error) {
       console.error("Failed to connect wallet:", error);
@@ -59,7 +59,7 @@ export class UserService extends BaseService {
    */
   static async getUserInfo(): Promise<ApiResponse<User>> {
     try {
-      console.log("👤 Fetching user info...");
+      // console.log("👤 Fetching user info...");
 
       const result = await this.get<User>(
         this.ENDPOINTS.INFO,
@@ -67,7 +67,7 @@ export class UserService extends BaseService {
         true
       );
 
-      console.log("✅ User info fetched:", result);
+      // console.log("✅ User info fetched:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to get user info:", error);
@@ -80,7 +80,7 @@ export class UserService extends BaseService {
    */
   static async getWalletBalance(): Promise<ApiResponse<any>> {
     try {
-      console.log("💰 Fetching wallet balance...");
+      // console.log("💰 Fetching wallet balance...");
 
       const result = await this.get<any>(
         this.ENDPOINTS.BALANCE,
@@ -88,7 +88,7 @@ export class UserService extends BaseService {
         true // Requires auth
       );
 
-      console.log("✅ Wallet balance fetched:", result);
+      // console.log("✅ Wallet balance fetched:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to get wallet balance:", error);
@@ -103,7 +103,7 @@ export class UserService extends BaseService {
     transactionData: SaveTransactionRequest
   ): Promise<ApiResponse<Transaction>> {
     try {
-      console.log("💾 Saving transaction...", transactionData);
+      // console.log("💾 Saving transaction...", transactionData);
 
       const result = await this.post<Transaction>(
         this.ENDPOINTS.TRANSACTION,
@@ -111,7 +111,7 @@ export class UserService extends BaseService {
         true // Requires auth
       );
 
-      console.log("✅ Transaction saved:", result);
+      // console.log("✅ Transaction saved:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to save transaction:", error);
@@ -126,7 +126,7 @@ export class UserService extends BaseService {
     nftData: SaveNftRequest
   ): Promise<ApiResponse<NFT>> {
     try {
-      console.log("🖼️ Saving NFT...", nftData);
+      // console.log("🖼️ Saving NFT...", nftData);
 
       const result = await this.post<NFT>(
         this.ENDPOINTS.NFT,
@@ -134,7 +134,7 @@ export class UserService extends BaseService {
         true // Requires auth
       );
 
-      console.log("✅ NFT saved:", result);
+      // console.log("✅ NFT saved:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to save NFT:", error);
@@ -149,7 +149,7 @@ export class UserService extends BaseService {
     params?: PaginationParams
   ): Promise<ApiResponse<Transaction[]>> {
     try {
-      console.log("📜 Fetching transactions...", { params });
+      // console.log("📜 Fetching transactions...", { params });
 
       const result = await this.get<Transaction[]>(
         this.ENDPOINTS.TRANSACTIONS,
@@ -157,7 +157,7 @@ export class UserService extends BaseService {
         true // Requires auth
       );
 
-      console.log("✅ Transactions fetched:", result);
+      // console.log("✅ Transactions fetched:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to get transactions:", error);
@@ -172,7 +172,7 @@ export class UserService extends BaseService {
     params?: PaginationParams
   ): Promise<ApiResponse<NFT[]>> {
     try {
-      console.log("🖼️ Fetching NFTs...", { params });
+      // console.log("🖼️ Fetching NFTs...", { params });
 
       const result = await this.get<NFT[]>(
         this.ENDPOINTS.NFTS,
@@ -180,7 +180,7 @@ export class UserService extends BaseService {
         true // Requires auth
       );
 
-      console.log("✅ NFTs fetched:", result);
+      // console.log("✅ NFTs fetched:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to get NFTs:", error);
@@ -195,7 +195,7 @@ export class UserService extends BaseService {
     ApiResponse<OverviewStatistics>
   > {
     try {
-      console.log("📊 Fetching overview statistics...");
+      // console.log("📊 Fetching overview statistics...");
 
       const result = await this.get<OverviewStatistics>(
         this.ENDPOINTS.OVERVIEW_STATISTICS,
@@ -203,7 +203,7 @@ export class UserService extends BaseService {
         true // Requires auth
       );
 
-      console.log("✅ Overview statistics fetched:", result);
+      // console.log("✅ Overview statistics fetched:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to get overview statistics:", error);
@@ -216,7 +216,7 @@ export class UserService extends BaseService {
    */
   static async getUserStatistics(): Promise<ApiResponse<UserStatistics>> {
     try {
-      console.log("📈 Fetching user statistics...");
+      // console.log("📈 Fetching user statistics...");
 
       const result = await this.get<UserStatistics>(
         this.ENDPOINTS.STATISTICS,
@@ -224,7 +224,7 @@ export class UserService extends BaseService {
         true
       );
 
-      console.log("✅ User statistics fetched:", result);
+      // console.log("✅ User statistics fetched:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to get user statistics:", error);
@@ -237,14 +237,14 @@ export class UserService extends BaseService {
    */
   static async deleteTransactions(): Promise<ApiResponse<{ deletedCount: number }>> {
     try {
-      console.log("🗑️ Deleting transactions...");
+      // console.log("🗑️ Deleting transactions...");
 
       const result = await this.delete<{ deletedCount: number }>(
         this.ENDPOINTS.TRANSACTIONS,
         true // Requires auth
       );
 
-      console.log("✅ Transactions deleted:", result);
+      // console.log("✅ Transactions deleted:", result);
       return result;
     } catch (error) {
       console.error("❌ Failed to delete transactions:", error);

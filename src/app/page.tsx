@@ -10,9 +10,6 @@ import BelpFooter from "@/components//Footer";
 export default function Home() {
   return (
     <main>
-      <div className="font-medium bg-[#640076] text-center py-2 text-white">
-        Belp is now on SOLANA
-      </div>
       <HeroSection />
       <WhatlsBelp />
       <BelpSection />

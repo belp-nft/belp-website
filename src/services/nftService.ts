@@ -8,6 +8,7 @@ import type {
   CandyMachineInfo,
   GetUserNftsResponse,
   GetNftDetailsResponse,
+  NFTPricingResponse,
 } from "./types";
 
 /**
@@ -15,6 +16,7 @@ import type {
  */
 export class NftService extends BaseService {
   private static readonly ENDPOINTS = {
+    PRICING: "/nft/pricing",
     BUILD_MINT_TX: "/nft/build-mint-tx",
     SEND_SIGNED_TX: "/nft/send-signed-tx",
     INFO: "/nft/info",
@@ -22,6 +24,35 @@ export class NftService extends BaseService {
     NFT_DETAILS: "/nft/details",
   };
 
+  /**
+   * 1. Lấy thông tin giá NFT hiện tại - GET /nft/pricing
+   */
+  static async getCurrentPricing(): Promise<NFTPricingResponse> {
+    try {
+      console.log("💰 Fetching current NFT pricing...");
+
+      const response = await this.get<NFTPricingResponse['data']>(
+        this.ENDPOINTS.PRICING,
+        {},
+        true // Requires auth
+      );
+
+      console.log("✅ NFT pricing API response:", response);
+
+      // Return the wrapped response
+      return {
+        success: response.success || true,
+        data: response.data || response as any
+      };
+    } catch (error) {
+      console.error("❌ Failed to get NFT pricing:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 2. Build mint transaction với payment - POST /nft/build-mint-tx
+   */
   static async buildMintTransaction(
     candyMachineAddress: string,
     buyerPublicKey: string
@@ -58,6 +89,9 @@ export class NftService extends BaseService {
     }
   }
 
+  /**
+   * 3. Gửi signed transaction - POST /nft/send-signed-tx
+   */
   static async sendSignedTransaction(
     signedTxBase64: string,
     walletAddress?: string,
@@ -97,7 +131,7 @@ export class NftService extends BaseService {
   }
 
   /**
-   * 3. Lấy thông tin candy machine - GET /nft/info
+   * 4. Lấy thông tin candy machine - GET /nft/info
    */
   static async getCandyMachineInfo(
     candyMachineAddress: string
@@ -120,7 +154,7 @@ export class NftService extends BaseService {
   }
 
   /**
-   * 4. Lấy danh sách NFTs của user - GET /nft/user/:walletAddress/nfts
+   * 5. Lấy danh sách NFTs của user - GET /nft/user/:walletAddress/nfts
    */
   static async getUserNfts(
     walletAddress: string
@@ -150,7 +184,7 @@ export class NftService extends BaseService {
   }
 
   /**
-   * 5. Lấy chi tiết NFT - GET /nft/details/:nftAddress
+   * 6. Lấy chi tiết NFT - GET /nft/details/:nftAddress
    */
   static async getNftDetails(
     nftAddress: string

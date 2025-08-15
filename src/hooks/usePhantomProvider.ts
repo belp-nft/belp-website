@@ -51,13 +51,13 @@ export function usePhantomProvider() {
 
   const loadUserData = useCallback(async (walletAddress: string) => {
     try {
-      console.log("Loading user data...", { walletAddress });
+      // console.log("Loading user data...", { walletAddress });
 
       // Load user statistics
       const statsResult = await UserService.getUserStatistics();
       if (statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
-        console.log("User statistics loaded:", statsResult.data);
+        // console.log("User statistics loaded:", statsResult.data);
       }
 
       // Load transaction history
@@ -66,7 +66,7 @@ export function usePhantomProvider() {
       });
       if (txResult.success && txResult.data) {
         setTransactions(txResult.data);
-        console.log(
+        // console.log(
           "Transaction history loaded:",
           txResult.data.length,
           "transactions"
@@ -90,7 +90,7 @@ export function usePhantomProvider() {
         const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(
           currentUrl
         )}?ref=belp`;
-        console.log("Trying mobile deep link:", deepLink);
+        // console.log("Trying mobile deep link:", deepLink);
 
         // Redirect to Phantom app
         window.location.href = deepLink;
@@ -115,7 +115,7 @@ export function usePhantomProvider() {
 
     try {
       setLoading(true);
-      console.log("Starting Phantom wallet connection...");
+      // console.log("Starting Phantom wallet connection...");
 
       // Connect to Phantom wallet
       const resp = await phantom.connect();
@@ -127,10 +127,10 @@ export function usePhantomProvider() {
 
       setIsConnected(true);
       setPublicKey(walletAddress);
-      console.log("Phantom connected:", walletAddress);
+      // console.log("Phantom connected:", walletAddress);
 
       // Authenticate with backend
-      console.log("Authenticating with backend...");
+      // console.log("Authenticating with backend...");
       const connectResult = await UserService.connectWallet(walletAddress);
 
       if (!connectResult.success) {
@@ -143,7 +143,7 @@ export function usePhantomProvider() {
       if ((connectResult as any).data?.accessToken) {
         AuthService.setToken((connectResult as any).data.accessToken);
         setAuthToken((connectResult as any).data.accessToken);
-        console.log("JWT token saved");
+        // console.log("JWT token saved");
       } else {
         console.warn("No JWT token received from backend");
       }
@@ -151,7 +151,7 @@ export function usePhantomProvider() {
       // Load user data with JWT token
       await loadUserData(walletAddress);
 
-      console.log("Phantom wallet connection successful!");
+      // console.log("Phantom wallet connection successful!");
       return resp;
     } catch (error: any) {
       console.error("Phantom connection failed:", error);
@@ -164,7 +164,7 @@ export function usePhantomProvider() {
 
       // Handle specific errors
       if (error.message?.includes("User rejected") || error.code === 4001) {
-        console.log("User cancelled the connection");
+        // console.log("User cancelled the connection");
       } else if (error.code === -32002) {
         alert(
           "Connection request is already pending. Please check your Phantom wallet."
@@ -197,7 +197,7 @@ export function usePhantomProvider() {
       setTransactions([]);
       AuthService.removeToken();
 
-      console.log("Phantom wallet disconnected");
+      // console.log("Phantom wallet disconnected");
     } catch (error) {
       console.error("Error disconnecting phantom:", error);
     }
@@ -207,7 +207,7 @@ export function usePhantomProvider() {
     if (!phantom?.isConnected || !phantom?.publicKey) return null;
 
     try {
-      console.log("Attempting auto-connect...");
+      // console.log("Attempting auto-connect...");
 
       // Try connect with onlyIfTrusted
       const response = await phantom.connect({ onlyIfTrusted: true });
@@ -215,7 +215,7 @@ export function usePhantomProvider() {
 
       setIsConnected(true);
       setPublicKey(walletAddress);
-      console.log("Auto-connect successful:", walletAddress);
+      // console.log("Auto-connect successful:", walletAddress);
 
       // Authenticate with backend
       const connectResult = await UserService.connectWallet(walletAddress);
@@ -223,7 +223,7 @@ export function usePhantomProvider() {
       if (connectResult.success && (connectResult as any).data?.accessToken) {
         AuthService.setToken((connectResult as any).data.accessToken);
         setAuthToken((connectResult as any).data.accessToken);
-        console.log("JWT token saved from auto-connect");
+        // console.log("JWT token saved from auto-connect");
 
         // Load user data
         await loadUserData(walletAddress);
@@ -231,7 +231,7 @@ export function usePhantomProvider() {
         return response;
       }
     } catch (error) {
-      console.log("Auto-connect failed, user needs to manually connect");
+      // console.log("Auto-connect failed, user needs to manually connect");
     }
 
     return null;

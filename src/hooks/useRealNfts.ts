@@ -26,12 +26,12 @@ export function useRealNfts(walletAddress?: string | null) {
 
     try {
       setSyncing(true);
-      console.log("Loading NFTs from backend...", { walletAddress });
+      // console.log("Loading NFTs from backend...", { walletAddress });
 
       const result = await UserService.getNfts({ limit: 100 });
       if (result.success && result.data) {
         setBackendNfts(result.data);
-        console.log("✅ Backend NFTs loaded:", result.data.length, "NFTs");
+        // console.log("✅ Backend NFTs loaded:", result.data.length, "NFTs");
       } else {
         setBackendNfts([]);
       }
@@ -86,7 +86,7 @@ export function useRealNfts(walletAddress?: string | null) {
 
       if (walletAddress && nft.mintSignature) {
         try {
-          console.log("Saving NFT to backend...", { nft, walletAddress });
+          // console.log("Saving NFT to backend...", { nft, walletAddress });
 
           await UserService.saveTransaction({
             walletAddress,
@@ -95,7 +95,7 @@ export function useRealNfts(walletAddress?: string | null) {
             timestamp: nft.mintedAt || new Date().toISOString(),
           });
 
-          console.log("NFT saved to backend");
+          // console.log("NFT saved to backend");
 
           await loadBackendNfts();
         } catch (error) {

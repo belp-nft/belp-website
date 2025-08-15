@@ -39,15 +39,15 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
         <div className="relative w-40 h-40 mb-4">
           <div
             className={clsx(
-              "w-full h-full bg-gradient-to-br from-pink-200 to-purple-300",
-              "rounded-2xl flex items-center justify-center shadow-lg overflow-hidden"
+              "w-full h-full",
+              "rounded-2xl shadow-lg overflow-hidden"
             )}
           >
             {selectedCat !== null && (
               <img
                 src={`/icons/${cats[selectedCat]}`}
                 alt="Minted BELPY"
-                className="w-32 h-32 object-contain"
+                className="w-full object-contain"
               />
             )}
           </div>

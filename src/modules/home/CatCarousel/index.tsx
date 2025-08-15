@@ -9,13 +9,17 @@ import "swiper/css";
 import "swiper/css/navigation";
 
 const baseCats = [
-  "token-nft-1.svg",
-  "token-nft-2.svg",
-  "token-nft-3.svg",
-  "token-nft-4.svg",
-  "token-nft-5.svg",
+  "tokens/1.png",
+  "tokens/2.png",
+  "tokens/3.png",
+  "tokens/4.png",
+  "tokens/5.png",
+  "tokens/6.png",
+  "tokens/7.png",
+  "tokens/8.png",
+  "tokens/9.png",
+  "tokens/10.png",
 ];
-
 // Tạo loop bằng cách duplicate slides để transition mượt hơn
 const cats = [...baseCats, ...baseCats, ...baseCats];
 
@@ -38,7 +42,7 @@ export default function CatCarousel() {
       const timer = setTimeout(() => {
         swiperRef.current?.autoplay.start();
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isPaused, currentSlide]);
@@ -83,34 +87,34 @@ export default function CatCarousel() {
         onSlideChange={handleSlideChange}
         breakpoints={{
           // Mobile
-          320: { 
-            slidesPerView: 2.2, 
-            spaceBetween: 2, 
-            centeredSlides: true 
+          320: {
+            slidesPerView: 2.2,
+            spaceBetween: 2,
+            centeredSlides: true,
           },
           // Mobile large
-          480: { 
-            slidesPerView: 2.5, 
-            spaceBetween: 2, 
-            centeredSlides: true 
+          480: {
+            slidesPerView: 2.5,
+            spaceBetween: 2,
+            centeredSlides: true,
           },
           // Tablet
-          640: { 
-            slidesPerView: 3, 
-            spaceBetween: 2, 
-            centeredSlides: true 
+          640: {
+            slidesPerView: 3,
+            spaceBetween: 2,
+            centeredSlides: true,
           },
           // Desktop
-          1024: { 
-            slidesPerView: 5, 
-            spaceBetween: 2, 
-            centeredSlides: true 
+          1024: {
+            slidesPerView: 5,
+            spaceBetween: 2,
+            centeredSlides: true,
           },
           // Large Desktop
-          1440: { 
-            slidesPerView: 7, 
-            spaceBetween: 2, 
-            centeredSlides: true 
+          1440: {
+            slidesPerView: 7,
+            spaceBetween: 2,
+            centeredSlides: true,
           },
         }}
       >
@@ -120,12 +124,12 @@ export default function CatCarousel() {
               const isAdjacent = isPrev || isNext;
               const opacity = isActive ? 1 : isAdjacent ? 0.8 : 0.4;
               const scale = isActive ? 1 : isAdjacent ? 0.95 : 0.85;
-              
+
               return (
                 <div
                   className={clsx(
                     "overflow-hidden flex items-center justify-center cursor-pointer transition-all duration-500 ease-out",
-                    "hover:scale-105 hover:shadow-lg",
+                    "hover:scale-105 hover:shadow-lg"
                   )}
                   style={{
                     width: "100%",
@@ -140,7 +144,7 @@ export default function CatCarousel() {
                     src={`/icons/${src}`}
                     alt={`Belp Cat NFT ${index + 1}`}
                     draggable={false}
-                    className="object-contain w-full h-full"
+                    className="object-contain w-full h-full rounded-2xl"
                     loading="lazy"
                     style={{
                       filter: isActive ? "none" : "brightness(0.9)",

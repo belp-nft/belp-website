@@ -20,10 +20,16 @@ import MintConfirmModal from "@/modules/mint/MintConfirmModal";
 import MintSuccessModal from "@/modules/mint/MintSuccessModal";
 
 const cats = [
-  "token-nft-1.svg",
-  "token-nft-2.svg",
-  "token-nft-3.svg",
-  "token-nft-4.svg",
+  "tokens/1.png",
+  "tokens/2.png",
+  "tokens/3.png",
+  "tokens/4.png",
+  "tokens/5.png",
+  "tokens/6.png",
+  "tokens/7.png",
+  "tokens/8.png",
+  "tokens/9.png",
+  "tokens/10.png",
 ];
 
 const BelpyMintPage = () => {
@@ -176,13 +182,6 @@ const BelpyMintPage = () => {
       }
 
       if (transactionSignature) {
-        console.log("MINT SUCCESSFUL!");
-        console.log("Transaction signature:", transactionSignature);
-        console.log("View on Solana Explorer:");
-        console.log(
-          `https://explorer.solana.com/tx/${transactionSignature}?cluster=devnet`
-        );
-
         setNftAddress(nftAddressResult);
 
         const randomCat = Math.floor(Math.random() * cats.length);
@@ -190,14 +189,13 @@ const BelpyMintPage = () => {
 
         if (authToken) {
           try {
-            console.log("Saving transaction to backend...");
             await UserService.saveTransaction({
               walletAddress: solAddress,
               transactionSignature: transactionSignature,
               candyMachineAddress: candyMachineAddress,
               timestamp: new Date().toISOString(),
             });
-            console.log("Transaction saved to backend");
+            ("Transaction saved to backend");
 
             if (loadUserData) {
               await loadUserData(solAddress);
@@ -208,26 +206,16 @@ const BelpyMintPage = () => {
         }
 
         try {
-          console.log("Refreshing SOL balance after mint...");
           await refreshSolBalance();
-          console.log("SOL balance refreshed successfully");
         } catch (balanceError) {
           console.error("Failed to refresh SOL balance:", balanceError);
         }
 
         try {
-          console.log("Fetching NFT details from backend...");
           const nftData = await NftService.getNftDetails(nftAddressResult);
 
           if (nftData && nftData.success && nftData.nft) {
-            console.log("NFT details loaded:", nftData.nft);
             setNftDetailData(nftData.nft);
-
-            if (nftData.nft.name) {
-              console.log("NFT Name:", nftData.nft.name);
-            }
-          } else {
-            console.log("NFT details response format unexpected:", nftData);
           }
         } catch (nftError) {
           console.error("Failed to fetch NFT details:", nftError);
@@ -248,10 +236,6 @@ const BelpyMintPage = () => {
         setMintSuccess(true);
         setShowMintModal(false);
         setShowSuccessModal(true);
-
-        console.log(
-          `View transaction: https://solscan.io/tx/${transactionSignature}?cluster=devnet`
-        );
       } else {
         console.log("MINT FAILED!");
         console.log("Error:", sendResult.message);
@@ -328,7 +312,6 @@ const BelpyMintPage = () => {
           isMinting={isMinting}
           mintSuccess={mintSuccess}
           selectedCat={selectedCat}
-          cats={cats}
           onMintClick={handleMintClick}
         />
 

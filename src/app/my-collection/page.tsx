@@ -39,13 +39,11 @@ const MyCollectionPage = () => {
 
       try {
         setError(null);
-        console.log("🖼️ Loading NFTs for wallet:", solAddress);
 
         const response = await NftService.getUserNfts(solAddress);
 
         if (response.success) {
           setNfts(response.nfts || []);
-          console.log("✅ NFTs loaded:", response.nfts?.length || 0);
         } else {
           setError("Failed to load NFTs");
           console.error("❌ Failed to load NFTs");

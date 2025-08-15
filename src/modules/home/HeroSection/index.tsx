@@ -86,8 +86,8 @@ export default function HeroSection() {
             <Image
               src="/images/home/belp-friends.svg"
               alt="belp friend"
-              width={623}
-              height={321}
+              width={800}
+              height={540}
               priority
               draggable={false}
               className="w-full h-auto"
