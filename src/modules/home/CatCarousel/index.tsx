@@ -16,11 +16,6 @@ const baseCats = [
   "tokens/3.png",
   "tokens/4.png",
   "tokens/5.png",
-  "tokens/6.png",
-  "tokens/7.png",
-  "tokens/8.png",
-  "tokens/9.png",
-  "tokens/10.png",
 ];
 
 // Memoized slide component
