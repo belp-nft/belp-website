@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -30,6 +30,22 @@ export default function BelpHeader() {
   const pathname = usePathname();
 
   const [open, setOpen] = useState(false);
+
+  // Disable/enable scroll when menu opens/closes
+  useEffect(() => {
+    if (open) {
+      // Disable scroll
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Enable scroll
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to ensure scroll is restored
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
 
   return (
     <>
