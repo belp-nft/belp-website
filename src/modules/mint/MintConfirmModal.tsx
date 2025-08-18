@@ -4,6 +4,7 @@ import React from "react";
 import clsx from "clsx";
 import Modal from "@/components/Modal";
 import Image from "next/image";
+import { useSettings } from "@/providers/SettingsProvider";
 
 interface MintConfirmModalProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ const MintConfirmModal: React.FC<MintConfirmModalProps> = ({
   onClose,
   onConfirm,
 }) => {
+  const { nftPricing, isLoadingPricing } = useSettings();
+
   return (
     <Modal
       isOpen={isOpen}
@@ -54,7 +57,10 @@ const MintConfirmModal: React.FC<MintConfirmModalProps> = ({
             "text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg"
           )}
         >
-          5 SOL
+          {isLoadingPricing 
+            ? "Loading..." 
+            : `${(nftPricing?.currentPrice || 5).toLocaleString()} SOL`
+          }
         </div>
       </div>
     </Modal>
