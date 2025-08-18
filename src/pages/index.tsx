@@ -1,4 +1,4 @@
-"use client";
+import { GetServerSideProps } from 'next';
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import HeroSection from "@/modules/home/HeroSection";
@@ -36,13 +36,18 @@ const BelpFooter = dynamic(() => import("@/components/Footer"), {
   ssr: true,
 });
 
-export default function Home() {
+interface HomeProps {
+  // Có thể thêm initial data từ server nếu cần
+  initialData?: any;
+}
+
+export default function Home({ initialData }: HomeProps) {
   return (
     <main>
       {/* Critical components load immediately */}
       <HeroSection />
       <WhatlsBelp />
-      
+
       {/* Non-critical components load with Suspense */}
       <Suspense fallback={<PageLoading />}>
         <BelpSection />
@@ -70,3 +75,24 @@ export default function Home() {
     </main>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  try {
+    // Có thể fetch initial data từ API nếu cần
+    // Ví dụ: fetch config data, stats, etc.
+    
+    return {
+      props: {
+        // initialData: data,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching home page data:', error);
+    
+    return {
+      props: {
+        initialData: null,
+      },
+    };
+  }
+};

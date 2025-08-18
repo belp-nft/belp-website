@@ -198,6 +198,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const isProcessingRef = useRef(false);
   const hasProcessedConnectionRef = useRef(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const balanceLoadingRef = useRef(false);
+  const lastBalanceLoadRef = useRef(0);
 
   const { clearConfig } = useConfigActions();
   const { showLoading, hideLoading } = useLoading();
@@ -218,10 +220,31 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   >(new Map());
 
   const refreshSolBalance = useCallback(async () => {
+    // Add stack trace to see where this is being called from
+    console.log("Refreshing SOL balance... Called from:", new Error().stack?.split('\n')[2]?.trim());
+    
+    // Prevent concurrent calls globally across all instances
+    if (globalBalanceLoading || balanceLoadingRef.current) {
+      console.log("💰 Balance already loading globally, skipping duplicate call");
+      return;
+    }
+
+    // Increased debounce - only allow one call per 30 seconds globally
+    const now = Date.now();
+    const MIN_INTERVAL = 30000; // 30 seconds
+    if (now - globalLastBalanceLoad < MIN_INTERVAL) {
+      console.log("💰 Balance called too recently globally, skipping (last call was", Math.floor((now - globalLastBalanceLoad) / 1000), "seconds ago, need to wait", Math.floor((MIN_INTERVAL - (now - globalLastBalanceLoad)) / 1000), "more seconds)");
+      return;
+    }
+
     try {
+      globalBalanceLoading = true;
+      balanceLoadingRef.current = true;
+      globalLastBalanceLoad = now;
+      lastBalanceLoadRef.current = now;
       setLoading("sol-balance");
 
-      console.log("💰 Using API to fetch wallet balance...");
+      console.log("💰 Using API to fetch wallet balance... (call #" + (Math.floor(now / 1000)) + ")");
       const balanceResult = await UserService.getWalletBalance();
       if (balanceResult.success && balanceResult.data) {
         // Check for different possible response structures
@@ -240,10 +263,21 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         );
         setSolLamports(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to refresh SOL balance:", error);
+      
+      // Handle rate limit error specifically
+      if (error.message?.includes("Rate limit") || error.message?.includes("Too many")) {
+        console.warn("⚠️ Rate limit hit, will skip balance refresh for a while");
+        // Set a longer cooldown for rate limit
+        globalLastBalanceLoad = now + 60000; // Extra 60 seconds cooldown
+        lastBalanceLoadRef.current = now + 60000;
+      }
+      
       setSolLamports(0);
     } finally {
+      globalBalanceLoading = false;
+      balanceLoadingRef.current = false;
       setLoading((l) => (l === "sol-balance" ? null : l));
     }
   }, []);
@@ -493,7 +527,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         disconnect: onDisconnect,
       });
     },
-    [refreshSolBalance]
+    []  // Remove refreshSolBalance dependency since it's not used in listeners
   );
 
   const cleanupWalletListeners = useCallback((walletType: WalletType) => {
@@ -516,12 +550,13 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   // Simplified connection handler to prevent duplicates
   const handleConnection = useCallback(
     async (walletType: WalletType, addr: string, isExisting: boolean = false) => {
-      // Prevent duplicate processing
-      if (hasProcessedConnectionRef.current) {
-        console.log("Connection already processed, skipping...");
+      // Prevent duplicate processing globally
+      if (globalConnectionProcessed || hasProcessedConnectionRef.current) {
+        console.log("Connection already processed globally, skipping...");
         return;
       }
 
+      globalConnectionProcessed = true;
       hasProcessedConnectionRef.current = true;
       setSolAddress(addr);
       setConnectedType("sol");
@@ -537,14 +572,17 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           console.log("Valid token exists, loading data");
           setAuthToken(existingToken);
           
-          // Load data sequentially to avoid race conditions
-          await refreshSolBalance();
+          // Only refresh balance if we don't have recent data
+          const now = Date.now();
+          if (solLamports === 0 || now - lastBalanceLoadRef.current > 60000) {
+            await refreshSolBalance();
+          }
           await loadUserData(addr);
         } else {
           console.log("Authenticating wallet...");
           const authSuccess = await authenticateWallet(addr);
           if (authSuccess) {
-            // Balance already loaded in authenticateWallet
+            // Balance already loaded in authenticateWallet, no need to call again
             await loadUserData(addr);
           }
         }
@@ -556,6 +594,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         });
       } catch (error) {
         console.error("Connection handling error:", error);
+        globalConnectionProcessed = false; // Reset global on error
         hasProcessedConnectionRef.current = false; // Reset on error
       }
     },
@@ -989,3 +1028,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     },
   };
 }
+
+// Global flag to prevent multiple balance calls across all instances
+let globalBalanceLoading = false;
+let globalLastBalanceLoad = 0;
+// Global flag to prevent multiple connection processing
+let globalConnectionProcessed = false;

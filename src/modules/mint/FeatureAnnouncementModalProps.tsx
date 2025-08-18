@@ -3,7 +3,6 @@
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { FaTimes, FaTwitter } from "react-icons/fa";
 
 interface FeatureAnnouncementModalProps {
   isOpen: boolean;
@@ -66,8 +65,12 @@ const FeatureAnnouncementModal = ({
               {/* Icon/Image */}
               <div className="mb-20 relative">
                 <Image
-                  src="/images/mint/cat-play-ball.png" alt="Cat Playing with Ball" width={186} height={173}
-                className="absolute -top-[200px] translate-x-1/2 right-1/2 transform"/>
+                  src="/images/mint/cat-play-ball.png"
+                  alt="Cat Playing with Ball"
+                  width={186}
+                  height={173}
+                  className="absolute -top-[200px] translate-x-1/2 right-1/2 transform"
+                />
               </div>
 
               {/* Title */}
@@ -81,18 +84,19 @@ const FeatureAnnouncementModal = ({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
                 style={{
-                fontFamily: "var(--font-oxanium)",
+                  fontFamily: "var(--font-oxanium)",
                 }}
               >
-                Something mystical is brewing… 
+                Something mystical is brewing…
               </motion.h1>
 
               {/* Description */}
-              <motion.p 
+              <motion.p
                 className={clsx(
                   "text-sm sm:text-base",
                   "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
-                )}>
+                )}
+              >
                 Catch the NFT Reveal & Mint Schedule on X
               </motion.p>
 
@@ -103,13 +107,12 @@ const FeatureAnnouncementModal = ({
                   onClick={handleTwitterClick}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  View on <img src="/icons/x.svg" alt="Twitter" className="w-5 h-5" />
+                  View on{" "}
+                  <img src="/icons/x.svg" alt="Twitter" className="w-5 h-5" />
                 </button>
 
                 {/* Remind Tomorrow Button */}
-                <button
-                  className="w-full bg-gray-200 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
-                >
+                <button className="w-full bg-gray-200 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200">
                   Remind me tomorrow
                 </button>
               </div>

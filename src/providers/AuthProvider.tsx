@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 import { AuthService } from "@/services/authService";
 import { useLoading } from "@/providers/LoadingProvider";
 import WalletModal from "@/components/Wallet/WalletModal";
@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState<string | null>(null);
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = router.pathname;
   const { showLoading, hideLoading } = useLoading();
   const { hasPhantom, connectPhantom } = useWallet();
 

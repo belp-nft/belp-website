@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import CatCarouselCuteness from "../CatCarouselCuteness";
 
-const N = 10;
+const N = 5;
 const R = 250;
 const STEP = 360 / N;
 const FOCUS_DEG = 45 - STEP;
@@ -94,56 +94,58 @@ function DesktopCarousel() {
     <div className="h-[500px] w-1/2 flex-shrink-0 flex items-center justify-start">
       {isMounted ? (
         <motion.div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-full origin-left">
-          {Array(10).fill(0).map((_, i) => {
-            const angle = angles[i];
-            const actualAngle = (angle + rotation) % 360;
-            const rad = (actualAngle * Math.PI) / 180;
-            const x = Math.cos(rad) * R;
-            const y = Math.sin(rad) * R;
-            const visual = getVisual(actualAngle, isPaused);
+          {Array(N)
+            .fill(0)
+            .map((_, i) => {
+              const angle = angles[i];
+              const actualAngle = (angle + rotation) % 360;
+              const rad = (actualAngle * Math.PI) / 180;
+              const x = Math.cos(rad) * R;
+              const y = Math.sin(rad) * R;
+              const visual = getVisual(actualAngle, isPaused);
 
-            let diff = (((actualAngle - FOCUS_DEG) % 360) + 360) % 360;
-            if (diff > 180) diff = 360 - diff;
-            let imgRotate = 0;
-            if (diff < STEP / 2) {
-              if (isPaused) {
-                imgRotate = 0;
+              let diff = (((actualAngle - FOCUS_DEG) % 360) + 360) % 360;
+              if (diff > 180) diff = 360 - diff;
+              let imgRotate = 0;
+              if (diff < STEP / 2) {
+                if (isPaused) {
+                  imgRotate = 0;
+                } else {
+                  const maxTilt = 14;
+                  imgRotate = (diff / (STEP / 2)) * maxTilt;
+                }
               } else {
-                const maxTilt = 14;
-                imgRotate = (diff / (STEP / 2)) * maxTilt;
+                imgRotate = actualAngle;
               }
-            } else {
-              imgRotate = actualAngle;
-            }
 
-            return (
-              <div
-                key={`icons-${i}`}
-                className="absolute transition-all"
-                style={{
-                  left: `calc(0px + ${x}px)`,
-                  top: `calc(50% + ${y}px)`,
-                  transform: `translate(-50%, -50%) scale(${
-                    visual.scale ?? 1
-                  }) rotate(${imgRotate}deg)`,
-                  opacity: String(visual.opacity ?? 1),
-                  filter: visual.filter ? String(visual.filter) : "none",
-                  zIndex: String(visual.zIndex ?? 1),
-                  transition:
-                    "opacity .5s, filter .5s, z-index .2s, transform .5s",
-                }}
-              >
-                <Image
-                  src={`/icons/tokens/${i + 1}.png`}
-                  alt="token NFT"
-                  width={visual.size}
-                  height={visual.size}
-                  className="rounded-2xl shadow-lg transition-all duration-500"
-                  draggable={false}
-                />
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={`icons-${i}`}
+                  className="absolute transition-all"
+                  style={{
+                    left: `calc(0px + ${x}px)`,
+                    top: `calc(50% + ${y}px)`,
+                    transform: `translate(-50%, -50%) scale(${
+                      visual.scale ?? 1
+                    }) rotate(${imgRotate}deg)`,
+                    opacity: String(visual.opacity ?? 1),
+                    filter: visual.filter ? String(visual.filter) : "none",
+                    zIndex: String(visual.zIndex ?? 1),
+                    transition:
+                      "opacity .5s, filter .5s, z-index .2s, transform .5s",
+                  }}
+                >
+                  <Image
+                    src={`/icons/tokens/${i + 1}.png`}
+                    alt="token NFT"
+                    width={visual.size}
+                    height={visual.size}
+                    className="rounded-2xl shadow-lg transition-all duration-500"
+                    draggable={false}
+                  />
+                </div>
+              );
+            })}
         </motion.div>
       ) : (
         <div style={{ width: 500, height: 500 }} />

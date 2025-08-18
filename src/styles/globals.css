@@ -23,6 +23,13 @@ html[data-theme="dark"],
   }
 }
 
+/* Prevent horizontal overflow */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 /* Custom animations */
 @keyframes fadeIn {
   from {

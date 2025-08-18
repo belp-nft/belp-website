@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   
-  // Tối ưu experimental features
+  // Disable App Router to use Pages Router
   experimental: {
     optimizePackageImports: [
       'framer-motion',

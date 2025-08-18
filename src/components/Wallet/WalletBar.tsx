@@ -42,8 +42,9 @@ export default function WalletBar() {
       )}
       {isConnected && (
         <button
-          className="text-xs px-2 py-1 ml-2 rounded bg-blue-100 hover:bg-blue-200 cursor-pointer"
+          className="text-xs px-2 py-1 ml-2 rounded bg-blue-100 hover:bg-blue-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => refreshSolBalance()}
+          disabled={isLoadingBalance}
         >
           Refresh
         </button>
