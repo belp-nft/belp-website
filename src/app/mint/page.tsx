@@ -292,9 +292,9 @@ const BelpyMintPage = () => {
   const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState<boolean>(false);
 
   const handleMintClick = () => {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
-      return;
-    }
+    // if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
+    //   return;
+    // }
     setShowFeatureAnnouncement(true);
     // setShowMintModal(true);
   };
