@@ -41,7 +41,6 @@ const CatSlide = React.memo(
       <div
         className={clsx(
           "overflow-hidden flex items-center justify-center cursor-pointer",
-          "hover:scale-105 hover:shadow-lg transition-transform duration-300"
         )}
         style={{
           width: "100%",
@@ -175,7 +174,7 @@ export default function CatCarousel() {
         }}
         onSlideChange={handleSlideChange}
       >
-        {Array(10)
+        {Array(25)
           .fill(0)
           .map((_, index) => (
             <SwiperSlide key={`cat-${index}`}>
