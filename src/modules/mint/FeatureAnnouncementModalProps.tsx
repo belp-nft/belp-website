@@ -3,7 +3,6 @@
 import clsx from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { FaTimes, FaTwitter } from "react-icons/fa";
 
 interface FeatureAnnouncementModalProps {
   isOpen: boolean;

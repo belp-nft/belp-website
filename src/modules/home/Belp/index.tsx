@@ -6,7 +6,7 @@ import RandomCloud from "../RandomCloud";
 
 const BelpSection = () => {
   return (
-    <div className="relative bg-white z-10">
+    <div className="relative bg-white z-10 overflow-hidden">
       <div
         className={clsx(
           "flex flex-col md:flex-row items-center justify-between w-full gap-10",
@@ -38,7 +38,7 @@ const BelpSection = () => {
               repeatType: "loop",
               ease: "linear",
             }}
-            className="flex md:hidden mb-10 w-full md:w-1/2 justify-center md:justify-end relative z-20 right-[-28px] md:right-[-70px]"
+            className="flex md:hidden mb-10 w-full md:w-1/2 justify-center md:justify-end relative z-20"
           >
             <Image
               src="/images/home/belp-cat-1.png"
@@ -76,7 +76,7 @@ const BelpSection = () => {
             repeatType: "loop",
             ease: "linear",
           }}
-          className="hidden  w-full md:w-1/2 md:flex justify-center md:justify-end relative z-20 right-[-28px] md:right-[-70px]"
+          className="hidden w-full md:w-1/2 md:flex justify-center md:justify-end relative z-20"
         >
           <Image
             src="/images/home/belp-cat-1.png"

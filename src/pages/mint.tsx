@@ -190,6 +190,16 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
     setNftDetailData(null);
   };
 
+  
+
+  const handleMintClick = () => {
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
+      setShowFeatureAnnouncement(true);
+      return;
+    }
+    setShowMintModal(true);
+  };
+
   // Show loading while config is loading
   if (!candyMachineConfig && !candyMachineData) {
     return <PageLoading />;
@@ -206,7 +216,7 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
         <MintHeader />
         
         <MintSection
-          onMintClick={() => setShowMintModal(true)}
+          onMintClick={handleMintClick}
           isMinting={isMinting}
           mintSuccess={mintSuccess}
           minted={minted}

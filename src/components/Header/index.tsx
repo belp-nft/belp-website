@@ -73,12 +73,11 @@ export default function BelpHeader() {
               style={{ minHeight: "100dvh" }}
             >
               <div className="flex flex-col items-center px-5 pt-6 pb-3 border-b border-[#c69dff] relative">
-                <Image
+                <img
                   src="/belp-logo.svg"
                   alt="belp logo"
                   width={120}
                   height={36}
-                  priority
                   className="mb-3"
                 />
                 <button
@@ -159,12 +158,11 @@ export default function BelpHeader() {
           </button>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <Link href="/" className="flex items-center gap-2" tabIndex={-1}>
-              <Image
+              <img
                 src="/belp-logo.svg"
                 alt="belp logo"
                 width={120}
                 height={36}
-                priority
               />
             </Link>
           </div>
@@ -175,12 +173,11 @@ export default function BelpHeader() {
           href="/"
           className="hidden md:flex items-center gap-2 h-[40px] min-w-[120px] md:ml-1"
         >
-          <Image
+          <img
             src="/belp-logo.svg"
             alt="belp logo"
             width={151}
             height={51}
-            priority
           />
         </Link>
 
