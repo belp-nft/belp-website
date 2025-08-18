@@ -1,6 +1,6 @@
-import { GetServerSideProps } from 'next';
 import BreadCrumbs from "@/components/Breadcrumb";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { NftService } from "@/services/nftService";
 import { BLOCKCHAIN_CONFIG } from "@/services";
@@ -11,50 +11,55 @@ import clsx from "clsx";
 import { HiOutlineInformationCircle, HiViewGrid } from "react-icons/hi";
 import { useLoading } from "@/providers/LoadingProvider";
 
-interface NftDetailPageProps {
-  nft?: NFT;
-  error?: string;
-  id: string;
-}
+const NftDetailPage = () => {
+  const router = useRouter();
+  const { id } = router.query;
+  const [nft, setNft] = useState<NFT | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-const NftDetailPage = ({ nft: initialNft, error: serverError, id }: NftDetailPageProps) => {
-  const [nft, setNft] = useState<NFT | null>(initialNft || null);
-  const [error, setError] = useState<string | null>(serverError || null);
   const { showLoading, hideLoading } = useLoading();
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
-    const baseUrl = "https://solscan.io";
-    const cluster = BLOCKCHAIN_CONFIG.NETWORK === "mainnet" ? "" : "?cluster=devnet";
-    const url = `${baseUrl}/token/${tokenAddress}${cluster}`;
+
+    const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
+
+    const url = `https://solscan.io/token/${tokenAddress}${
+      isMainnet ? "" : "?cluster=devnet"
+    }`;
     window.open(url, "_blank");
   };
 
   useEffect(() => {
-    const fetchNft = async () => {
-      if (!initialNft && id && !serverError) {
-        try {
-          showLoading();
-          setError(null);
-          
-          const response = await NftService.getNftDetails(id);
-          
-          if (response.success) {
-            setNft(response.nft || null);
-          } else {
-            setError("NFT not found");
-          }
-        } catch (error) {
-          console.error("❌ Error fetching NFT details:", error);
-          setError("Failed to load NFT details");
-        } finally {
-          hideLoading();
+    const loadNftDetails = async () => {
+      if (!router.isReady || !id || typeof id !== "string") {
+        hideLoading();
+        return;
+      }
+
+      try {
+        showLoading();
+        setError(null);
+
+        const response = await NftService.getNftDetails(id);
+
+        if (response.success && response.nft) {
+          setNft(response.nft);
+        } else {
+          setError("NFT not found");
+          console.error("❌ Failed to load NFT details");
         }
+      } catch (err) {
+        console.error("❌ Error loading NFT details:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
+        setNft(null);
+      } finally {
+        hideLoading();
       }
     };
 
-    fetchNft();
-  }, [id, initialNft, serverError, showLoading, hideLoading]);
+    loadNftDetails();
+  }, [router.isReady, id, showLoading, hideLoading]);
 
   if (error || !nft) {
     return (
@@ -79,138 +84,127 @@ const NftDetailPage = ({ nft: initialNft, error: serverError, id }: NftDetailPag
       <div className="main-container w-full">
         <BreadCrumbs
           breadcrumbs={[
-            { href: "/", label: "Home" },
             { href: "/my-collection", label: "My Collection" },
-            { label: nft.name || "NFT Details" },
+            { label: "NFT details" },
           ]}
         />
 
-        <motion.div
+        <motion.h1
+          className={clsx(
+            "font-oxanium font-bold mb-4 mt-5 text-3xl md:text-5xl md:title-text",
+            "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
+          )}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
+          transition={{ duration: 0.8 }}
+          style={{
+            fontFamily: "var(--font-oxanium)",
+          }}
         >
-          {/* NFT Image */}
-          <div className="relative">
-            <div className="aspect-square rounded-2xl overflow-hidden bg-white shadow-lg">
-              <Image
-                src={nft.imageUrl || "/icons/cat.png"}
-                alt={nft.name || "NFT"}
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            
-            {/* Rarity badge */}
-            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
-              <BiStar />
-              Rare
-            </div>
-          </div>
-
-          {/* NFT Details */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                {nft.name || "Untitled NFT"}
-              </h1>
-              <p className="text-gray-600 text-lg">
-                {nft.description || "No description available"}
-              </p>
-            </div>
-
-            {/* NFT Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <div className="text-sm text-gray-500 mb-1">Token ID</div>
-                <div className="font-bold text-lg truncate">
-                  {nft.nftAddress ? nft.nftAddress.slice(0, 8) + '...' : 'N/A'}
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <div className="text-sm text-gray-500 mb-1">Blockchain</div>
-                <div className="font-bold text-lg">Solana</div>
-              </div>
-            </div>
-
-            {/* Attributes */}
-            {nft.attributes && nft.attributes.length > 0 && (
+          {nft.name}
+        </motion.h1>
+        <div className="flex flex-col md:flex-row gap-6 items-start text-lg">
+          {/* Left: Image + Info */}
+          <div className="flex flex-col gap-4 w-full md:w-[340px] items-center">
+            <Image
+              src={nft.imageUrl}
+              alt={nft.name}
+              width={260}
+              height={260}
+              className="rounded-xl object-contain w-full"
+            />
+            {/* Backstory */}
+            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2 w-full">
+              <HiOutlineInformationCircle size={20} />
               <div>
-                <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <HiOutlineInformationCircle />
-                  Attributes
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {nft.attributes.map((attr: any, index: number) => (
-                    <div key={index} className="bg-white rounded-xl p-4 shadow-sm">
-                      <div className="text-sm text-gray-500 mb-1">{attr.trait_type}</div>
-                      <div className="font-bold">{attr.value}</div>
-                    </div>
-                  ))}
+                <div className="font-bold mb-1">Backstory</div>
+                <div className="text-lg">
+                  {nft.description ||
+                    `${nft.name} was born under the Moon of Whisker Hollow. Known
+                  for its mysterious glow and trickster nature, this BELPY has a
+                  hidden destiny linked to the lost Harmony Stone.`}
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Actions */}
-            <div className="space-y-3">
-              <button
-                onClick={() => openTokenOnSolscan(nft.nftAddress)}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-xl font-semibold hover:scale-105 transition-transform"
-              >
-                View on Solscan
-              </button>
-              
-              <button
-                onClick={() => (window.location.href = "/my-collection")}
-                className="w-full bg-white border-2 border-purple-500 text-purple-500 py-3 px-6 rounded-xl font-semibold hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
-              >
-                <HiViewGrid />
-                Back to Collection
-              </button>
+            {/* Blockchain details */}
+            <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2 w-full">
+              <HiViewGrid size={20} />
+              <div className="flex-1">
+                <div className="font-bold mb-1">Blockchain details</div>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <strong>Token ID</strong> {nft.name}
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <strong className="text-nowrap">Token Address</strong>
+                    <span
+                      className="cursor-pointer hover:text-[#7A4BD6] transition-colors"
+                      onClick={() => openTokenOnSolscan(nft.nftAddress)}
+                      title="View token on Solscan"
+                    >
+                      <span className="sm:hidden">
+                        {nft.nftAddress.slice(0, 4)}...
+                        {nft.nftAddress.slice(-4)}
+                      </span>
+                      <span className="hidden sm:inline">
+                        {nft.nftAddress.slice(0, 8)}...
+                        {nft.nftAddress.slice(-8)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <strong>Token Standard</strong> NFT
+                  </div>
+                  <div className="flex justify-between">
+                    <strong>Chain</strong> Solana
+                  </div>
+                  {nft.createdAt && (
+                    <div className="flex justify-between">
+                      <strong>Minted:</strong>{" "}
+                      {new Date(nft.createdAt).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </motion.div>
+
+          {/* Right: Trait Info */}
+          <div className="flex-1 flex flex-col gap-4">
+            <button className="self-start px-6 py-2 rounded-xl bg-[#7a4bd6] text-white font-bold shadow text-base mb-2">
+              GENESIS BELPY !
+            </button>
+            <div className="bg-[#E3CEF6] rounded-xl p-4">
+              <div className="font-bold mb-2 flex items-center gap-2 text-base">
+                <BiStar />
+                Trait
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {nft.attributes
+                  ?.filter((i: any) => i.value.toLowerCase() !== "none")
+                  ?.map((trait: any) => (
+                    <div
+                      key={trait.trait_type}
+                      className="bg-white rounded-lg px-3 pt-2 pb-1 text-sm flex flex-col items-start border border-[#e9defd]"
+                    >
+                      <p className="text-[#d3c0e4] font-semibold mb-[6px]">
+                        {trait.trait_type}
+                      </p>
+                      <span className="text-base">{trait.value}</span>
+                    </div>
+                  )) || (
+                  <div className="col-span-full text-center text-gray-500">
+                    No traits available
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { id } = context.params!;
-  
-  try {
-    if (typeof id === 'string') {
-      const response = await NftService.getNftDetails(id);
-      
-      if (response.success && response.nft) {
-        return {
-          props: {
-            nft: response.nft,
-            id,
-          },
-        };
-      }
-    }
-    
-    return {
-      props: {
-        error: 'NFT not found',
-        id: id || '',
-      },
-    };
-  } catch (error) {
-    console.error('Error fetching NFT details on server:', error);
-    
-    return {
-      props: {
-        error: 'Failed to load NFT details',
-        id: id || '',
-      },
-    };
-  }
 };
 
 export default NftDetailPage;
