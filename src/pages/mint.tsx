@@ -206,11 +206,6 @@ const BelpyMintPage = ({
     // setShowMintModal(true);
   };
 
-  // Show loading while config is loading
-  if (!candyMachineConfig && !candyMachineData) {
-    return <PageLoading />;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
       <motion.div

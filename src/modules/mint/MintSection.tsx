@@ -36,13 +36,6 @@ const MintSection: React.FC<MintSectionProps> = ({
   const { isAuthenticated } = useAuth();
   const { nftPricing, isLoadingPricing, pricingError } = useSettings();
 
-  console.log("Debug MintSection:", {
-    isAuthenticated,
-    nftPricing,
-    isLoadingPricing,
-    pricingError,
-  });
-
   const getScaleAndSize = (text: string) => {
     // Simplified to use consistent title-text class
     return {
@@ -73,16 +66,18 @@ const MintSection: React.FC<MintSectionProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.6 }}
     >
-      <img
-        src="/gifs/cat-play-ball.gif"
-        alt="Cat playing with ball"
-        width={721}
-        height={665}
-        className="w-full lg:w-3/5 h-auto"
-      />
+      <div className="w-full lg:w-1/2 relative">
+        <img
+          src="/gifs/cat-play-ball.gif"
+          alt="Cat playing with ball"
+          width={1442}
+          height={665}
+          className="lg:absolute h-full w-auto lg:max-w-xl xl:max-w-none"
+        />
+      </div>
 
       <motion.div
-        className="w-full lg:w-2/5 flex flex-col items-center justify-center gap-4"
+        className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-4"
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 1 }}
