@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import clsx from "clsx";
 import {
   MdHome,
@@ -36,15 +35,15 @@ export default function BelpHeader() {
   useEffect(() => {
     if (open) {
       // Disable scroll
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
       // Enable scroll
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
 
     // Cleanup function to ensure scroll is restored
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [open]);
 
@@ -173,12 +172,7 @@ export default function BelpHeader() {
           href="/"
           className="hidden md:flex items-center gap-2 h-[40px] min-w-[120px] md:ml-1"
         >
-          <img
-            src="/belp-logo.svg"
-            alt="belp logo"
-            width={151}
-            height={51}
-          />
+          <img src="/belp-logo.svg" alt="belp logo" width={151} height={51} />
         </Link>
 
         <nav className="hidden md:block">
