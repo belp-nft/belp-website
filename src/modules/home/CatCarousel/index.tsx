@@ -1,5 +1,11 @@
 "use client";
-import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper";
 import { Navigation, Autoplay } from "swiper/modules";
@@ -10,65 +16,59 @@ import OptimizedImage from "@/components/OptimizedImage";
 import "swiper/css";
 import "swiper/css/navigation";
 
-const baseCats = [
-  "tokens/1.png",
-  "tokens/2.png",
-  "tokens/3.png",
-  "tokens/4.png",
-  "tokens/5.png",
-];
-
 // Memoized slide component
-const CatSlide = React.memo(({ 
-  src, 
-  index, 
-  isActive, 
-  isPrev, 
-  isNext, 
-  onClick 
-}: {
-  src: string;
-  index: number;
-  isActive: boolean;
-  isPrev: boolean;
-  isNext: boolean;
-  onClick: () => void;
-}) => {
-  const isAdjacent = isPrev || isNext;
-  const opacity = isActive ? 1 : isAdjacent ? 0.8 : 0.4;
-  const scale = isActive ? 1 : isAdjacent ? 0.95 : 0.85;
+const CatSlide = React.memo(
+  ({
+    src,
+    index,
+    isActive,
+    isPrev,
+    isNext,
+    onClick,
+  }: {
+    src: string;
+    index: number;
+    isActive: boolean;
+    isPrev: boolean;
+    isNext: boolean;
+    onClick: () => void;
+  }) => {
+    const isAdjacent = isPrev || isNext;
+    const opacity = isActive ? 1 : isAdjacent ? 0.8 : 0.4;
+    const scale = isActive ? 1 : isAdjacent ? 0.95 : 0.85;
 
-  return (
-    <div
-      className={clsx(
-        "overflow-hidden flex items-center justify-center cursor-pointer",
-        "hover:scale-105 hover:shadow-lg transition-transform duration-300"
-      )}
-      style={{
-        width: "100%",
-        maxWidth: 180,
-        opacity,
-        transform: `scale(${scale})`,
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      }}
-      onClick={onClick}
-    >
-      <OptimizedImage
-        src={`/icons/${src}`}
-        alt={`Belp Cat NFT ${index + 1}`}
-        width={180}
-        height={180}
-        draggable={false}
-        className="object-contain w-full h-full rounded-2xl"
-        lazy={!isActive}
+    return (
+      <div
+        className={clsx(
+          "overflow-hidden flex items-center justify-center cursor-pointer",
+          "hover:scale-105 hover:shadow-lg transition-transform duration-300"
+        )}
         style={{
-          filter: isActive ? "none" : "brightness(0.9)",
-          transition: "filter 0.3s ease",
+          width: "100%",
+          maxWidth: 180,
+          opacity,
+          transform: `scale(${scale})`,
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
-      />
-    </div>
-  );
-});
+        onClick={onClick}
+      >
+        <OptimizedImage
+          src={`/icons/${src}`}
+          alt={`Belp Cat NFT ${index + 1}`}
+          width={180}
+          height={180}
+          draggable={false}
+          className="object-contain w-full h-full rounded-2xl"
+          lazy={!isActive}
+          style={{
+            filter: isActive ? "none" : "brightness(0.9)",
+            transition: "filter 0.3s ease",
+          }}
+        />
+      </div>
+    );
+  }
+);
 
 CatSlide.displayName = "CatSlide";
 
@@ -76,9 +76,6 @@ export default function CatCarousel() {
   const swiperRef = useRef<SwiperType | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(2);
-
-  // Optimize slides array inside component
-  const cats = useMemo(() => [...baseCats, ...baseCats, ...baseCats], []);
 
   // Memoized handlers
   const handleMouseEnter = useCallback(() => {
@@ -101,43 +98,49 @@ export default function CatCarousel() {
   }, []);
 
   // Optimized autoplay settings
-  const autoplayConfig = useMemo(() => ({
-    delay: 2000,
-    disableOnInteraction: false,
-    pauseOnMouseEnter: true,
-    reverseDirection: false,
-    stopOnLastSlide: false,
-    waitForTransition: true,
-  }), []);
+  const autoplayConfig = useMemo(
+    () => ({
+      delay: 2000,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+      reverseDirection: false,
+      stopOnLastSlide: false,
+      waitForTransition: true,
+    }),
+    []
+  );
 
   // Optimized breakpoints
-  const breakpoints = useMemo(() => ({
-    320: {
-      slidesPerView: 2.2,
-      spaceBetween: 2,
-      centeredSlides: true,
-    },
-    480: {
-      slidesPerView: 2.5,
-      spaceBetween: 2,
-      centeredSlides: true,
-    },
-    640: {
-      slidesPerView: 3,
-      spaceBetween: 2,
-      centeredSlides: true,
-    },
-    1024: {
-      slidesPerView: 5,
-      spaceBetween: 2,
-      centeredSlides: true,
-    },
-    1440: {
-      slidesPerView: 7,
-      spaceBetween: 2,
-      centeredSlides: true,
-    },
-  }), []);
+  const breakpoints = useMemo(
+    () => ({
+      320: {
+        slidesPerView: 2.2,
+        spaceBetween: 2,
+        centeredSlides: true,
+      },
+      480: {
+        slidesPerView: 2.5,
+        spaceBetween: 2,
+        centeredSlides: true,
+      },
+      640: {
+        slidesPerView: 3,
+        spaceBetween: 2,
+        centeredSlides: true,
+      },
+      1024: {
+        slidesPerView: 5,
+        spaceBetween: 2,
+        centeredSlides: true,
+      },
+      1440: {
+        slidesPerView: 7,
+        spaceBetween: 2,
+        centeredSlides: true,
+      },
+    }),
+    []
+  );
 
   // Auto-resume after manual interaction
   useEffect(() => {
@@ -159,7 +162,7 @@ export default function CatCarousel() {
       <Swiper
         modules={[Navigation, Autoplay]}
         centeredSlides={true}
-        initialSlide={Math.floor(cats.length / 2)}
+        initialSlide={3}
         loop={true}
         speed={600} // Reduced from 800 for better performance
         watchSlidesProgress={true}
@@ -172,20 +175,22 @@ export default function CatCarousel() {
         }}
         onSlideChange={handleSlideChange}
       >
-        {cats.map((src, index) => (
-          <SwiperSlide key={`${src}-${index}`}>
-            {({ isActive, isPrev, isNext }) => (
-              <CatSlide
-                src={src}
-                index={index}
-                isActive={isActive}
-                isPrev={isPrev}
-                isNext={isNext}
-                onClick={() => handleSlideClick(index)}
-              />
-            )}
-          </SwiperSlide>
-        ))}
+        {Array(10)
+          .fill(0)
+          .map((_, index) => (
+            <SwiperSlide key={`cat-${index}`}>
+              {({ isActive, isPrev, isNext }) => (
+                <CatSlide
+                  src={`/tokens/${index + 1}.png`}
+                  index={index}
+                  isActive={isActive}
+                  isPrev={isPrev}
+                  isNext={isNext}
+                  onClick={() => handleSlideClick(index)}
+                />
+              )}
+            </SwiperSlide>
+          ))}
       </Swiper>
     </div>
   );
