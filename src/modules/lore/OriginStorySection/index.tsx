@@ -8,7 +8,7 @@ const stories = [
     id: 1,
     image: "/images/lore/story-1.svg",
     description:
-      "In a digital land considered to be the most luxurious place in the multiverse, lived a community of friendly Belp cats inspired by Belp.",
+      "In a digital land considered to be the most luxurious place in the multiverse, lived a community of friendly Belpy cats inspired by Belpy.",
   },
   {
     id: 2,

@@ -18,7 +18,7 @@ export default function HeroSection() {
             "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 32%, rgba(255,255,255,0.06) 68%, #f2ecf6 100%)",
         }}
       >
-        <div className="main-container py-10 sm:py-20 md:py-24 lg:py-[100px] mt-20">
+        <div className="main-container py-10 sm:py-20 md:pt-24 lg:pt-[100px] mt-20">
           <motion.h1
             className={clsx(
               "font-oxanium font-bold mb-4 text-4xl md:text-6xl md:title-text",
@@ -34,9 +34,7 @@ export default function HeroSection() {
             Create Your Own BELPY
             <br />& Find New Universe
           </motion.h1>
-          <p
-            className={clsx("text-white", "sm:text-responsive-lg mb-8")}
-          >
+          <p className={clsx("text-white", "sm:text-responsive-lg mb-8")}>
             The first limited collection of unique NFT tokens,
             <br />
             there are amazing adventure and exploration.
@@ -60,16 +58,23 @@ export default function HeroSection() {
                 Mint Now
               </button>
             </Link>
-            <button
-              className={clsx(
-                "w-full sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
-                "h-[48px] sm:h-[56px] md:h-[64px]",
-                "rounded-2xl bg-[#E5CAFF] shadow-lg hover:scale-105 transition",
-                "border-2 border-[#8438CE] text-[#8438CE]"
-              )}
+            <a
+              href="https://magiceden.io/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full"
             >
-              Join Marketplace
-            </button>
+              <button
+                className={clsx(
+                  "w-full sm:min-w-[280px] md:min-w-[320px] lg:min-w-[360px]",
+                  "h-[48px] sm:h-[56px] md:h-[64px]",
+                  "rounded-2xl bg-[#E5CAFF] shadow-lg hover:scale-105 transition",
+                  "border-2 border-[#8438CE] text-[#8438CE]"
+                )}
+              >
+                Join Marketplace
+              </button>
+            </a>
           </div>
 
           <motion.div
@@ -80,14 +85,14 @@ export default function HeroSection() {
             viewport={{ once: false, margin: "-100px" }}
             transition={{ duration: 1.2, ease: "easeOut" }}
             className={clsx(
-              "relative z-10 flex-shrink-0 w-full max-w-[550px] xl:max-w-[623px] mx-auto cursor-pointer"
+              "relative z-10 flex-shrink-0 w-full mx-auto cursor-pointer"
             )}
           >
             <Image
               src="/images/home/belp-friends.svg"
               alt="belp friend"
-              width={800}
-              height={540}
+              width={623}
+              height={321}
               priority
               draggable={false}
               className="w-full h-auto"

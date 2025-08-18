@@ -2,6 +2,7 @@
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function LoreShop() {
   return (
@@ -71,29 +72,31 @@ export default function LoreShop() {
               className="max-w-[320px] sm:max-w-[440px] md:max-w-[540px] lg:max-w-[620px] xl:max-w-[684px] h-auto"
             />
           </motion.div>
-          <div className="flex flex-row md:flex-col justify-center gap-5 w-full max-w-[380px]">
-            <motion.button
-              className={clsx(
-                "md:h-[54px] rounded-xl md:rounded-2xl shadow-md text-xs md:text-xl md:font-bold",
-                "bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
-                "hover:bg-[#dfc6fd] transition-all w-full",
-                "h-11"
-              )}
-              whileHover={{ scale: 1.03 }}
-            >
-              Learn about the BELP
-            </motion.button>
-            <motion.button
-              className={clsx(
-                "bg-[#E5CAFF] shadow-lg transition",
-                "border-1 border-[#8438CE] text-[#8438CE]",
-                "md:h-[54px] rounded-xl md:rounded-2xl text-xs md:text-xl md:font-bold w-full",
-                "h-11"
-              )}
-              whileHover={{ scale: 1.03 }}
-            >
-              Start your Collection
-            </motion.button>
+          <div className="flex flex-col justify-center gap-3 md:gap-5 w-full max-w-[380px]">
+            <Link href="/lore" className="w-full">
+              <button
+                className={clsx(
+                  "md:h-[54px] rounded-xl md:rounded-2xl shadow-md text-xs md:text-xl md:font-bold",
+                  "bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
+                  "hover:bg-[#dfc6fd] transition-all w-full",
+                  "h-11 cursor-pointer"
+                )}
+              >
+                Learn about the BELPY
+              </button>
+            </Link>
+            <Link href="/mint" className="w-full">
+              <button
+                className={clsx(
+                  "bg-[#E5CAFF] shadow-lg transition",
+                  "border-1 border-[#8438CE] text-[#8438CE]",
+                  "md:h-[54px] rounded-xl md:rounded-2xl text-xs md:text-xl md:font-bold w-full",
+                  "h-11 cursor-pointer"
+                )}
+              >
+                Start your Collection
+              </button>
+            </Link>
           </div>
         </div>
       </div>
