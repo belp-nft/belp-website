@@ -34,8 +34,7 @@ const MintSection: React.FC<MintSectionProps> = ({
   onMintClick,
 }) => {
   const { isAuthenticated } = useAuth();
-  const { nftPricing, isLoadingPricing, pricingError } =
-    useSettings();
+  const { nftPricing, isLoadingPricing, pricingError } = useSettings();
 
   console.log("Debug MintSection:", {
     isAuthenticated,
@@ -60,28 +59,30 @@ const MintSection: React.FC<MintSectionProps> = ({
     if (isLoadingPricing) return "Loading...";
     if (pricingError) return "Genesis Round"; // Default fallback
     if (!nftPricing) return "Genesis Round"; // Default fallback
-    
-    return nftPricing.priceType === "genesis" ? "Genesis Round" : "General Round";
+
+    return nftPricing.priceType === "genesis"
+      ? "Genesis Round"
+      : "General Round";
   };
 
   const { scale, sizeClasses } = getScaleAndSize(mintText);
   return (
     <motion.div
-      className="mt-8 flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12"
+      className="mt-8 flex flex-col lg:flex-row items-center lg:items-stretch"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.6 }}
     >
-      <div className="w-full lg:w-1/2 flex items-center justify-center">
-        <img
-          src="/gifs/cat-play-ball.gif"
-          alt="Cat playing with ball"
-          style={{ aspectRatio: "5/3" }}
-        />
-      </div>
+      <img
+        src="/gifs/cat-play-ball.gif"
+        alt="Cat playing with ball"
+        width={721}
+        height={665}
+        className="w-full lg:w-3/5 h-auto"
+      />
 
       <motion.div
-        className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-4"
+        className="w-full lg:w-2/5 flex flex-col items-center justify-center gap-4"
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 1 }}

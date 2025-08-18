@@ -33,7 +33,7 @@ const FeatureAnnouncementModal = ({
 
           {/* Modal */}
           <motion.div
-            className="relative bg-white rounded-2xl py-8 max-w-md px-5 sm:px-10 mx-5 shadow-2xl"
+            className="relative bg-white rounded-2xl py-8 max-w-lg px-5 sm:px-10 mx-5 shadow-2xl"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -97,7 +97,8 @@ const FeatureAnnouncementModal = ({
                   "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
                 )}
               >
-                Catch the NFT Reveal & Mint Schedule on X
+                Catch the NFT Reveal <p className="block sm:inline">&</p> Mint
+                Schedule on X
               </motion.p>
 
               {/* Buttons */}

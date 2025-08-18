@@ -136,7 +136,7 @@ export default function IntroSection() {
                 viewport={{ once: false, amount: 0.3 }}
                 transition={{ duration: 0.6, delay: 1.0 }}
               >
-                BELP is the counterpunch from the cat kingdom, a cultural
+                BELPY is the counterpunch from the cat kingdom, a cultural
                 uprising built on warmth, weirdness, and Web3 tech.
               </motion.p>
             </div>

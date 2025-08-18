@@ -15,7 +15,7 @@ const roadmapItems = [
   },
   {
     label: "Gaming",
-    desc: "Lay-to-earn adventures with BELP rewards and evolving companions.",
+    desc: "Lay-to-earn adventures with BELPY rewards and evolving companions.",
   },
   {
     label: "Merchandise & Toys",
