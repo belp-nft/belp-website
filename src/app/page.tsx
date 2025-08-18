@@ -7,32 +7,32 @@ import PageLoading from "@/components/PageLoading";
 
 // Lazy load các components không critical
 const LoreShop = dynamic(() => import("@/modules/home/LoreShop"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
 const GetTheCuteness = dynamic(() => import("@/modules/home/GetTheCuteness"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: false, // Component này có animation phức tạp
 });
 
 const Roadmap = dynamic(() => import("@/modules/home/Roadmap"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
 const MintSection = dynamic(() => import("@/modules/home/MintSection"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
 const BelpSection = dynamic(() => import("@/modules/home/Belp"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
 const BelpFooter = dynamic(() => import("@/components/Footer"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
@@ -44,27 +44,27 @@ export default function Home() {
       <WhatlsBelp />
       
       {/* Non-critical components load with Suspense */}
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<></>}>
         <BelpSection />
       </Suspense>
       
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<></>}>
         <LoreShop />
       </Suspense>
       
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<></>}>
         <GetTheCuteness />
       </Suspense>
       
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<></>}>
         <Roadmap />
       </Suspense>
       
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<></>}>
         <MintSection />
       </Suspense>
       
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<></>}>
         <BelpFooter />
       </Suspense>
     </main>

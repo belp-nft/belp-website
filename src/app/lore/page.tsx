@@ -10,22 +10,22 @@ import PageLoading from "@/components/PageLoading";
 
 // Dynamic imports cho non-critical components
 const OriginStorySection = dynamic(() => import("@/modules/lore/OriginStorySection"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
 const IntroSection = dynamic(() => import("@/modules/lore/IntroSection"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
 const MissionSection = dynamic(() => import("@/modules/lore/MissionSection"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
 const BelpFooter = dynamic(() => import("@/components/Footer"), {
-  loading: () => <PageLoading />,
+  loading: () => <></>,
   ssr: true,
 });
 
@@ -76,13 +76,13 @@ export default function LorePage() {
 
         <div className="relative z-20 bg-gradient-to-b from-pink-100 to-purple-100">
           <div className="main-container py-16">
-            <Suspense fallback={<PageLoading />}>
+            <Suspense fallback={<></>}>
               <OriginStorySection />
             </Suspense>
-            <Suspense fallback={<PageLoading />}>
+            <Suspense fallback={<></>}>
               <IntroSection />
             </Suspense>
-            <Suspense fallback={<PageLoading />}>
+            <Suspense fallback={<></>}>
               <MissionSection />
             </Suspense>
           </div>
@@ -97,7 +97,7 @@ export default function LorePage() {
               quality={75}
             />
           </div>
-          <Suspense fallback={<PageLoading />}>
+          <Suspense fallback={<></>}>
             <BelpFooter />
           </Suspense>
         </div>
