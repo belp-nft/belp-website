@@ -25,7 +25,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
     solAddress,
     hasPhantom,
     loading,
-    connectPhantom,
+    connectWallet,
     shorten,
     disconnect,
     solBalanceText,
@@ -34,25 +34,21 @@ export default function ConnectWallet({ className, onConnected }: Props) {
   const {
     solflare,
     isConnected: isSolflareConnected,
-    connect: connectSolflare,
     disconnect: disconnectSolflare,
   } = useSolflareProvider();
   const {
     backpack,
     isConnected: isBackpackConnected,
-    connect: connectBackpack,
     disconnect: disconnectBackpack,
   } = useBackpackProvider();
   const {
     glow,
     isConnected: isGlowConnected,
-    connect: connectGlow,
     disconnect: disconnectGlow,
   } = useGlowProvider();
   const {
     okx,
     isConnected: isOKXConnected,
-    connect: connectOKX,
     disconnect: disconnectOKX,
   } = useOKXProvider();
 
@@ -142,27 +138,27 @@ export default function ConnectWallet({ className, onConnected }: Props) {
         hasOKX={!!okx}
         loading={loading}
         connectPhantom={async () => {
-          await connectPhantom();
+          await connectWallet("phantom");
           setOpen(false);
           setShowMenu(false);
         }}
         connectSolflare={async () => {
-          await connectSolflare();
+          await connectWallet("solflare");
           setOpen(false);
           setShowMenu(false);
         }}
         connectBackpack={async () => {
-          await connectBackpack();
+          await connectWallet("backpack");
           setOpen(false);
           setShowMenu(false);
         }}
         connectGlow={async () => {
-          await connectGlow();
+          await connectWallet("glow");
           setOpen(false);
           setShowMenu(false);
         }}
         connectOKX={async () => {
-          await connectOKX();
+          await connectWallet("okx");
           setOpen(false);
           setShowMenu(false);
         }}

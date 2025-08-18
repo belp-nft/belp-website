@@ -148,10 +148,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const handleWalletConnected = () => {
       console.log("🔗 Wallet connected - checking auth");
-      // Small delay to ensure token is set
+      // Check auth immediately and then again after a small delay to ensure token is set
+      checkAuth();
       setTimeout(() => {
         checkAuth();
-      }, 100);
+      }, 50);
     };
 
     const handleWalletDisconnected = () => {
