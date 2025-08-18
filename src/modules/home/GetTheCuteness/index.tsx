@@ -5,15 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import CatCarouselCuteness from "../CatCarouselCuteness";
 
-const cats = [
-  "token-nft-1.svg",
-  "token-nft-2.svg",
-  "token-nft-3.svg",
-  "token-nft-4.svg",
-  "token-nft-5.svg",
-];
-
-const N = cats.length;
+const N = 10;
 const R = 250;
 const STEP = 360 / N;
 const FOCUS_DEG = 45 - STEP;
@@ -102,7 +94,7 @@ function DesktopCarousel() {
     <div className="h-[500px] w-1/2 flex-shrink-0 flex items-center justify-start">
       {isMounted ? (
         <motion.div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-full origin-left">
-          {cats.map((item, i) => {
+          {Array(10).fill(0).map((_, i) => {
             const angle = angles[i];
             const actualAngle = (angle + rotation) % 360;
             const rad = (actualAngle * Math.PI) / 180;
@@ -126,7 +118,7 @@ function DesktopCarousel() {
 
             return (
               <div
-                key={item}
+                key={`icons-${i}`}
                 className="absolute transition-all"
                 style={{
                   left: `calc(0px + ${x}px)`,
@@ -142,8 +134,8 @@ function DesktopCarousel() {
                 }}
               >
                 <Image
-                  src={`/icons/${item}`}
-                  alt=""
+                  src={`/icons/tokens/${i + 1}.png`}
+                  alt="token NFT"
                   width={visual.size}
                   height={visual.size}
                   className="rounded-2xl shadow-lg transition-all duration-500"

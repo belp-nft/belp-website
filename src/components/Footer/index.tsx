@@ -28,13 +28,7 @@ export default function BelpFooter() {
       name: "twitter",
       icon: "/icons/twitter.svg",
       tooltip: "X (Twitter)",
-      href: "#",
-    },
-    {
-      name: "telegram",
-      icon: "/icons/telegram.svg",
-      tooltip: "Telegram",
-      href: "#",
+      href: "https://x.com/BELP_official",
     },
     {
       name: "discord",

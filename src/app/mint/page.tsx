@@ -18,6 +18,7 @@ import MintHeader from "@/modules/mint/MintHeader";
 import MintSection from "@/modules/mint/MintSection";
 import MintConfirmModal from "@/modules/mint/MintConfirmModal";
 import MintSuccessModal from "@/modules/mint/MintSuccessModal";
+import FeatureAnnouncementModal from "@/modules/mint/FeatureAnnouncementModalProps";
 
 const cats = [
   "tokens/1.png",
@@ -114,10 +115,9 @@ const BelpyMintPage = () => {
       } else {
         console.error("Invalid build response format:", buildResult);
         throw new Error(
-          `Failed to build transaction: ${
-            buildResult.message ||
-            buildResult.note ||
-            "No unsigned transaction returned"
+          `Failed to build transaction: ${buildResult.message ||
+          buildResult.note ||
+          "No unsigned transaction returned"
           }`
         );
       }
@@ -289,11 +289,14 @@ const BelpyMintPage = () => {
     setSelectedCat(null);
   };
 
+  const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState<boolean>(false);
+
   const handleMintClick = () => {
-    if (!process.env.NEXT_PUBLIC_NODE_ENV || process.env.NEXT_PUBLIC_NODE_ENV === "production") {
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
       return;
     }
-    setShowMintModal(true);
+    setShowFeatureAnnouncement(true);
+    // setShowMintModal(true);
   };
 
   return (
@@ -313,6 +316,11 @@ const BelpyMintPage = () => {
           mintSuccess={mintSuccess}
           selectedCat={selectedCat}
           onMintClick={handleMintClick}
+        />
+
+        <FeatureAnnouncementModal
+          isOpen={showFeatureAnnouncement}
+          onClose={() => setShowFeatureAnnouncement(false)}
         />
 
         <MintConfirmModal
