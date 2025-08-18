@@ -1,4 +1,4 @@
-import { GetServerSideProps } from 'next';
+import { GetServerSideProps } from "next";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
@@ -39,7 +39,10 @@ interface MintPageProps {
   };
 }
 
-const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) => {
+const BelpyMintPage = ({
+  candyMachineData,
+  initialMintStats,
+}: MintPageProps) => {
   const router = useRouter();
   const {
     solAddress,
@@ -81,7 +84,7 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [candyMachineAddress]); 
+  }, [candyMachineAddress]);
 
   const handleMint = async () => {
     setIsMinting(true);
@@ -116,15 +119,17 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
       );
 
       if (!buildResult.success) {
-        throw new Error(buildResult.message || "Failed to build mint transaction");
+        throw new Error(
+          buildResult.message || "Failed to build mint transaction"
+        );
       }
 
       // Here you would typically sign and send the transaction
       // This is a simplified version - you'll need to implement actual signing logic
-      const result = { 
-        success: true, 
+      const result = {
+        success: true,
         nftAddress: "example-nft-address", // This should come from actual mint result
-        message: "Mint successful" 
+        message: "Mint successful",
       };
 
       if (result.success && result.nftAddress) {
@@ -149,7 +154,9 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
         // Fetch NFT details for display
         if (result.nftAddress) {
           try {
-            const nftDetails = await NftService.getNftDetails(result.nftAddress);
+            const nftDetails = await NftService.getNftDetails(
+              result.nftAddress
+            );
             setNftDetailData(nftDetails);
           } catch (error) {
             console.warn("⚠️ Could not fetch NFT details:", error);
@@ -163,11 +170,12 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
       }
     } catch (error: any) {
       console.error("❌ Mint failed:", error);
-      
+
       let errorMessage = "Failed to mint NFT. Please try again.";
-      
+
       if (error.message?.includes("insufficient")) {
-        errorMessage = "Insufficient SOL balance. Please add more SOL to your wallet.";
+        errorMessage =
+          "Insufficient SOL balance. Please add more SOL to your wallet.";
       } else if (error.message?.includes("sold out")) {
         errorMessage = "Sorry, all NFTs have been sold out!";
       } else if (error.message?.includes("not active")) {
@@ -190,14 +198,12 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
     setNftDetailData(null);
   };
 
-  
-
   const handleMintClick = () => {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
-      setShowFeatureAnnouncement(true);
-      return;
-    }
-    setShowMintModal(true);
+    setShowFeatureAnnouncement(true);
+    // if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
+    // return;
+    // }
+    // setShowMintModal(true);
   };
 
   // Show loading while config is loading
@@ -214,7 +220,7 @@ const BelpyMintPage = ({ candyMachineData, initialMintStats }: MintPageProps) =>
         className="container mx-auto px-4 py-8"
       >
         <MintHeader />
-        
+
         <MintSection
           onMintClick={handleMintClick}
           isMinting={isMinting}
@@ -260,10 +266,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     // Fetch candy machine configuration from server
     // const candyMachineData = await ConfigService.getCandyMachineConfig();
-    
+
     // Fetch initial mint stats
     // const mintStats = await NftService.getMintStats();
-    
+
     return {
       props: {
         // candyMachineData: candyMachineData?.data || null,
@@ -271,8 +277,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       },
     };
   } catch (error) {
-    console.error('Error fetching mint page data:', error);
-    
+    console.error("Error fetching mint page data:", error);
+
     return {
       props: {
         candyMachineData: null,
