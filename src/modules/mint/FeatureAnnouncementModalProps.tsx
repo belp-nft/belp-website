@@ -101,7 +101,7 @@ const FeatureAnnouncementModal = ({
                 {/* Features Button (Link to X) */}
                 <button
                   onClick={handleTwitterClick}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-200 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   View on <img src="/icons/x.svg" alt="Twitter" className="w-5 h-5" />
                 </button>

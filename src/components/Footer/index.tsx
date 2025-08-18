@@ -34,7 +34,7 @@ export default function BelpFooter() {
       name: "discord",
       icon: "/icons/discord.svg",
       tooltip: "Discord",
-      href: "#",
+      href: "https://discord.gg/belp",
     },
   ];
   return (
