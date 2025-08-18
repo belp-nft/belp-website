@@ -91,7 +91,7 @@ const FeatureAnnouncementModal = ({
               </motion.h1>
 
               {/* Description */}
-              <motion.p
+              <motion.div
                 className={clsx(
                   "text-sm sm:text-base",
                   "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight"
@@ -99,7 +99,7 @@ const FeatureAnnouncementModal = ({
               >
                 Catch the NFT Reveal <p className="block sm:inline">&</p> Mint
                 Schedule on X
-              </motion.p>
+              </motion.div>
 
               {/* Buttons */}
               <div className="flex flex-col gap-3 mt-5">

@@ -1,4 +1,4 @@
-import { GetServerSideProps } from 'next';
+import { GetServerSideProps } from "next";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import clsx from "clsx";
@@ -18,7 +18,10 @@ interface MyCollectionPageProps {
   error?: string;
 }
 
-const MyCollectionPage = ({ initialNfts = [], error: serverError }: MyCollectionPageProps) => {
+const MyCollectionPage = ({
+  initialNfts = [],
+  error: serverError,
+}: MyCollectionPageProps) => {
   const [nfts, setNfts] = useState<NFT[]>(initialNfts);
   const [error, setError] = useState<string | null>(serverError || null);
   const [visible, setVisible] = useState(20);
@@ -71,7 +74,9 @@ const MyCollectionPage = ({ initialNfts = [], error: serverError }: MyCollection
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f2ecf6] p-8">
         <div className="text-6xl mb-4">👛</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Connect Your Wallet</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          Connect Your Wallet
+        </h2>
         <p className="text-gray-600 text-center mb-6">
           Please connect your wallet to view your NFT collection.
         </p>
@@ -102,7 +107,9 @@ const MyCollectionPage = ({ initialNfts = [], error: serverError }: MyCollection
           {error ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">⚠️</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading NFTs</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Error Loading NFTs
+              </h2>
               <p className="text-gray-600 mb-6">{error}</p>
               <button
                 onClick={() => window.location.reload()}
@@ -114,7 +121,9 @@ const MyCollectionPage = ({ initialNfts = [], error: serverError }: MyCollection
           ) : totalCount === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🎭</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">No NFTs Found</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                No NFTs Found
+              </h2>
               <p className="text-gray-600 mb-6">
                 You don't have any NFTs in your collection yet.
               </p>
@@ -130,7 +139,7 @@ const MyCollectionPage = ({ initialNfts = [], error: serverError }: MyCollection
               <div className="mt-6 text-gray-600">
                 Showing {items.length} of {totalCount} NFTs
               </div>
-              
+
               <NftGrid items={items} />
 
               {visible < totalCount && (
@@ -156,11 +165,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     // You could potentially get wallet address from query params or cookies
     // and pre-fetch NFTs on the server side
     const { walletAddress } = context.query;
-    
-    if (walletAddress && typeof walletAddress === 'string') {
+
+    if (walletAddress && typeof walletAddress === "string") {
       try {
         const response = await NftService.getUserNfts(walletAddress);
-        
+
         if (response.success) {
           return {
             props: {
@@ -169,22 +178,22 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
           };
         }
       } catch (error) {
-        console.error('Error fetching NFTs on server:', error);
+        console.error("Error fetching NFTs on server:", error);
       }
     }
-    
+
     return {
       props: {
         initialNfts: [],
       },
     };
   } catch (error) {
-    console.error('Error in my-collection getServerSideProps:', error);
-    
+    console.error("Error in my-collection getServerSideProps:", error);
+
     return {
       props: {
         initialNfts: [],
-        error: 'Failed to load collection data',
+        error: "Failed to load collection data",
       },
     };
   }
