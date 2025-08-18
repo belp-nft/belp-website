@@ -18,10 +18,10 @@ export default function HeroSection() {
             "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 32%, rgba(255,255,255,0.06) 68%, #f2ecf6 100%)",
         }}
       >
-        <div className="main-container py-10 sm:py-20 md:pt-24 lg:pt-[100px] mt-20">
+        <div className="main-container pt-10 sm:pt-20 md:pt-24 lg:pt-[100px] mt-20 pb-[350px] md:pb-[400px] lg:pb-[600px]">
           <motion.h1
             className={clsx(
-              "font-oxanium font-bold mb-4 text-4xl md:text-6xl md:title-text",
+              "font-oxanium font-bold mb-4 text-4xl md:text-6xl md:title-text relative z-20",
               "bg-gradient-to-b from-[#ED00FF] to-[#FFC3F9] bg-clip-text text-transparent leading-tight"
             )}
             initial={{ opacity: 0, y: 20 }}
@@ -34,7 +34,12 @@ export default function HeroSection() {
             Create Your Own BELPY
             <br />& Find New Universe
           </motion.h1>
-          <p className={clsx("text-white", "sm:text-responsive-lg mb-8")}>
+          <p
+            className={clsx(
+              "text-white relative z-20",
+              "sm:text-responsive-lg mb-8"
+            )}
+          >
             The first limited collection of unique NFT tokens,
             <br />
             there are amazing adventure and exploration.
@@ -42,7 +47,7 @@ export default function HeroSection() {
 
           <div
             className={clsx(
-              "flex flex-row gap-5 sm:gap-8 justify-center items-center font-bold w-full mt-4 mb-20",
+              "flex flex-row gap-5 sm:gap-8 justify-center items-center font-bold w-full mt-4 mb-20 relative z-20",
               "text-sm sm:text-base md:text-lg lg:text-xl"
             )}
           >
@@ -80,19 +85,17 @@ export default function HeroSection() {
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
             viewport={{ once: false, margin: "-100px" }}
             transition={{ duration: 1.2, ease: "easeOut" }}
             className={clsx(
-              "relative z-10 flex-shrink-0 w-full mx-auto cursor-pointer"
+              "absolute bottom-10 left-1/2 transform -translate-x-1/2 z-0 flex-shrink-0 w-full mx-auto px-[50px] lg:px-[200px]"
             )}
           >
             <Image
               src="/images/home/belp-friends.svg"
               alt="belp friend"
-              width={623}
-              height={321}
+              width={600}
+              height={521}
               priority
               draggable={false}
               className="w-full h-auto"
