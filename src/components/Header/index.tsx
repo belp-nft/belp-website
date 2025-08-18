@@ -12,7 +12,7 @@ import {
   MdMenu,
   MdSmartButton,
 } from "react-icons/md";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 import ConnectWallet from "../Wallet/ConnectWallet";
 
 const menu = [
@@ -27,7 +27,8 @@ const menu = [
 ];
 
 export default function BelpHeader() {
-  const pathname = usePathname();
+  const router = useRouter();
+  const pathname = router.pathname;
 
   const [open, setOpen] = useState(false);
 

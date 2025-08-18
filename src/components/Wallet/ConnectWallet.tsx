@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 import WalletModal from "./WalletModal";
 import WalletButton from "./WalletButton";
 import { Connected, useWallet } from "@/hooks/useWallet";
@@ -15,7 +15,8 @@ type Props = {
 };
 
 export default function ConnectWallet({ className, onConnected }: Props) {
-  const pathname = usePathname();
+  const router = useRouter();
+  const pathname = router.pathname;
 
   const [open, setOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);

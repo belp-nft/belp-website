@@ -198,6 +198,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const isProcessingRef = useRef(false);
   const hasProcessedConnectionRef = useRef(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const balanceLoadingRef = useRef(false);
+  const lastBalanceLoadRef = useRef(0);
 
   const { clearConfig } = useConfigActions();
   const { showLoading, hideLoading } = useLoading();
@@ -218,10 +220,25 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   >(new Map());
 
   const refreshSolBalance = useCallback(async () => {
+    // Prevent concurrent calls
+    if (balanceLoadingRef.current) {
+      console.log("💰 Balance already loading, skipping duplicate call");
+      return;
+    }
+
+    // Debounce - only allow one call per 2 seconds
+    const now = Date.now();
+    if (now - lastBalanceLoadRef.current < 2000) {
+      console.log("💰 Balance called too recently, skipping (last call was", now - lastBalanceLoadRef.current, "ms ago)");
+      return;
+    }
+
     try {
+      balanceLoadingRef.current = true;
+      lastBalanceLoadRef.current = now;
       setLoading("sol-balance");
 
-      console.log("💰 Using API to fetch wallet balance...");
+      console.log("💰 Using API to fetch wallet balance... (call #" + (Math.floor(now / 1000)) + ")");
       const balanceResult = await UserService.getWalletBalance();
       if (balanceResult.success && balanceResult.data) {
         // Check for different possible response structures
@@ -244,6 +261,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       console.error("Failed to refresh SOL balance:", error);
       setSolLamports(0);
     } finally {
+      balanceLoadingRef.current = false;
       setLoading((l) => (l === "sol-balance" ? null : l));
     }
   }, []);
@@ -493,7 +511,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         disconnect: onDisconnect,
       });
     },
-    [refreshSolBalance]
+    []  // Remove refreshSolBalance dependency since it's not used in listeners
   );
 
   const cleanupWalletListeners = useCallback((walletType: WalletType) => {
@@ -544,7 +562,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           console.log("Authenticating wallet...");
           const authSuccess = await authenticateWallet(addr);
           if (authSuccess) {
-            // Balance already loaded in authenticateWallet
+            // Balance already loaded in authenticateWallet, no need to call again
             await loadUserData(addr);
           }
         }
