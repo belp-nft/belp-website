@@ -181,7 +181,7 @@ export default function CatCarousel() {
             <SwiperSlide key={`cat-${index}`}>
               {({ isActive, isPrev, isNext }) => (
                 <CatSlide
-                  src={`/tokens/${index + 1}.png`}
+                  src={`tokens/${index + 1}.png`}
                   index={index}
                   isActive={isActive}
                   isPrev={isPrev}
