@@ -2,15 +2,12 @@ import { GetServerSideProps } from "next";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
-import { useWallet } from "@/hooks/useWallet";
+import { useWalletContext } from "@/providers/WalletProvider";
+import { useCandyMachine } from "@/providers/CandyMachineProvider";
 import { useToast } from "@/components/ToastContainer";
 import PageLoading from "@/components/PageLoading";
 
 import { NftService } from "@/services";
-import {
-  mintNftDirectlyFromWallet,
-  mintBelpNft,
-} from "@/lib/candyMachineHelpers";
 import {
   useConfig,
   useMintStats,
@@ -52,13 +49,22 @@ const BelpyMintPage = ({
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const {
     solAddress,
-    connectPhantom,
+    connectWallet,
     refreshSolBalance,
     connectedWallet,
-    getWalletProvider,
     authToken,
     loadUserData,
-  } = useWallet();
+  } = useWalletContext();
+  
+  const {
+    isMinting,
+    mint,
+    lastMintResult,
+    error: mintError,
+    canMint,
+    clearResult,
+    clearError
+  } = useCandyMachine();
 
   // Zustand store
   const candyMachineConfig = useConfig();
@@ -67,7 +73,6 @@ const BelpyMintPage = ({
   const { refreshStats, incrementMinted } = useConfigActions();
 
   // Local state
-  const [isMinting, setIsMinting] = useState<boolean>(false);
   const [mintSuccess, setMintSuccess] = useState<boolean>(false);
   const [selectedCat, setSelectedCat] = useState<number | null>(null);
   const [showMintModal, setShowMintModal] = useState<boolean>(false);
@@ -93,52 +98,24 @@ const BelpyMintPage = ({
   }, [candyMachineAddress]);
 
   const handleMint = async () => {
-    setIsMinting(true);
     setMintSuccess(false);
+    clearResult();
+    clearError();
 
     try {
       if (!solAddress) {
         console.log("Wallet not connected, attempting to connect...");
-        await connectPhantom();
+        await connectWallet('phantom');
         return;
       }
 
-      if (!candyMachineConfig) {
-        throw new Error("Candy Machine configuration not loaded!");
-      }
-
-      if (!candyMachineAddress) {
-        throw new Error("Candy Machine address not available!");
-      }
-
-      console.log("Starting NFT mint...");
-      console.log("Candy Machine:", candyMachineAddress);
-      console.log("Buyer wallet:", solAddress);
+      console.log("Starting NFT mint using CandyMachine provider...");
 
       // Refresh SOL balance before minting
       await refreshSolBalance();
 
-      // Get wallet provider from window
-      const walletProvider =
-        (window as any).solana || (window as any).phantom?.solana;
-
-      if (!walletProvider) {
-        throw new Error(
-          "Wallet provider not found! Please make sure your wallet is installed and connected."
-        );
-      }
-
-      console.log("🎯 Using wallet provider for direct mint...");
-
-      // Call mint directly from Candy Machine smart contract
-      // const result = await mintNftDirectlyFromWallet(
-      //   candyMachineAddress,
-      //   solAddress,
-      //   walletProvider
-      // );
-
-      // Call mint directly from Candy Machine smart contract
-      const result = await mintBelpNft(solAddress, walletProvider);
+      // Call mint from CandyMachine provider
+      const result = await mint();
 
       if (result.success) {
         console.log("✅ NFT minted successfully!");
@@ -185,62 +162,49 @@ const BelpyMintPage = ({
         }
 
         // Refresh stats in background
-        setTimeout(() => refreshStats(candyMachineAddress), 2000);
+        if (candyMachineAddress) {
+          setTimeout(() => refreshStats(candyMachineAddress), 2000);
+        }
       } else {
-        // Throw error with result object to access errorType
-        const error = new Error(result.message || "Failed to mint NFT");
-        (error as any).result = result;
-        throw error;
+        // Handle error result from CandyMachine provider
+        const errorType = result.errorType || "error";
+        
+        // Handle specific error types
+        if (
+          result.message?.includes("User rejected") ||
+          result.message?.includes("rejected")
+        ) {
+          showWarning(
+            "Transaction Cancelled",
+            "You cancelled the transaction signing in your wallet. Please try again if you want to mint NFT.",
+            6000
+          );
+        } else if (result.message?.includes("insufficient")) {
+          showError(
+            "Insufficient SOL",
+            "Your wallet doesn't have enough SOL balance to mint. Please add more SOL to your wallet.",
+            8000
+          );
+        } else if (result.message?.includes("sold out")) {
+          showInfo(
+            "Sold Out",
+            "Sorry, all NFTs have been minted out. Stay tuned for information about the next mint drop!",
+            8000
+          );
+        } else if (result.message?.includes("not active")) {
+          showInfo(
+            "Mint Not Active",
+            "Minting is not currently active. Please wait for official announcement.",
+            6000
+          );
+        } else {
+          // General error
+          showError("Mint Failed", result.message || "Failed to mint NFT. Please try again.", 6000);
+        }
       }
     } catch (error: any) {
       console.error("❌ Mint failed:", error);
-
-      // Check if error is from mintNftDirectlyFromWallet
-      const result = error.result || {};
-      const errorType = result.errorType || "error";
-      let errorMessage =
-        result.message ||
-        error.message ||
-        "Failed to mint NFT. Please try again.";
-
-      // Handle specific error types
-      if (
-        error.message?.includes("User rejected") ||
-        error.message?.includes("rejected")
-      ) {
-        showWarning(
-          "Transaction Cancelled",
-          "You cancelled the transaction signing in your wallet. Please try again if you want to mint NFT.",
-          6000
-        );
-        return; // No need to show additional error
-      } else if (error.message?.includes("insufficient")) {
-        showError(
-          "Insufficient SOL",
-          "Your wallet doesn't have enough SOL balance to mint. Please add more SOL to your wallet.",
-          8000
-        );
-        return;
-      } else if (error.message?.includes("sold out")) {
-        showInfo(
-          "Sold Out",
-          "Sorry, all NFTs have been minted out. Stay tuned for information about the next mint drop!",
-          8000
-        );
-        return;
-      } else if (error.message?.includes("not active")) {
-        showInfo(
-          "Mint Not Active",
-          "Minting is not currently active. Please wait for official announcement.",
-          6000
-        );
-        return;
-      }
-
-      // General error
-      showError("Mint Failed", errorMessage, 6000);
-    } finally {
-      setIsMinting(false);
+      showError("Mint Failed", error.message || "An unexpected error occurred.", 6000);
     }
   };
 
