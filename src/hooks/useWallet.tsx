@@ -6,6 +6,10 @@ import { AuthService } from "@/services";
 
 // Import separated services
 import { WalletType, LoadingKind, Connected } from "./wallet/types";
+import {
+  generateWalletAvailabilityChecks,
+  generateWalletConnectors,
+} from "./wallet/walletHelpers";
 import { WALLET_CONFIGS } from "./wallet/configs";
 import { formatSol, shortenAddress } from "./wallet/utils";
 import { BalanceService } from "./wallet/balanceService";
@@ -461,28 +465,12 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     []
   );
 
-  // Wallet availability checks (backward compatibility)
-  const hasPhantom = WALLET_CONFIGS.phantom.isAvailable();
-  const hasSolflare = WALLET_CONFIGS.solflare.isAvailable();
-  const hasBackpack = WALLET_CONFIGS.backpack.isAvailable();
-  const hasGlow = WALLET_CONFIGS.glow.isAvailable();
-  const hasOKX = WALLET_CONFIGS.okx.isAvailable();
+  // Generate wallet availability checks dynamically
+  const walletHelpers = useMemo(() => generateWalletAvailabilityChecks(), []);
 
-  // Specific wallet connection functions (backward compatibility)
-  const connectPhantom = useCallback(
-    () => connectWallet("phantom"),
-    [connectWallet]
-  );
-  const connectSolflare = useCallback(
-    () => connectWallet("solflare"),
-    [connectWallet]
-  );
-  const connectBackpack = useCallback(
-    () => connectWallet("backpack"),
-    [connectWallet]
-  );
-  const connectGlow = useCallback(() => connectWallet("glow"), [connectWallet]);
-  const connectOKX = useCallback(() => connectWallet("okx"), [connectWallet]);
+  // Extract availability checks for components that need them
+  const { hasPhantom, hasSolflare, hasBackpack, hasGlow, hasOKX } =
+    walletHelpers;
 
   return {
     // State
@@ -508,14 +496,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       loadUserStatistics(forceRefresh),
     shorten,
 
-    // Specific wallet actions (backward compatibility)
-    connectPhantom,
-    connectSolflare,
-    connectBackpack,
-    connectGlow,
-    connectOKX,
-
-    // Wallet availability checks (backward compatibility)
+    // Wallet availability checks
     hasPhantom,
     hasSolflare,
     hasBackpack,

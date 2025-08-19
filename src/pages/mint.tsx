@@ -46,7 +46,7 @@ const BelpyMintPage = ({
   const router = useRouter();
   const {
     solAddress,
-    connectPhantom,
+    connectWallet,
     refreshSolBalance,
     connectedWallet,
     getWalletProvider,
@@ -93,7 +93,7 @@ const BelpyMintPage = ({
     try {
       if (!solAddress) {
         console.log("Wallet not connected, attempting to connect...");
-        await connectPhantom();
+        await connectWallet("phantom");
         return;
       }
 

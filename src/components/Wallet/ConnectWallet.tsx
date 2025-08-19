@@ -174,11 +174,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
         hasGlow={hasGlow}
         hasOKX={hasOKX}
         loading={loading}
-        connectPhantom={() => handleWalletConnection("phantom")}
-        connectSolflare={() => handleWalletConnection("solflare")}
-        connectBackpack={() => handleWalletConnection("backpack")}
-        connectGlow={() => handleWalletConnection("glow")}
-        connectOKX={() => handleWalletConnection("okx")}
+        connectWallet={handleWalletConnection}
       />
     </>
   );
