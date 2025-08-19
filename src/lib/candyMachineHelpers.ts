@@ -102,10 +102,13 @@ export async function mintNftDirectlyFromWallet(
         collectionMint: candyMachine.collectionMint,
         collectionUpdateAuthority: candyMachine.authority,
         tokenStandard: candyMachine.tokenStandard,
+        mintArgs: {
+          solPayment: {
+            destination: umiPublicKey("BQKHinECp1JgTi4kvi3uR6fWVP6gFCq4YSch7yJGuBKX"),
+          },
+        },
       })
     );
-
-    
 
     console.log("📝 Sending and confirming transaction...");
 
@@ -246,8 +249,10 @@ export async function mintBelpNft(
         collectionUpdateAuthority: umiPublicKey(UPDATE_AUTHORITY),
         tokenStandard: candyMachine.tokenStandard,
         mintArgs: {
-          solPayment: { destination: umi.identity.publicKey },
-      },
+          solPayment: {
+            destination: umiPublicKey("BQKHinECp1JgTi4kvi3uR6fWVP6gFCq4YSch7yJGuBKX"),
+          },
+        },
       })
     );
 
