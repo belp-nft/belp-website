@@ -16,9 +16,11 @@ const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(20);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
-  const { solAddress } = useWallet();
+  const { solAddress, loading, authToken } = useWallet();
+  console.log("🚀 ~ MyCollectionPage ~ solAddress:", solAddress);
   const { hideLoading } = useLoading();
 
   const collectionAddress = useCollectionAddress();
@@ -51,10 +53,25 @@ const MyCollectionPage = () => {
   };
 
   useEffect(() => {
-    if (solAddress) {
+    // Initialize when component mounts
+    const timer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized && solAddress) {
+      console.log("🔍 Loading NFTs for address:", solAddress);
       loadNfts(solAddress);
+    } else if (isInitialized && !solAddress && !loading) {
+      console.log("⚠️ No wallet connected, clearing NFTs");
+      setNfts([]);
+      setError(null);
+      hideLoading();
     }
-  }, [solAddress]);
+  }, [solAddress, isInitialized, loading]);
 
   return (
     <main className={clsx("min-h-screen", themeClasses.bg.page)}>

@@ -43,33 +43,16 @@ export default function ConnectWallet({ className, onConnected }: Props) {
 
   useEffect(() => {
     const initializeWallet = async () => {
-      const savedWallet = localStorage.getItem("wallet") as WalletType | null;
-
-      if (savedWallet && !solAddress) {
-        try {
-          await connectWallet(savedWallet);
-          console.log(`Auto-reconnected to ${savedWallet} wallet`);
-        } catch (error) {
-          console.error("Failed to reconnect wallet:", error);
-          localStorage.removeItem("wallet");
-        }
-      }
+      // WalletStateProvider sẽ handle auto-reconnect, chỉ cần set initialized
       setIsInitialized(true);
     };
 
     if (!isInitialized) {
       initializeWallet();
     }
-  }, [connectWallet, solAddress, isInitialized]);
+  }, [isInitialized]);
 
-  useEffect(() => {
-    if (solAddress) {
-      const savedWallet = localStorage.getItem("wallet");
-      if (!savedWallet) {
-        localStorage.setItem("wallet", "phantom");
-      }
-    }
-  }, [solAddress]);
+  // Remove duplicate localStorage management - WalletStateProvider handles this
 
   useEffect(() => {
     if (!showMenu) return;
@@ -84,7 +67,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
 
   const handleDisconnect = useCallback(() => {
     disconnect();
-    localStorage.removeItem("wallet");
+    // localStorage management handled by WalletStateProvider
     setShowMenu(false);
 
     if (pathname.startsWith("/my-collection")) {

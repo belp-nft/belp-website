@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfigActions } from "@/stores/config";
 import { useLoading } from "@/providers/LoadingProvider";
 import { AuthService } from "@/services";
+import { WalletStorage } from "@/constants/storage";
 
 // Import separated services
 import { WalletType, LoadingKind, Connected } from "./wallet/types";
@@ -26,14 +27,66 @@ export type { WalletType, Connected };
 export { getSolBalanceLamports };
 
 export function useWallet(onConnected?: (info: Connected) => void) {
-  // State management
-  const [solAddress, setSolAddress] = useState<string | null>(null);
-  const [connectedType, setConnectedType] = useState<Connected["kind"] | null>(
-    null
-  );
-  const [connectedWallet, setConnectedWallet] = useState<WalletType | null>(
-    null
-  );
+  // State management với localStorage initialization
+  const [solAddress, setSolAddressState] = useState<string | null>(null);
+  const [connectedType, setConnectedTypeState] = useState<"sol" | null>(null);
+  const [connectedWallet, setConnectedWalletState] =
+    useState<WalletType | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Wrapper functions for localStorage sync
+  const setSolAddress = useCallback((address: string | null) => {
+    console.log("💾 Setting solAddress:", address);
+    setSolAddressState(address);
+    WalletStorage.setAddress(address);
+  }, []);
+
+  const setConnectedType = useCallback((type: "sol" | null) => {
+    console.log("💾 Setting connectedType:", type);
+    setConnectedTypeState(type);
+    WalletStorage.setType(type);
+  }, []);
+
+  const setConnectedWallet = useCallback((wallet: WalletType | null) => {
+    console.log("💾 Setting connectedWallet:", wallet);
+    setConnectedWalletState(wallet);
+    WalletStorage.setWallet(wallet);
+  }, []);
+
+  const clearWalletState = useCallback(() => {
+    console.log("🧹 Clearing wallet state");
+    setSolAddressState(null);
+    setConnectedTypeState(null);
+    setConnectedWalletState(null);
+    WalletStorage.clear();
+  }, []);
+
+  // Hydrate from localStorage after mount (SSR safe)
+  useEffect(() => {
+    if (typeof window !== "undefined" && !isHydrated) {
+      // Only hydrate if not manually disconnected
+      if (!WalletStorage.isDisconnected()) {
+        const storedAddress = WalletStorage.getAddress();
+        const storedType = WalletStorage.getType();
+        const storedWallet = WalletStorage.getWallet();
+
+        console.log("🔄 Hydrating wallet state:", {
+          storedAddress,
+          storedType,
+          storedWallet,
+        });
+
+        if (storedAddress) setSolAddressState(storedAddress);
+        if (storedType) setConnectedTypeState(storedType as "sol");
+        if (storedWallet) setConnectedWalletState(storedWallet as WalletType);
+      } else {
+        console.log("⏹️ User disconnected, skipping hydration");
+      }
+      setIsHydrated(true);
+    }
+  }, [isHydrated]);
+
+  // Local state for non-persistent data
   const [loading, setLoading] = useState<LoadingKind>(null);
   const [solLamports, setSolLamports] = useState<number>(0);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -157,16 +210,19 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   );
 
   // Wallet listeners setup
-  const setupWalletListeners = useCallback((walletType: WalletType) => {
-    WalletListenerService.setupWalletListeners(
-      walletType,
-      listenersRef,
-      setSolAddress,
-      setConnectedWallet,
-      setConnectedType,
-      setSolLamports
-    );
-  }, []);
+  const setupWalletListeners = useCallback(
+    (walletType: WalletType) => {
+      WalletListenerService.setupWalletListeners(
+        walletType,
+        listenersRef,
+        setSolAddress,
+        setConnectedWallet,
+        setConnectedType,
+        setSolLamports
+      );
+    },
+    [setSolAddress, setConnectedWallet, setConnectedType]
+  );
 
   const cleanupWalletListeners = useCallback((walletType: WalletType) => {
     WalletListenerService.cleanupWalletListeners(walletType, listenersRef);
@@ -258,10 +314,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setupWalletListeners(walletType as WalletType);
       });
 
-      const wasManuallyDisconnected =
-        window.localStorage.getItem("wallet-disconnected") === "true";
-
-      if (wasManuallyDisconnected) {
+      // Check if user manually disconnected
+      if (WalletStorage.isDisconnected()) {
         console.log("User manually disconnected, skipping auto-connect");
         setIsInitialLoadComplete(true);
         isProcessingRef.current = false;
@@ -356,44 +410,38 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         cleanupWalletListeners(connectedWallet);
       }
 
-      // Reset all state
-      setConnectedType(null);
-      setSolAddress(null);
+      // Reset state but keep isInitialLoadComplete to prevent auto-reconnect
+      clearWalletState();
       setSolLamports(0);
-      setConnectedWallet(null);
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
       setTransactionsLastLoaded(0);
       setUserStatsLastLoaded(0);
-      setIsInitialLoadComplete(false);
+      // Don't reset isInitialLoadComplete to prevent auto-connect
 
       window.dispatchEvent(new CustomEvent("wallet:disconnected"));
       clearConfig();
-      window.localStorage.setItem("wallet-disconnected", "true");
       AuthService.removeToken();
 
       console.log("Wallet disconnected successfully");
     } catch (error) {
       console.error("Error disconnecting wallet:", error);
 
-      // Force cleanup on error
-      setConnectedType(null);
-      setSolAddress(null);
+      // Force cleanup on error but keep isInitialLoadComplete
+      clearWalletState();
       setSolLamports(0);
-      setConnectedWallet(null);
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
       setTransactionsLastLoaded(0);
       setUserStatsLastLoaded(0);
-      setIsInitialLoadComplete(false);
+      // Don't reset isInitialLoadComplete to prevent auto-connect
 
       clearConfig();
       AuthService.removeToken();
-      window.localStorage.setItem("wallet-disconnected", "true");
     }
-  }, [connectedWallet, cleanupWalletListeners, clearConfig]);
+  }, [connectedWallet, cleanupWalletListeners, clearConfig, clearWalletState]);
 
   // Wallet event listeners
   useEffect(() => {
@@ -429,9 +477,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
     const handleWalletDisconnected = () => {
       console.log("🔌 Wallet disconnected event received - syncing state");
-      setSolAddress(null);
-      setConnectedWallet(null);
-      setConnectedType(null);
+      clearWalletState();
       setAuthToken(null);
       setSolLamports(0);
     };
@@ -454,13 +500,23 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     []
   );
 
+  // Generate available wallets list
+  const availableWallets = useMemo(() => {
+    return Object.entries(WALLET_CONFIGS)
+      .filter(([_, config]) => config.isAvailable())
+      .map(([walletType, config]) => ({
+        type: walletType as WalletType,
+        name: config.displayName,
+        isInstalled: true,
+      }));
+  }, []);
+
   // Generate wallet availability checks dynamically
   const walletHelpers = useMemo(() => generateWalletAvailabilityChecks(), []);
 
   // Extract availability checks for components that need them
   const { hasPhantom, hasSolflare, hasBackpack, hasGlow, hasOKX } =
     walletHelpers;
-
   return {
     // State
     solAddress,
@@ -491,6 +547,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     hasBackpack,
     hasGlow,
     hasOKX,
+
+    // Available wallets list
+    availableWallets,
 
     // Wallet configs access
     getWalletConfig: (walletType: WalletType) => WALLET_CONFIGS[walletType],

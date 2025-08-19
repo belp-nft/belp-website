@@ -1,7 +1,7 @@
-import type { AppProps } from 'next/app';
+import type { AppProps } from "next/app";
 import { Oxanium } from "next/font/google";
 import clsx from "clsx";
-import Head from 'next/head';
+import Head from "next/head";
 
 // Styles
 import "@/styles/globals.css";
@@ -32,15 +32,27 @@ export default function App({ Component, pageProps, router }: AppProps) {
     <>
       <Head>
         <title>Belpy</title>
-        <meta name="description" content="Belpy NFT - The first limited collection of unique NFT tokens" />
+        <meta
+          name="description"
+          content="Belpy NFT - The first limited collection of unique NFT tokens"
+        />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="96x96"
+          href="/favicon-96x96.png"
+        />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="apple-mobile-web-app-title" content="MyWebSite" />
       </Head>
-      
+
       <div className={clsx("font-gmarket antialiased", oxanium.variable)}>
         <LoadingProvider>
           <AuthProvider>

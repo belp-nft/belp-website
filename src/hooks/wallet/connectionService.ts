@@ -23,7 +23,7 @@ export class WalletConnectionService {
     try {
       setLoading(walletType);
       showLoading();
-      window.localStorage.removeItem("wallet-disconnected");
+      // WalletStateProvider handles disconnected state
 
       const provider = config.getProvider();
 
