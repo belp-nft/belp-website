@@ -16,6 +16,7 @@ import {
 } from "@/services";
 import { useConfigActions } from "@/stores/config";
 import { useLoading } from "@/providers/LoadingProvider";
+import { useToast } from "@/components/ToastContainer";
 
 export type WalletType = "phantom" | "solflare" | "backpack" | "glow" | "okx";
 export type Connected = {
@@ -205,6 +206,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const balanceLoadingRef = useRef(false);
   const lastBalanceLoadRef = useRef(0);
+  const toast = useToast();
 
   const { clearConfig } = useConfigActions();
   const { showLoading, hideLoading } = useLoading();
@@ -277,6 +279,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setSolLamports(lamports);
         console.log("✅ Balance loaded from API:", lamports);
       } else {
+        // toast by english
+        toast.showError("Balance fetch failed", "Please try again later", 8000);
         // If API fails, set to 0
         console.warn(
           "API balance fetch failed:",
@@ -287,6 +291,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     } catch (error: any) {
       console.error("Failed to refresh SOL balance:", error);
 
+      toast.showError("Balance fetch failed", "Please try again later", 8000);
       // Handle rate limit error specifically
       if (
         error.message?.includes("Rate limit") ||

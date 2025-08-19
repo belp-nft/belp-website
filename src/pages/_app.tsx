@@ -14,6 +14,7 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { SettingsProvider } from "@/providers/SettingsProvider";
 import { ConfigProvider } from "@/providers/ConfigProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { ToastProvider } from "@/components/ToastContainer";
 
 // Components
 import BelpHeader from "@/components/Header";
@@ -42,24 +43,26 @@ export default function App({ Component, pageProps, router }: AppProps) {
       </Head>
       
       <div className={clsx("font-gmarket antialiased", oxanium.variable)}>
-        <LoadingProvider>
-          <AuthProvider>
-            <SettingsProvider>
-              <ConfigProvider>
-                <ThemeProvider>
-                  <BelpHeader />
-                  <div
-                    className={clsx(
-                      !["/", "/my-collection"].includes(pathname) && "mt-16"
-                    )}
-                  >
-                    <Component {...pageProps} />
-                  </div>
-                </ThemeProvider>
-              </ConfigProvider>
-            </SettingsProvider>
-          </AuthProvider>
-        </LoadingProvider>
+        <ToastProvider>
+          <LoadingProvider>
+            <AuthProvider>
+              <SettingsProvider>
+                <ConfigProvider>
+                  <ThemeProvider>
+                    <BelpHeader />
+                    <div
+                      className={clsx(
+                        !["/", "/my-collection"].includes(pathname) && "mt-16"
+                      )}
+                    >
+                      <Component {...pageProps} />
+                    </div>
+                  </ThemeProvider>
+                </ConfigProvider>
+              </SettingsProvider>
+            </AuthProvider>
+          </LoadingProvider>
+        </ToastProvider>
       </div>
     </>
   );

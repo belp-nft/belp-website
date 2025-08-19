@@ -3,9 +3,14 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { useWallet } from "@/hooks/useWallet";
+import { useToast } from "@/components/ToastContainer";
 import PageLoading from "@/components/PageLoading";
 
 import { NftService } from "@/services";
+import {
+  mintNftDirectlyFromWallet,
+  mintBelpNft,
+} from "@/lib/candyMachineHelpers";
 import {
   useConfig,
   useMintStats,
@@ -44,6 +49,7 @@ const BelpyMintPage = ({
   initialMintStats,
 }: MintPageProps) => {
   const router = useRouter();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const {
     solAddress,
     connectPhantom,
@@ -112,29 +118,44 @@ const BelpyMintPage = ({
       // Refresh SOL balance before minting
       await refreshSolBalance();
 
-      // Build mint transaction
-      const buildResult = await NftService.buildMintTransaction(
-        candyMachineAddress,
-        solAddress
-      );
+      // Get wallet provider from window
+      const walletProvider =
+        (window as any).solana || (window as any).phantom?.solana;
 
-      if (!buildResult.success) {
+      if (!walletProvider) {
         throw new Error(
-          buildResult.message || "Failed to build mint transaction"
+          "Wallet provider not found! Please make sure your wallet is installed and connected."
         );
       }
 
-      // Here you would typically sign and send the transaction
-      // This is a simplified version - you'll need to implement actual signing logic
-      const result = {
-        success: true,
-        nftAddress: "example-nft-address", // This should come from actual mint result
-        message: "Mint successful",
-      };
+      console.log("🎯 Using wallet provider for direct mint...");
 
-      if (result.success && result.nftAddress) {
-        console.log("✅ NFT minted successfully:", result.nftAddress);
-        setNftAddress(result.nftAddress);
+      // Call mint directly from Candy Machine smart contract
+      // const result = await mintNftDirectlyFromWallet(
+      //   candyMachineAddress,
+      //   solAddress,
+      //   walletProvider
+      // );
+
+      // Call mint directly from Candy Machine smart contract
+      const result = await mintBelpNft(solAddress, walletProvider);
+
+      if (result.success) {
+        console.log("✅ NFT minted successfully!");
+        console.log("Transaction signature:", result.signature);
+        console.log("NFT address:", result.nftAddress);
+
+        // Show success toast
+        showSuccess(
+          "Mint Successful! 🎉",
+          `NFT has been minted successfully${result.signature ? `. TX: ${result.signature.slice(0, 8)}...` : ""}`,
+          8000
+        );
+
+        if (result.nftAddress) {
+          setNftAddress(result.nftAddress);
+        }
+
         setMintSuccess(true);
         setSelectedCat(Math.floor(Math.random() * cats.length));
 
@@ -151,7 +172,7 @@ const BelpyMintPage = ({
         setShowMintModal(false);
         setShowSuccessModal(true);
 
-        // Fetch NFT details for display
+        // Fetch NFT details for display (if nftAddress exists)
         if (result.nftAddress) {
           try {
             const nftDetails = await NftService.getNftDetails(
@@ -166,25 +187,58 @@ const BelpyMintPage = ({
         // Refresh stats in background
         setTimeout(() => refreshStats(candyMachineAddress), 2000);
       } else {
-        throw new Error(result.message || "Failed to mint NFT");
+        // Throw error with result object to access errorType
+        const error = new Error(result.message || "Failed to mint NFT");
+        (error as any).result = result;
+        throw error;
       }
     } catch (error: any) {
       console.error("❌ Mint failed:", error);
 
-      let errorMessage = "Failed to mint NFT. Please try again.";
+      // Check if error is from mintNftDirectlyFromWallet
+      const result = error.result || {};
+      const errorType = result.errorType || "error";
+      let errorMessage =
+        result.message ||
+        error.message ||
+        "Failed to mint NFT. Please try again.";
 
-      if (error.message?.includes("insufficient")) {
-        errorMessage =
-          "Insufficient SOL balance. Please add more SOL to your wallet.";
+      // Handle specific error types
+      if (
+        error.message?.includes("User rejected") ||
+        error.message?.includes("rejected")
+      ) {
+        showWarning(
+          "Transaction Cancelled",
+          "You cancelled the transaction signing in your wallet. Please try again if you want to mint NFT.",
+          6000
+        );
+        return; // No need to show additional error
+      } else if (error.message?.includes("insufficient")) {
+        showError(
+          "Insufficient SOL",
+          "Your wallet doesn't have enough SOL balance to mint. Please add more SOL to your wallet.",
+          8000
+        );
+        return;
       } else if (error.message?.includes("sold out")) {
-        errorMessage = "Sorry, all NFTs have been sold out!";
+        showInfo(
+          "Sold Out",
+          "Sorry, all NFTs have been minted out. Stay tuned for information about the next mint drop!",
+          8000
+        );
+        return;
       } else if (error.message?.includes("not active")) {
-        errorMessage = "Minting is not currently active.";
-      } else if (error.message) {
-        errorMessage = error.message;
+        showInfo(
+          "Mint Not Active",
+          "Minting is not currently active. Please wait for official announcement.",
+          6000
+        );
+        return;
       }
 
-      alert(errorMessage);
+      // General error
+      showError("Mint Failed", errorMessage, 6000);
     } finally {
       setIsMinting(false);
     }
@@ -199,11 +253,11 @@ const BelpyMintPage = ({
   };
 
   const handleMintClick = () => {
-    setShowFeatureAnnouncement(true);
+    // setShowFeatureAnnouncement(true);
     // if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
     // return;
     // }
-    // setShowMintModal(true);
+    setShowMintModal(true);
   };
 
   return (
