@@ -7,6 +7,7 @@ import CatGrid from "./CatGrid";
 import { useAuth } from "@/providers/AuthProvider";
 import ConnectWallet from "@/components/Wallet/ConnectWallet";
 import { useSettings } from "@/providers/SettingsProvider";
+import { useWalletContext } from "@/providers/WalletProvider";
 
 interface MintSectionProps {
   minted: number;
@@ -26,6 +27,7 @@ const MintSection: React.FC<MintSectionProps> = ({
   onMintClick,
 }) => {
   const { isAuthenticated } = useAuth();
+  const { solAddress, connectWallet } = useWalletContext();
   const { nftPricing, isLoadingPricing, pricingError } = useSettings();
 
   const getScaleAndSize = (text: string) => {
@@ -123,7 +125,7 @@ const MintSection: React.FC<MintSectionProps> = ({
               whileHover={{ scale: isMinting ? 1 : 1.05 }}
               whileTap={{ scale: isMinting ? 1 : 0.95 }}
               onClick={onMintClick}
-              disabled={isMinting}
+              disabled={isMinting || !solAddress}
             >
               {isMinting ? (
                 <div className="flex items-center justify-center gap-2">
@@ -142,8 +144,10 @@ const MintSection: React.FC<MintSectionProps> = ({
                 </div>
               ) : mintSuccess ? (
                 "Minted Successfully! 🎉"
-              ) : (
+              ) : solAddress ? (
                 <>MINT BELPY</>
+              ) : (
+                <>Connect wallet to mint</>
               )}
             </motion.button>
           ) : (

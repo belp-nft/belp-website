@@ -5,11 +5,40 @@ import clsx from "clsx";
 import Modal from "@/components/Modal";
 import { motion } from "framer-motion";
 
+interface NFTDetails {
+  _id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  nftAddress: string;
+  transactionSignature: string;
+  attributes: Array<{
+    trait_type: string;
+    value: string;
+  }>;
+  metadata: {
+    name: string;
+    symbol: string;
+    description: string;
+    image: string;
+    edition: number;
+  };
+  candyMachineAddress: string;
+  collectionAddress: string;
+  collectionName: string;
+  walletAddress: string;
+  userId: string;
+  mintedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  isVerified: boolean;
+  symbol: string;
+}
+
 interface MintSuccessModalProps {
   isOpen: boolean;
-  selectedCat: number | null;
-  cats: string[];
-  mintedNftId: string;
+  nftDetails: NFTDetails | null;
   onClose: () => void;
   onViewDetails: () => void;
   onViewHistory: () => void;
@@ -17,9 +46,7 @@ interface MintSuccessModalProps {
 
 const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
   isOpen,
-  selectedCat,
-  cats,
-  mintedNftId,
+  nftDetails,
   onClose,
   onViewDetails,
   onViewHistory,
@@ -43,11 +70,14 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
               "rounded-2xl shadow-lg overflow-hidden"
             )}
           >
-            {selectedCat !== null && (
+            {nftDetails?.imageUrl && (
               <img
-                src={`/icons/${cats[selectedCat]}`}
-                alt="Minted BELPY"
-                className="w-full object-contain"
+                src={nftDetails.imageUrl.startsWith('ipfs://') 
+                  ? `https://gateway.pinata.cloud/ipfs/${nftDetails.imageUrl.replace('ipfs://', '')}`
+                  : nftDetails.imageUrl
+                }
+                alt={`Minted ${nftDetails.name}`}
+                className="w-full h-full object-cover"
               />
             )}
           </div>
@@ -66,15 +96,33 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
               fontFamily: "var(--font-oxanium)",
             }}
           >
-            BELPY {mintedNftId}
+            {nftDetails?.name || "BELPY NFT"}
           </motion.h1>
+          
+          {/* Display attributes if available */}
+          {nftDetails?.attributes && nftDetails.attributes.length > 0 && (
+            <div className="flex flex-wrap gap-2 justify-center mb-4">
+              {nftDetails.attributes.slice(0, 3).map((attr, index) => (
+                <div
+                  key={index}
+                  className={clsx(
+                    "inline-block bg-gradient-to-r from-[#F356FF] to-[#AE4DCE]",
+                    "text-white px-3 py-1 rounded-full text-xs font-medium"
+                  )}
+                >
+                  {attr.trait_type}: {attr.value}
+                </div>
+              ))}
+            </div>
+          )}
+          
           <div
             className={clsx(
               "inline-block bg-gradient-to-r from-[#F356FF] to-[#AE4DCE]",
               "text-white px-4 py-1 rounded-full text-sm font-medium"
             )}
           >
-            GENESIS BELPY!
+            {nftDetails?.collectionName || "GENESIS BELPY"}!
           </div>
         </div>
       </div>

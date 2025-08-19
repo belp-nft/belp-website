@@ -104,8 +104,6 @@ const BelpyMintPage = ({
 
     try {
       if (!solAddress) {
-        console.log("Wallet not connected, attempting to connect...");
-        await connectWallet("phantom");
         return;
       }
 
@@ -158,7 +156,7 @@ const BelpyMintPage = ({
         }
       } else {
         // Handle error result from CandyMachine provider
-        const errorType = result.errorType || "error";
+        // const errorType = result.errorType || "error";
 
         // Handle specific error types
         if (
@@ -256,9 +254,7 @@ const BelpyMintPage = ({
 
         <MintSuccessModal
           isOpen={showSuccessModal}
-          selectedCat={selectedCat}
-          cats={cats}
-          mintedNftId={nftDetailData?.name}
+          nftDetails={nftDetailData}
           onClose={handleSuccessModalClose}
           onViewDetails={() => {
             router.push(`/my-collection/${nftAddress}`);
