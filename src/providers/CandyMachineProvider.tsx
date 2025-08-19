@@ -390,10 +390,12 @@ export function CandyMachineProvider({ children, config = {} }: CandyMachineProv
         },
       });
 
-      log('✅ Belp NFT transaction confirmed:', result.signature);
-
-      // Convert signature bytes to base64
+      // Convert signature bytes to hex string (transaction hash)
       const signatureBytes = new Uint8Array(result.signature);
+      const signatureHash = Buffer.from(signatureBytes).toString('hex');
+      
+      log('✅ Belp NFT transaction confirmed:', signatureHash);
+
       const base64signature = Buffer.from(signatureBytes).toString('base64');
 
       const mintResult: MintResult = {
