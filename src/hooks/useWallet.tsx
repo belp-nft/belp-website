@@ -1,7 +1,12 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import {
+  Connection,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  Transaction,
+} from "@solana/web3.js";
 import {
   UserService,
   AuthService,
@@ -737,6 +742,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           );
         }
 
+        await refreshSolBalance();
         onConnected?.({ kind: "sol", address: addr, walletType });
         console.log(`${config.displayName} wallet connection successful!`);
       } catch (error: any) {
@@ -1122,6 +1128,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     hasBackpack,
     hasGlow,
     hasOKX,
+    getSolBalanceLamports,
 
     // Wallet configs access
     getWalletConfig: (walletType: WalletType) => WALLET_CONFIGS[walletType],
@@ -1147,3 +1154,11 @@ let globalBalanceLoading = false;
 let globalLastBalanceLoad = 0;
 // Global flag to prevent multiple connection processing
 let globalConnectionProcessed = false;
+
+export async function getSolBalanceLamports(address: string): Promise<number> {
+  const rpcClient = new Connection(BLOCKCHAIN_CONFIG.SOLANA_RPC);
+  const pubkey = new PublicKey(address);
+
+  const lamports = await rpcClient.getBalance(pubkey);
+  return lamports / LAMPORTS_PER_SOL;
+}

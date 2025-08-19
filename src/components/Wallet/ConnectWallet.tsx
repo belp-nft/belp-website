@@ -84,6 +84,10 @@ export default function ConnectWallet({ className, onConnected }: Props) {
     setShowMenu(false);
   };
 
+  // useEffect(() => {
+  //   getSolBalanceLamports("HnmbrKehyBp2Kj6vXKytjiPFJe2KCmWydK5WPrHHd9sM");
+  // }, []);
+
   return (
     <>
       <WalletButton
