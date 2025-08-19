@@ -607,6 +607,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       setConnectedType("sol");
       setConnectedWallet(walletType);
 
+      // Save wallet type for future restoration
+      window.localStorage.setItem("last-wallet-type", walletType);
+
       const config = WALLET_CONFIGS[walletType];
       console.log(
         `Processing ${isExisting ? "existing" : "new"} ${config.displayName} connection...`
@@ -731,6 +734,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
         console.log(`${config.displayName} connected:`, addr);
 
+        // Save wallet type for future restoration
+        window.localStorage.setItem("last-wallet-type", walletType);
+
         // Authenticate with backend using centralized function, force balance refresh
         const authSuccess = await authenticateWallet(addr, true);
 
@@ -779,12 +785,55 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     [onConnected, loadUserData, showLoading, hideLoading, authenticateWallet]
   );
 
+  // Restore wallet state from localStorage on initial load
+  useEffect(() => {
+    if (typeof window === "undefined" || solAddress) return;
+
+    // Check for existing valid token and try to restore wallet address
+    const existingToken = AuthService.getToken();
+    if (existingToken && AuthService.isTokenValid()) {
+      try {
+        // Try to decode wallet address from JWT token
+        const parts = existingToken.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const walletAddress = payload.walletAddress || payload.address || payload.wallet;
+          
+          if (walletAddress) {
+            console.log("🔄 Restoring wallet address from token:", walletAddress);
+            setSolAddress(walletAddress);
+            setAuthToken(existingToken);
+            
+            // Try to determine which wallet type was used (fallback to phantom)
+            const lastWalletType = window.localStorage.getItem("last-wallet-type") as WalletType || "phantom";
+            setConnectedWallet(lastWalletType);
+            setConnectedType("sol");
+            
+            // Load balance and user data
+            refreshSolBalance();
+            loadUserData(walletAddress);
+            
+            onConnected?.({
+              kind: "sol",
+              address: walletAddress,
+              walletType: lastWalletType,
+            });
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to restore wallet from token:", error);
+        AuthService.removeToken();
+      }
+    }
+  }, []);
+
   // Simplified auto-connect with debounce
   useEffect(() => {
     if (
       typeof window === "undefined" ||
       isInitialLoadComplete ||
-      isProcessingRef.current
+      isProcessingRef.current ||
+      solAddress // Skip if already restored from token
     )
       return;
 
@@ -888,6 +937,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     cleanupWalletListeners,
     handleConnection,
     isInitialLoadComplete,
+    solAddress, // Add solAddress to dependencies
   ]);
 
   // Generic disconnect function
@@ -932,6 +982,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       // Set disconnected flag to prevent auto-reconnect
       window.localStorage.setItem("wallet-disconnected", "true");
+      
+      // Clear wallet type
+      window.localStorage.removeItem("last-wallet-type");
 
       // Cleanup JWT token
       AuthService.removeToken();
@@ -957,6 +1010,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       AuthService.removeToken();
       window.localStorage.setItem("wallet-disconnected", "true");
+      window.localStorage.removeItem("last-wallet-type");
     }
   }, [connectedWallet, cleanupWalletListeners, solAddress, clearConfig]);
 

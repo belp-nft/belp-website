@@ -30,7 +30,25 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'devnet.irys.xyz',
       },
+      {
+        protocol: 'https',
+        hostname: 'gateway.pinata.cloud',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ipfs.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cloudflare-ipfs.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dweb.link',
+      },
     ],
+    loader: 'custom',
+    loaderFile: './src/lib/ipfsImageLoader.ts',
   },
 
   // Headers cho performance

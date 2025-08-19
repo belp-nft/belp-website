@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import clsx from "clsx";
 import Modal from "@/components/Modal";
 import { motion } from "framer-motion";
@@ -71,13 +72,13 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
             )}
           >
             {nftDetails?.imageUrl && (
-              <img
-                src={nftDetails.imageUrl.startsWith('ipfs://') 
-                  ? `https://gateway.pinata.cloud/ipfs/${nftDetails.imageUrl.replace('ipfs://', '')}`
-                  : nftDetails.imageUrl
-                }
+              <Image
+                src={nftDetails.imageUrl}
                 alt={`Minted ${nftDetails.name}`}
+                width={160}
+                height={160}
                 className="w-full h-full object-cover"
+                priority
               />
             )}
           </div>

@@ -80,6 +80,17 @@ const BelpyMintPage = ({
   const [nftAddress, setNftAddress] = useState<string>("");
   const [nftDetailData, setNftDetailData] = useState<any>(null);
   const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(true);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+  // Auto-connect wallet if authToken exists but no solAddress
+  useEffect(() => {
+    if (!solAddress && authToken) {
+      console.log("🔄 Auto-connecting wallet with existing authToken...");
+      // Try to get last used wallet type or default to phantom
+      const lastWalletType = (window.localStorage.getItem("last-wallet-type") as any) || "phantom";
+      connectWallet(lastWalletType);
+    }
+  }, [solAddress, authToken, connectWallet]);
 
   // Auto-refresh stats every 30s
   useEffect(() => {
@@ -99,11 +110,13 @@ const BelpyMintPage = ({
 
   const handleMint = async () => {
     setMintSuccess(false);
+    setIsProcessing(true);
     clearResult();
     clearError();
 
     try {
       if (!solAddress) {
+        setIsProcessing(false);
         return;
       }
 
@@ -137,6 +150,7 @@ const BelpyMintPage = ({
         // Show success modal
         setShowMintModal(false);
         setShowSuccessModal(true);
+        setIsProcessing(false); // Stop processing when success modal is shown
 
         // Fetch NFT details for display (if nftAddress exists)
         if (result.nftAddress) {
@@ -194,9 +208,11 @@ const BelpyMintPage = ({
             6000
           );
         }
+        setIsProcessing(false); // Stop processing on error
       }
     } catch (error: any) {
       console.error("❌ Mint failed:", error);
+      setIsProcessing(false); // Stop processing on exception
       showError(
         "Mint Failed",
         error.message || "An unexpected error occurred.",
@@ -211,6 +227,7 @@ const BelpyMintPage = ({
     setSelectedCat(null);
     setNftAddress("");
     setNftDetailData(null);
+    setIsProcessing(false); // Ensure processing is stopped
   };
 
   const handleMintClick = () => {
@@ -247,7 +264,7 @@ const BelpyMintPage = ({
 
         <MintConfirmModal
           isOpen={showMintModal}
-          isMinting={isMinting}
+          isMinting={isProcessing}
           onClose={() => setShowMintModal(false)}
           onConfirm={handleMint}
         />
