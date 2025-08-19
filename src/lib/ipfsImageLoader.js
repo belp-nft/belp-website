@@ -1,13 +1,10 @@
-export default function ipfsImageLoader({ src, width, quality }: {
-  src: string;
-  width: number;
-  quality?: number;
-}) {
+export default function ipfsImageLoader({ src, width, quality }) {
   // Nếu là IPFS URL
   if (src.startsWith('ipfs://')) {
     const hash = src.replace('ipfs://', '');
-    // Sử dụng dweb.link IPFS gateway
-    return `https://dweb.link/ipfs/${hash}?w=${width}&q=${quality || 75}`;
+    // IPFS gateways không hỗ trợ image optimization parameters
+    // Chỉ trả về URL gốc từ gateway
+    return `https://dweb.link/ipfs/${hash}`;
   }
   
   // Nếu đã là HTTP URL, giữ nguyên
