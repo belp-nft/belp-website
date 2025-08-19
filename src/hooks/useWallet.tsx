@@ -2,8 +2,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfigActions } from "@/stores/config";
 import { useLoading } from "@/providers/LoadingProvider";
+
 import { AuthService } from "@/services";
 import { WalletStorage } from "@/constants/storage";
+
 
 // Import separated services
 import { WalletType, LoadingKind, Connected } from "./wallet/types";
@@ -104,7 +106,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const isProcessingRef = useRef(false);
   const hasProcessedConnectionRef = useRef(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const listenersRef = useRef<Map<WalletType, any>>(new Map());
+
 
   const { clearConfig } = useConfigActions();
   const { showLoading, hideLoading } = useLoading();
@@ -246,6 +248,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       setConnectedType("sol");
       setConnectedWallet(walletType);
 
+      // Save wallet type for future restoration
+      window.localStorage.setItem("last-wallet-type", walletType);
+
       const config = WALLET_CONFIGS[walletType];
       console.log(
         `Processing ${isExisting ? "existing" : "new"} ${config.displayName} connection...`
@@ -277,27 +282,186 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   // Main wallet connection function
   const connectWallet = useCallback(
     async (walletType: WalletType) => {
-      await WalletConnectionService.connectWallet(
-        walletType,
-        setLoading,
-        showLoading,
-        hideLoading,
-        setSolAddress,
-        setConnectedType,
-        setConnectedWallet,
-        authenticateWallet,
-        refreshSolBalance
-      );
+      const config = WALLET_CONFIGS[walletType];
+
+      try {
+        setLoading(walletType);
+        showLoading();
+        window.localStorage.removeItem("wallet-disconnected");
+
+        const provider = config.getProvider();
+
+        // If provider not found, redirect to download/install
+        if (!provider) {
+          hideLoading();
+          console.log(
+            `No ${config.displayName} provider detected, redirecting...`
+          );
+
+          const currentUrl = window.location.href;
+          const isMobile =
+            /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+              navigator.userAgent
+            );
+
+          if (isMobile && config.deepLinkTemplate) {
+            // Try deep link first for mobile
+            const deepLink = config.deepLinkTemplate.replace(
+              "{{url}}",
+              encodeURIComponent(currentUrl)
+            );
+            console.log(
+              `Trying mobile deep link for ${config.displayName}:`,
+              deepLink
+            );
+            window.location.href = deepLink;
+
+            // Fallback to app store
+            setTimeout(() => {
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              const storeUrl = isIOS
+                ? config.downloadUrl.mobile?.ios
+                : config.downloadUrl.mobile?.android;
+
+              if (storeUrl) {
+                window.open(storeUrl, "_blank");
+              }
+            }, 3000);
+          } else {
+            // Desktop: Open extension download page
+            const downloadUrl = `${
+              config.downloadUrl.desktop
+            }?utm_source=belp&utm_medium=web&return_url=${encodeURIComponent(
+              currentUrl
+            )}`;
+            console.log(`Opening ${config.displayName} download:`, downloadUrl);
+            window.open(downloadUrl, "_blank");
+          }
+          return;
+        }
+
+        if (!provider.connect) {
+          throw new Error(`${config.displayName} does not support connection`);
+        }
+
+        console.log(`Starting ${config.displayName} wallet connection...`);
+
+        // Request connection from wallet
+        const resp = await provider.connect();
+
+        if (!resp?.publicKey) {
+          throw new Error(
+            `Failed to get public key from ${config.displayName}`
+          );
+        }
+
+        const addr = resp.publicKey.toString();
+        setSolAddress(addr);
+        setConnectedType("sol");
+        setConnectedWallet(walletType);
+
+        console.log(`${config.displayName} connected:`, addr);
+
+        // Save wallet type for future restoration
+        window.localStorage.setItem("last-wallet-type", walletType);
+
+        // Authenticate with backend using centralized function, force balance refresh
+        const authSuccess = await authenticateWallet(addr, true);
+
+        if (authSuccess) {
+          // Wait a moment to ensure token is properly set
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Now load user data (balance already loaded in authenticateWallet)
+          console.log("Loading user data...");
+          await loadUserData(addr);
+        } else {
+          console.warn(
+            "Authentication failed, continuing without backend data"
+          );
+        }
+
+        await refreshSolBalance();
+        onConnected?.({ kind: "sol", address: addr, walletType });
+        console.log(`${config.displayName} wallet connection successful!`);
+      } catch (error: any) {
+        console.error(`${config.displayName} connection failed:`, error);
+
+        // Handle specific error cases
+        if (error.message?.includes("User rejected") || error.code === 4001) {
+          console.log("User cancelled the connection");
+        } else if (error.code === -32002) {
+          alert(
+            `Connection request is already pending. Please check your ${config.displayName} wallet.`
+          );
+        } else if (error.message?.includes("wallet not found")) {
+          alert(
+            `${config.displayName} wallet not found. Please install ${config.displayName} extension or app.`
+          );
+        } else {
+          alert(
+            `Connection failed: ${
+              error.message || "Unknown error"
+            }. Please try again.`
+          );
+        }
+      } finally {
+        setLoading(null);
+        hideLoading();
+      }
     },
     [showLoading, hideLoading, authenticateWallet, refreshSolBalance]
   );
 
-  // Auto-connect effect
+  // Restore wallet state from localStorage on initial load
+  useEffect(() => {
+    if (typeof window === "undefined" || solAddress) return;
+
+    // Check for existing valid token and try to restore wallet address
+    const existingToken = AuthService.getToken();
+    if (existingToken && AuthService.isTokenValid()) {
+      try {
+        // Try to decode wallet address from JWT token
+        const parts = existingToken.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const walletAddress = payload.walletAddress || payload.address || payload.wallet;
+          
+          if (walletAddress) {
+            console.log("🔄 Restoring wallet address from token:", walletAddress);
+            setSolAddress(walletAddress);
+            setAuthToken(existingToken);
+            
+            // Try to determine which wallet type was used (fallback to phantom)
+            const lastWalletType = window.localStorage.getItem("last-wallet-type") as WalletType || "phantom";
+            setConnectedWallet(lastWalletType);
+            setConnectedType("sol");
+            
+            // Load balance and user data
+            refreshSolBalance();
+            loadUserData(walletAddress);
+            
+            onConnected?.({
+              kind: "sol",
+              address: walletAddress,
+              walletType: lastWalletType,
+            });
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to restore wallet from token:", error);
+        AuthService.removeToken();
+      }
+    }
+  }, []);
+
+  // Simplified auto-connect with debounce
   useEffect(() => {
     if (
       typeof window === "undefined" ||
       isInitialLoadComplete ||
-      isProcessingRef.current
+      isProcessingRef.current ||
+      solAddress // Skip if already restored from token
     )
       return;
 
@@ -391,6 +555,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     cleanupWalletListeners,
     handleConnection,
     isInitialLoadComplete,
+    solAddress, // Add solAddress to dependencies
   ]);
 
   // Disconnect function
@@ -422,6 +587,15 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       window.dispatchEvent(new CustomEvent("wallet:disconnected"));
       clearConfig();
+
+      // Set disconnected flag to prevent auto-reconnect
+      window.localStorage.setItem("wallet-disconnected", "true");
+      
+      // Clear wallet type
+      window.localStorage.removeItem("last-wallet-type");
+
+      // Cleanup JWT token
+
       AuthService.removeToken();
 
       console.log("Wallet disconnected successfully");
@@ -440,6 +614,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       clearConfig();
       AuthService.removeToken();
+      window.localStorage.setItem("wallet-disconnected", "true");
+      window.localStorage.removeItem("last-wallet-type");
+
     }
   }, [connectedWallet, cleanupWalletListeners, clearConfig, clearWalletState]);
 
