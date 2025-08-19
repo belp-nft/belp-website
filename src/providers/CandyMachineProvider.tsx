@@ -87,8 +87,8 @@ const initialState: CandyMachineState = {
 
 // Belp project constants
 const BELP_CONFIG = {
-  candyMachineAddress: "AyJ3gLeJHvmCzBusiPZaGdsARViEaYg9bkghfosoenwX",
-  collectionAddress: "Ak6Gq19YxzYmCqeDTHgmuhyNijTehM1HkVWsEjeZtZ7d",
+  candyMachineAddress: "9MTRpcfQCGfpBgeruvVH5sDYCP58xVjEf7k3QjKE8pkf",
+  collectionAddress: "5rd46zx3aZKyRxrNTkU9vhJam5hBonCRMmM27bZepPBF",
   updateAuthority: "BQKHinECp1JgTi4kvi3uR6fWVP6gFCq4YSch7yJGuBKX",
 };
 

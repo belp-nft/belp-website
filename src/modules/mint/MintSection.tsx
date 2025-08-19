@@ -17,14 +17,6 @@ interface MintSectionProps {
   onMintClick: () => void;
 }
 
-const cats = [
-  "tokens/1.png",
-  "tokens/2.png",
-  "tokens/3.png",
-  "tokens/4.png",
-  "tokens/5.png",
-];
-
 const MintSection: React.FC<MintSectionProps> = ({
   minted,
   supply,
@@ -162,11 +154,11 @@ const MintSection: React.FC<MintSectionProps> = ({
           )}
         </motion.div>
 
-        <CatGrid
-          cats={cats}
+        {/* <CatGrid
+          cats={}
           selectedCat={selectedCat}
           mintSuccess={mintSuccess}
-        />
+        /> */}
 
         <motion.p
           className={clsx("mt-3 text-xs sm:text-sm text-center lg:text-left")}
@@ -175,9 +167,7 @@ const MintSection: React.FC<MintSectionProps> = ({
           transition={{ duration: 0.6, delay: 2.4 }}
         >
           {mintSuccess && selectedCat !== null
-            ? `🎉 Congratulations! You minted ${cats[selectedCat]
-                .replace(".svg", "")
-                .replace("token-nft-", "BELPY #")}!`
+            ? `🎉 Congratulations! You minted BELPY #${selectedCat}!`
             : "These are example BELPY designs available in this round."}
         </motion.p>
       </motion.div>

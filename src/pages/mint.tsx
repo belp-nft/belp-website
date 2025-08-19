@@ -55,7 +55,7 @@ const BelpyMintPage = ({
     authToken,
     loadUserData,
   } = useWalletContext();
-  
+
   const {
     isMinting,
     mint,
@@ -63,7 +63,7 @@ const BelpyMintPage = ({
     error: mintError,
     canMint,
     clearResult,
-    clearError
+    clearError,
   } = useCandyMachine();
 
   // Zustand store
@@ -105,17 +105,15 @@ const BelpyMintPage = ({
     try {
       if (!solAddress) {
         console.log("Wallet not connected, attempting to connect...");
-        await connectWallet('phantom');
+        await connectWallet("phantom");
         return;
       }
 
-      console.log("Starting NFT mint using CandyMachine provider...");
-
-      // Refresh SOL balance before minting
-      await refreshSolBalance();
-
       // Call mint from CandyMachine provider
       const result = await mint();
+
+      // save tx
+      // lay nft len
 
       if (result.success) {
         console.log("✅ NFT minted successfully!");
@@ -135,15 +133,6 @@ const BelpyMintPage = ({
 
         setMintSuccess(true);
         setSelectedCat(Math.floor(Math.random() * cats.length));
-
-        // Increment minted count locally for immediate UI feedback
-        incrementMinted();
-
-        // Save user data after successful mint
-        if (authToken && solAddress) {
-          console.log("💾 Saving user data after mint...");
-          await loadUserData(solAddress);
-        }
 
         // Show success modal
         setShowMintModal(false);
@@ -168,7 +157,7 @@ const BelpyMintPage = ({
       } else {
         // Handle error result from CandyMachine provider
         const errorType = result.errorType || "error";
-        
+
         // Handle specific error types
         if (
           result.message?.includes("User rejected") ||
@@ -199,12 +188,20 @@ const BelpyMintPage = ({
           );
         } else {
           // General error
-          showError("Mint Failed", result.message || "Failed to mint NFT. Please try again.", 6000);
+          showError(
+            "Mint Failed",
+            result.message || "Failed to mint NFT. Please try again.",
+            6000
+          );
         }
       }
     } catch (error: any) {
       console.error("❌ Mint failed:", error);
-      showError("Mint Failed", error.message || "An unexpected error occurred.", 6000);
+      showError(
+        "Mint Failed",
+        error.message || "An unexpected error occurred.",
+        6000
+      );
     }
   };
 
