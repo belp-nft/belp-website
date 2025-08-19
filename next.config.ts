@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
       },
     ],
     loader: 'custom',
-    loaderFile: './src/lib/ipfsImageLoader.ts',
+    loaderFile: './src/lib/ipfsImageLoader.js',
   },
 
   // Headers cho performance
