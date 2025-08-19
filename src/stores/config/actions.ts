@@ -1,5 +1,9 @@
 import { ConfigService } from "@/services";
 import type { CandyMachineConfig, CandyMachineState } from "./types";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { mplCandyMachine, fetchCandyMachine } from "@metaplex-foundation/mpl-candy-machine";
+import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
+import { BLOCKCHAIN_CONFIG } from "@/config/env.config";
 
 export const createConfigActions = (
   set: (partial: Partial<CandyMachineState>) => void,
@@ -23,6 +27,13 @@ export const createConfigActions = (
           totalMinted: config.totalProcessed || 0,
           totalSupply: config.itemsAvailable || 0,
         });
+
+        // Đồng bộ số liệu trực tiếp từ Metaplex sau khi có địa chỉ
+        try {
+          await (get().refreshStats?.(config.address));
+        } catch (e) {
+          // Silent fallback, keep backend values if chain fetch fails
+        }
       } else {
         throw new Error(
           result.message || "Failed to fetch candy machine config"
@@ -53,19 +64,21 @@ export const createConfigActions = (
     }
 
     try {
-      const result = await ConfigService.getCandyMachineConfig(targetAddress);
+      // Lấy số liệu trực tiếp từ Metaplex (on-chain)
+      const rpcEndpoint = BLOCKCHAIN_CONFIG.SOLANA_RPC;
+      const umi = createUmi(rpcEndpoint).use(mplCandyMachine());
+      const cm = await fetchCandyMachine(umi, umiPublicKey(targetAddress));
 
-      if (result.success && result.data) {
-        const totalProcessed = result.data.totalProcessed || 0;
-        const totalSupply = result.data.itemsAvailable || 0;
+      const itemsLoaded = Number(cm.itemsLoaded || 0);
+      const itemsRedeemed = Number(cm.itemsRedeemed || 0);
 
-        set({
-          totalMinted: totalProcessed,
-          totalSupply: totalSupply,
-        });
-      }
+      set({
+        totalMinted: itemsRedeemed,
+        totalSupply: itemsLoaded,
+      });
     } catch (error) {
       console.error("⚠️ Failed to refresh stats:", error);
+      // Fallback: giữ nguyên số liệu cũ nếu lỗi
     }
   },
 

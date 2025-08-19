@@ -3,11 +3,10 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { useWalletContext } from "@/providers/WalletProvider";
-import { useCandyMachine } from "@/providers/CandyMachineProvider";
+import { useCandyMachine, useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import { useToast } from "@/components/ToastContainer";
 import PageLoading from "@/components/PageLoading";
 
-import { NftService } from "@/services";
 import {
   useConfig,
   useMintStats,
@@ -19,6 +18,12 @@ import MintSection from "@/modules/mint/MintSection";
 import MintConfirmModal from "@/modules/mint/MintConfirmModal";
 import MintSuccessModal from "@/modules/mint/MintSuccessModal";
 import FeatureAnnouncementModal from "@/modules/mint/FeatureAnnouncementModalProps";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { Metaplex } from "@metaplex-foundation/js";
+import { BLOCKCHAIN_CONFIG } from "@/services";
+import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
+import { fetchDigitalAsset } from "@metaplex-foundation/mpl-token-metadata";
+import { fetchAsset } from "@metaplex-foundation/mpl-core";
 
 const cats = [
   "tokens/1.png",
@@ -32,6 +37,22 @@ const cats = [
   "tokens/9.png",
   "tokens/10.png",
 ];
+
+function normalizeNftImageUrl(url?: string): string {
+  if (!url) return "";
+  if (url.startsWith("ipfs://")) {
+    return `https://ipfs.io/ipfs/${url.replace("ipfs://", "")}`;
+  }
+  if (url.startsWith("ar://")) {
+    return `https://arweave.net/${url.replace("ar://", "")}`;
+  }
+  return url;
+}
+
+function shortenAddress(addr?: string, len: number = 4) {
+  if (!addr) return "";
+  return `${addr.slice(0, len)}...${addr.slice(-len)}`;
+}
 
 interface MintPageProps {
   candyMachineData?: any;
@@ -65,6 +86,7 @@ const BelpyMintPage = ({
     clearResult,
     clearError,
   } = useCandyMachine();
+  const { umi } = useCandyMachineContext();
 
   // Zustand store
   const candyMachineConfig = useConfig();
@@ -110,12 +132,7 @@ const BelpyMintPage = ({
       }
 
       // Call mint from CandyMachine provider
-      const mintResult = await mint();
-      const result = await NftService.sendSignedTransaction(
-        mintResult?.signature || '',
-        solAddress,
-        '9MTRpcfQCGfpBgeruvVH5sDYCP58xVjEf7k3QjKE8pkf'
-      );
+      const result = await mint();
 
       if (result.success) {
         console.log("✅ NFT minted successfully!");
@@ -134,55 +151,115 @@ const BelpyMintPage = ({
         }
 
         setMintSuccess(true);
-        setSelectedCat(Math.floor(Math.random() * cats.length));
+        setSelectedCat(null);
+
+        // Cập nhật minted ngay lập tức trên UI
+        incrementMinted();
 
         // Show success modal
         setShowMintModal(false);
         setShowSuccessModal(true);
 
-        // Fetch NFT details for display (if nftAddress exists)
+        // Fetch NFT details for display: ưu tiên dùng Token Metadata, sau đó Core, rồi Metaplex JS
         if (result.nftAddress) {
           try {
-            const nftDetails = await NftService.getNftDetails(
-              result.nftAddress
-            );
-            setNftDetailData(nftDetails);
+            let name = "";
+            let imageUrl = "";
+
+            // 1) mpl-token-metadata
+            if (umi) {
+              try {
+                const da = await fetchDigitalAsset(umi, umiPublicKey(result.nftAddress));
+                name = (da as any)?.metadata?.name || name;
+                const uri = (da as any)?.metadata?.uri;
+                if (uri) {
+                  try {
+                    const resp = await fetch(uri);
+                    const json = await resp.json();
+                    name = json.name || name;
+                    imageUrl = normalizeNftImageUrl(json.image || json.image_url || json?.properties?.files?.[0]?.uri);
+                  } catch {}
+                }
+              } catch {}
+            }
+
+            // 2) Fallback: mpl-core asset
+            if (!imageUrl && umi) {
+              try {
+                const coreAsset = await fetchAsset(umi, umiPublicKey(result.nftAddress));
+                name = (coreAsset as any).name || name;
+                const uri = (coreAsset as any).uri;
+                if (uri) {
+                  try {
+                    const resp = await fetch(uri);
+                    const json = await resp.json();
+                    name = json.name || name;
+                    imageUrl = normalizeNftImageUrl(json.image || json.image_url || json?.properties?.files?.[0]?.uri);
+                  } catch {}
+                }
+              } catch {}
+            }
+
+            // 3) Fallback: Metaplex JS NFT
+            if (!imageUrl) {
+              try {
+                const connection = new Connection(BLOCKCHAIN_CONFIG.SOLANA_RPC);
+                const metaplex = Metaplex.make(connection);
+                const mintPk = new PublicKey(result.nftAddress);
+                const asset = await metaplex.nfts().findByMint({ mintAddress: mintPk });
+                name = name || (asset as any).name || "";
+                const uri = (asset as any).uri;
+                if (uri) {
+                  try {
+                    const resp = await fetch(uri);
+                    const json = await resp.json();
+                    name = json.name || name;
+                    imageUrl = normalizeNftImageUrl(json.image || json.image_url || json?.properties?.files?.[0]?.uri);
+                  } catch {}
+                }
+              } catch {}
+            }
+
+            // Finalize detail data with fallbacks
+            const finalName = name || shortenAddress(result.nftAddress);
+            setNftDetailData({ name: finalName, imageUrl, address: result.nftAddress });
           } catch (error) {
-            console.warn("⚠️ Could not fetch NFT details:", error);
+            console.warn("⚠️ Could not fetch NFT details via chain:", error);
+            setNftDetailData({ name: shortenAddress(result.nftAddress), imageUrl: "", address: result.nftAddress });
           }
         }
 
-        // Refresh stats in background
+        // Đồng bộ số liệu từ Metaplex ngay và sau 2s
         if (candyMachineAddress) {
+          try { await refreshStats(candyMachineAddress); } catch {}
           setTimeout(() => refreshStats(candyMachineAddress), 2000);
         }
       } else {
-        // Handle error result from CandyMachine provider
-        const errorType = result.errorType || "error";
+        // Handle error result from backend
+        const message = result.message || "Failed to send transaction";
 
-        // Handle specific error types
         if (
-          result.message?.includes("User rejected") ||
-          result.message?.includes("rejected")
+          message?.includes("User rejected") ||
+          message?.includes("rejected")
         ) {
           showWarning(
             "Transaction Cancelled",
             "You cancelled the transaction signing in your wallet. Please try again if you want to mint NFT.",
             6000
           );
-        } else if (result.message?.includes("insufficient")) {
+        } else if (message?.includes("insufficient")) {
           showError(
             "Insufficient SOL",
             "Your wallet doesn't have enough SOL balance to mint. Please add more SOL to your wallet.",
             8000
           );
-        } else if (result.message?.includes("sold out")) {
+        } else if (message?.includes("sold out")) {
           showInfo(
             "Sold Out",
             "Sorry, all NFTs have been minted out. Stay tuned for information about the next mint drop!",
             8000
           );
-        } else if (result.message?.includes("not active")) {
+        } else if (message?.includes("not active")) {
           showInfo(
             "Mint Not Active",
             "Minting is not currently active. Please wait for official announcement.",
@@ -192,7 +269,7 @@ const BelpyMintPage = ({
           // General error
           showError(
             "Mint Failed",
-            result.message || "Failed to mint NFT. Please try again.",
+            message || "Failed to mint NFT. Please try again.",
             6000
           );
         }
@@ -216,10 +293,6 @@ const BelpyMintPage = ({
   };
 
   const handleMintClick = () => {
-    // setShowFeatureAnnouncement(true);
-    // if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
-    // return;
-    // }
     setShowMintModal(true);
   };
 
@@ -259,6 +332,7 @@ const BelpyMintPage = ({
           selectedCat={selectedCat}
           cats={cats}
           mintedNftId={nftDetailData?.name}
+          mintedImageUrl={nftDetailData?.imageUrl}
           onClose={handleSuccessModalClose}
           onViewDetails={() => {
             router.push(`/my-collection/${nftAddress}`);
@@ -276,17 +350,8 @@ const BelpyMintPage = ({
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
-    // Fetch candy machine configuration from server
-    // const candyMachineData = await ConfigService.getCandyMachineConfig();
-
-    // Fetch initial mint stats
-    // const mintStats = await NftService.getMintStats();
-
     return {
-      props: {
-        // candyMachineData: candyMachineData?.data || null,
-        // initialMintStats: mintStats?.data || null,
-      },
+      props: {},
     };
   } catch (error) {
     console.error("Error fetching mint page data:", error);

@@ -204,8 +204,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const isProcessingRef = useRef(false);
   const hasProcessedConnectionRef = useRef(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const balanceLoadingRef = useRef(false);
-  const lastBalanceLoadRef = useRef(0);
   const toast = useToast();
 
   const { clearConfig } = useConfigActions();
@@ -226,92 +224,23 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     >
   >(new Map());
 
-  const refreshSolBalance = useCallback(async (forceRefresh = false) => {
-    // Add stack trace to see where this is being called from
-    console.log(
-      "Refreshing SOL balance... Called from:",
-      new Error().stack?.split("\n")[2]?.trim(),
-      forceRefresh ? "(FORCED)" : ""
-    );
-
-    // Prevent concurrent calls globally across all instances
-    if (globalBalanceLoading || balanceLoadingRef.current) {
-      console.log(
-        "💰 Balance already loading globally, skipping duplicate call"
-      );
-      return;
-    }
-
-    // Increased debounce - only allow one call per 30 seconds globally (unless forced)
-    const now = Date.now();
-    const MIN_INTERVAL = 30000; // 30 seconds
-    if (!forceRefresh && now - globalLastBalanceLoad < MIN_INTERVAL) {
-      console.log(
-        "💰 Balance called too recently globally, skipping (last call was",
-        Math.floor((now - globalLastBalanceLoad) / 1000),
-        "seconds ago, need to wait",
-        Math.floor((MIN_INTERVAL - (now - globalLastBalanceLoad)) / 1000),
-        "more seconds)"
-      );
-      return;
-    }
-
+  const refreshSolBalance = useCallback(async (address?: string) => {
+    const targetAddress = address || solAddress;
+    if (!targetAddress) return;
     try {
-      globalBalanceLoading = true;
-      balanceLoadingRef.current = true;
-      globalLastBalanceLoad = now;
-      lastBalanceLoadRef.current = now;
       setLoading("sol-balance");
-
-      console.log(
-        "💰 Using API to fetch wallet balance... (call #" +
-          Math.floor(now / 1000) +
-          ")"
-      );
-      const balanceResult = await UserService.getWalletBalance();
-      if (balanceResult.success && balanceResult.data) {
-        // Check for different possible response structures
-        const lamports =
-          balanceResult.data.lamports ||
-          balanceResult.data.balance ||
-          balanceResult.data.solBalance ||
-          0;
-        setSolLamports(lamports);
-        console.log("✅ Balance loaded from API:", lamports);
-      } else {
-        // toast by english
-        toast.showError("Balance fetch failed", "Please try again later", 8000);
-        // If API fails, set to 0
-        console.warn(
-          "API balance fetch failed:",
-          balanceResult.message || "Unknown error"
-        );
-        setSolLamports(0);
-      }
+      const rpcClient = new Connection(BLOCKCHAIN_CONFIG.SOLANA_RPC);
+      const pubkey = new PublicKey(targetAddress);
+      const lamports = await rpcClient.getBalance(pubkey);
+      setSolLamports(lamports);
+      console.log("✅ Balance loaded from web3:", lamports, "address:", targetAddress);
     } catch (error: any) {
       console.error("Failed to refresh SOL balance:", error);
-
-      toast.showError("Balance fetch failed", "Please try again later", 8000);
-      // Handle rate limit error specifically
-      if (
-        error.message?.includes("Rate limit") ||
-        error.message?.includes("Too many")
-      ) {
-        console.warn(
-          "⚠️ Rate limit hit, will skip balance refresh for a while"
-        );
-        // Set a longer cooldown for rate limit
-        globalLastBalanceLoad = now + 60000; // Extra 60 seconds cooldown
-        lastBalanceLoadRef.current = now + 60000;
-      }
-
       setSolLamports(0);
     } finally {
-      globalBalanceLoading = false;
-      balanceLoadingRef.current = false;
       setLoading((l) => (l === "sol-balance" ? null : l));
     }
-  }, []);
+  }, [solAddress]);
 
   // Load transactions with caching and debouncing
   const loadTransactions = useCallback(
@@ -478,8 +407,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   // Authenticate wallet with backend - centralized function to prevent duplicate calls
   const authenticateWallet = useCallback(
     async (
-      walletAddress: string,
-      forceBalanceRefresh: boolean = false
+      walletAddress: string
     ): Promise<boolean> => {
       // Prevent multiple simultaneous authentication calls
       if (isAuthenticating) {
@@ -494,10 +422,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setAuthToken(existingToken);
 
         // Always refresh balance when connecting wallet manually
-        if (forceBalanceRefresh) {
-          console.log("Force refreshing balance for existing token...");
-          await refreshSolBalance();
-        }
+        await refreshSolBalance(walletAddress);
 
         return true;
       }
@@ -514,8 +439,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setAuthToken(token);
           console.log("✅ Authentication successful, token saved");
 
-          // Load balance only once after successful authentication (force refresh)
-          await refreshSolBalance(true);
+          // Load balance only once after successful authentication
+          await refreshSolBalance(walletAddress);
 
           // Dispatch wallet connected event for AuthProvider
           window.dispatchEvent(new CustomEvent("wallet:connected"));
@@ -620,10 +545,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setAuthToken(existingToken);
 
           // Only refresh balance if we don't have recent data
-          const now = Date.now();
-          if (solLamports === 0 || now - lastBalanceLoadRef.current > 60000) {
-            await refreshSolBalance();
-          }
+          await refreshSolBalance(addr);
           await loadUserData(addr);
         } else {
           console.log("Authenticating wallet...");
@@ -732,7 +654,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         console.log(`${config.displayName} connected:`, addr);
 
         // Authenticate with backend using centralized function, force balance refresh
-        const authSuccess = await authenticateWallet(addr, true);
+        const authSuccess = await authenticateWallet(addr);
 
         if (authSuccess) {
           // Wait a moment to ensure token is properly set
@@ -747,7 +669,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           );
         }
 
-        await refreshSolBalance();
+        await refreshSolBalance(addr);
         onConnected?.({ kind: "sol", address: addr, walletType });
         console.log(`${config.displayName} wallet connection successful!`);
       } catch (error: any) {
@@ -983,8 +905,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
             setAuthToken(token);
           }
 
-          // Load balance after syncing state (force refresh to ignore rate limit)
-          await refreshSolBalance(true);
+          // Load balance after syncing state
+          await refreshSolBalance(addr);
 
           // Call onConnected callback if provided
           onConnected?.({
@@ -1155,8 +1077,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 }
 
 // Global flag to prevent multiple balance calls across all instances
-let globalBalanceLoading = false;
-let globalLastBalanceLoad = 0;
+
 // Global flag to prevent multiple connection processing
 let globalConnectionProcessed = false;
 

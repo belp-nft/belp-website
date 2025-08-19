@@ -1,8 +1,8 @@
 "use client";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import type { NFT } from "@/services/types";
 import Link from "next/link";
+import OptimizedImage from "@/components/OptimizedImage";
 
 export default function NftItem({ item }: { item: NFT }) {
   return (
@@ -15,12 +15,15 @@ export default function NftItem({ item }: { item: NFT }) {
         ].join(" ")}
       >
         <div className="relative rounded-lg overflow-hidden">
-          <Image
-            src={item.imageUrl}
+          <OptimizedImage
+            src={item.imageUrl || "/file.svg"}
             alt={item.name}
             width={480}
             height={480}
             className="w-full aspect-square object-cover rounded-lg"
+            unoptimized
+            fallback="/file.svg"
+            priority={false}
           />
         </div>
 

@@ -1,8 +1,7 @@
 import BreadCrumbs from "@/components/Breadcrumb";
-import Image from "next/image";
+import OptimizedImage from "@/components/OptimizedImage";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
-import { NftService } from "@/services/nftService";
 import { BLOCKCHAIN_CONFIG } from "@/services";
 import type { NFT } from "@/services/types";
 import { BiStar } from "react-icons/bi";
@@ -10,6 +9,19 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import { HiOutlineInformationCircle, HiViewGrid } from "react-icons/hi";
 import { useLoading } from "@/providers/LoadingProvider";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { Metaplex } from "@metaplex-foundation/js";
+
+function normalizeNftImageUrl(url?: string): string {
+  if (!url) return "";
+  if (url.startsWith("ipfs://")) {
+    return `https://ipfs.io/ipfs/${url.replace("ipfs://", "")}`;
+  }
+  if (url.startsWith("ar://")) {
+    return `https://arweave.net/${url.replace("ar://", "")}`;
+  }
+  return url;
+}
 
 const NftDetailPage = () => {
   const router = useRouter();
@@ -41,16 +53,41 @@ const NftDetailPage = () => {
         showLoading();
         setError(null);
 
-        const response = await NftService.getNftDetails(id);
+        const connection = new Connection(BLOCKCHAIN_CONFIG.SOLANA_RPC);
+        const metaplex = Metaplex.make(connection);
 
-        if (response.success && response.nft) {
-          setNft(response.nft);
-        } else {
-          setError("NFT not found");
-          console.error("❌ Failed to load NFT details");
+        const mint = new PublicKey(id);
+        const asset = await metaplex.nfts().findByMint({ mintAddress: mint });
+
+        const mintAddress = asset.mint.address.toString();
+        const name = asset.name || "Unknown";
+        let imageUrl = "";
+        let description = "";
+        let attributes: any = [];
+
+        const uri = (asset as any).uri;
+        if (uri) {
+          try {
+            const resp = await fetch(uri);
+            const json = await resp.json();
+            imageUrl = normalizeNftImageUrl(json.image || json.image_url || json?.properties?.files?.[0]?.uri);
+            description = json.description || "";
+            attributes = json.attributes || [];
+          } catch {}
         }
+
+        setNft({
+          _id: mintAddress,
+          walletAddress: "",
+          nftAddress: mintAddress,
+          name,
+          imageUrl,
+          description,
+          attributes,
+          createdAt: new Date().toISOString(),
+        } as unknown as NFT);
       } catch (err) {
-        console.error("❌ Error loading NFT details:", err);
+        console.error("❌ Error loading NFT details via Metaplex:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
         setNft(null);
       } finally {
@@ -106,12 +143,14 @@ const NftDetailPage = () => {
         <div className="flex flex-col md:flex-row gap-6 items-start text-lg">
           {/* Left: Image + Info */}
           <div className="flex flex-col gap-4 w-full md:w-[340px] items-center">
-            <Image
-              src={nft.imageUrl}
+            <OptimizedImage
+              src={nft.imageUrl || "/file.svg"}
               alt={nft.name}
               width={260}
               height={260}
               className="rounded-xl object-contain w-full"
+              unoptimized
+              fallback="/file.svg"
             />
             {/* Backstory */}
             <div className="bg-[#E3CEF6] rounded-xl p-4 flex items-start gap-2 w-full">

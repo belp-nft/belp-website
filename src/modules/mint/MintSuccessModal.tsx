@@ -10,6 +10,7 @@ interface MintSuccessModalProps {
   selectedCat: number | null;
   cats: string[];
   mintedNftId: string;
+  mintedImageUrl?: string;
   onClose: () => void;
   onViewDetails: () => void;
   onViewHistory: () => void;
@@ -20,6 +21,7 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
   selectedCat,
   cats,
   mintedNftId,
+  mintedImageUrl,
   onClose,
   onViewDetails,
   onViewHistory,
@@ -43,12 +45,20 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
               "rounded-2xl shadow-lg overflow-hidden"
             )}
           >
-            {selectedCat !== null && (
+            {mintedImageUrl ? (
+              <img
+                src={mintedImageUrl}
+                alt="Minted BELPY"
+                className="w-full h-full object-contain"
+              />
+            ) : selectedCat !== null ? (
               <img
                 src={`/icons/${cats[selectedCat]}`}
                 alt="Minted BELPY"
                 className="w-full object-contain"
               />
+            ) : (
+              <div className="w-full h-full bg-gray-100" />
             )}
           </div>
         </div>

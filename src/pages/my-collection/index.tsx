@@ -5,12 +5,25 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import UserInfo from "@/modules/my-collection//UserInfo";
 import { useWallet } from "@/hooks/useWallet";
-import { NftService } from "@/services/nftService";
 import type { NFT } from "@/services/types";
 import NftGrid from "@/modules/my-collection//NftGrid";
 import { useLoading } from "@/providers/LoadingProvider";
 import { useCollectionAddress } from "@/stores/config";
 import { themeClasses } from "@/providers/ThemeProvider";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { Metaplex } from "@metaplex-foundation/js";
+import { BLOCKCHAIN_CONFIG } from "@/services";
+
+function normalizeNftImageUrl(url?: string): string {
+  if (!url) return "";
+  if (url.startsWith("ipfs://")) {
+    return `https://ipfs.io/ipfs/${url.replace("ipfs://", "")}`;
+  }
+  if (url.startsWith("ar://")) {
+    return `https://arweave.net/${url.replace("ar://", "")}`;
+  }
+  return url;
+}
 
 const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -38,18 +51,54 @@ const MyCollectionPage = () => {
 
       try {
         setError(null);
+        showLoading();
 
-        const response = await NftService.getUserNfts(solAddress);
+        const connection = new Connection(BLOCKCHAIN_CONFIG.SOLANA_RPC);
+        const metaplex = Metaplex.make(connection);
 
-        if (response.success) {
-          setNfts(response.nfts || []);
-        } else {
-          setError("Failed to load NFTs");
-          console.error("❌ Failed to load NFTs");
+        const owner = new PublicKey(solAddress);
+        const all = await metaplex.nfts().findAllByOwner({ owner });
+
+        const detailed: NFT[] = [];
+        for (const item of all) {
+          try {
+            const mintAddress = (item as any).mintAddress?.toString?.() || (item as any).mint?.address?.toString?.();
+            const name = (item as any).name || "Unknown";
+            let imageUrl = "";
+            let description = "";
+            let attributes: any = [];
+
+            const uri = (item as any).uri;
+            if (uri) {
+              try {
+                const resp = await fetch(uri);
+                const json = await resp.json();
+                imageUrl = normalizeNftImageUrl(json.image || json.image_url || json?.properties?.files?.[0]?.uri);
+                description = json.description || "";
+                attributes = json.attributes || [];
+              } catch {}
+            }
+
+            if (mintAddress) {
+              detailed.push({
+                _id: mintAddress,
+                walletAddress: solAddress,
+                nftAddress: mintAddress,
+                name,
+                imageUrl,
+                description,
+                attributes,
+                createdAt: new Date().toISOString(),
+              } as unknown as NFT);
+            }
+          } catch {}
         }
+
+        setNfts(detailed);
       } catch (err) {
-        console.error("❌ Error loading NFTs:", err);
+        console.error("❌ Error loading NFTs via Metaplex:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
+        setNfts([]);
       } finally {
         hideLoading();
       }
