@@ -381,10 +381,13 @@ export function CandyMachineProvider({ children, config = {} }: CandyMachineProv
 
       log('📝 Sending and confirming Belp NFT transaction...');
 
-      // Gửi và confirm transaction
+      // Gửi và confirm transaction với error handling
       const result = await mintBuilder.sendAndConfirm(state.umi, {
         confirm: { commitment: "confirmed" },
-        send: { skipPreflight: false },
+        send: { 
+          skipPreflight: true, // Skip preflight to avoid simulation issues
+          maxRetries: 3,
+        },
       });
 
       log('✅ Belp NFT transaction confirmed:', result.signature);
@@ -428,6 +431,16 @@ export function CandyMachineProvider({ children, config = {} }: CandyMachineProv
     } catch (error: any) {
       log('❌ Belp NFT mint failed:', error);
 
+      // Try to get detailed logs if it's a SendTransactionError
+      if (error.getLogs && typeof error.getLogs === 'function') {
+        try {
+          const logs = await error.getLogs();
+          log('🔍 Transaction logs:', logs);
+        } catch (logError) {
+          log('❌ Failed to get transaction logs:', logError);
+        }
+      }
+
       let errorMessage = "Failed to mint Belp NFT";
       let errorType = "error";
 
@@ -453,6 +466,12 @@ export function CandyMachineProvider({ children, config = {} }: CandyMachineProv
         errorType = "warning";
       } else if (error.message?.includes("timeout")) {
         errorMessage = "Transaction timeout. Please try again";
+        errorType = "warning";
+      } else if (error.message?.includes("simulation failed") || error.message?.includes("Simulation failed")) {
+        errorMessage = "Transaction simulation failed. Please try again or check your wallet balance";
+        errorType = "warning";
+      } else if (error.message?.includes("deserialize")) {
+        errorMessage = "Transaction format error. Please refresh and try again";
         errorType = "warning";
       } else if (error.message) {
         errorMessage = error.message;
