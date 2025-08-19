@@ -110,7 +110,8 @@ const MintSection: React.FC<MintSectionProps> = ({
               transformOrigin: "center lg:left center",
             }}
           >
-            {mintText}
+            --
+            {/* {mintText} */}
           </div>
         </motion.div>
 
