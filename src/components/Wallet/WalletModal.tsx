@@ -1,7 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
 import ProviderRow from "./ProviderRow";
-import { LoadingKind } from "@/hooks/useWallet";
+import { LoadingKind, WalletType } from "@/hooks/wallet/types";
 
 type Props = {
   open: boolean;
@@ -17,11 +17,7 @@ type Props = {
   hasGlow?: boolean;
   hasOKX?: boolean;
   loading: LoadingKind;
-  connectPhantom: () => void;
-  connectSolflare: () => void;
-  connectBackpack: () => void;
-  connectGlow: () => void;
-  connectOKX: () => void;
+  connectWallet: (walletType: WalletType) => void;
 };
 
 export default function WalletModal({
@@ -38,11 +34,7 @@ export default function WalletModal({
   hasGlow,
   hasOKX,
   loading,
-  connectPhantom,
-  connectSolflare,
-  connectBackpack,
-  connectGlow,
-  connectOKX,
+  connectWallet,
 }: Props) {
   return (
     <AnimatePresence>
@@ -74,7 +66,7 @@ export default function WalletModal({
                 logo={{ src: "/icons/phantom.svg", alt: "Phantom" }}
                 title="Phantom"
                 subtitle="Solana"
-                onClick={connectPhantom}
+                onClick={() => connectWallet("phantom")}
                 loading={loading === "phantom"}
                 installedHint={hasPhantom ? null : "Install"}
               />
@@ -82,7 +74,7 @@ export default function WalletModal({
                 logo={{ src: "/icons/solflare.svg", alt: "Solflare" }}
                 title="Solflare"
                 subtitle="Solana"
-                onClick={connectSolflare}
+                onClick={() => connectWallet("solflare")}
                 loading={loading === "solflare"}
                 installedHint={hasSolflare ? null : "Install"}
               />
@@ -90,7 +82,7 @@ export default function WalletModal({
                 logo={{ src: "/icons/backpack.svg", alt: "Backpack" }}
                 title="Backpack"
                 subtitle="Solana"
-                onClick={connectBackpack}
+                onClick={() => connectWallet("backpack")}
                 loading={loading === "backpack"}
                 installedHint={hasBackpack ? null : "Install"}
               />
@@ -98,7 +90,7 @@ export default function WalletModal({
                 logo={{ src: "/icons/glow.jpg", alt: "Glow" }}
                 title="Glow"
                 subtitle="Solana"
-                onClick={connectGlow}
+                onClick={() => connectWallet("glow")}
                 loading={loading === "glow"}
                 installedHint={hasGlow ? null : "Install"}
               />
@@ -106,7 +98,7 @@ export default function WalletModal({
                 logo={{ src: "/icons/okx.svg", alt: "OKX" }}
                 title="OKX"
                 subtitle="Solana"
-                onClick={connectOKX}
+                onClick={() => connectWallet("okx")}
                 loading={loading === "okx"}
                 installedHint={hasOKX ? null : "Install"}
               />

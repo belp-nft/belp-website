@@ -1,6 +1,14 @@
 "use client";
-import { createContext, useContext, ReactNode, useRef, useState } from 'react';
-import { useWallet, Connected } from '@/hooks/useWallet';
+import {
+  createContext,
+  useContext,
+  ReactNode,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
+import { useWallet, Connected } from "@/hooks/useWallet";
+import { WalletStorage } from "@/constants/storage";
 
 interface WalletContextType extends ReturnType<typeof useWallet> {
   isReady: boolean;
@@ -20,6 +28,7 @@ interface WalletProviderProps {
 
 export function WalletProvider({ children, config = {} }: WalletProviderProps) {
   const [isReady, setIsReady] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const initializationRef = useRef(false);
 
   const {
@@ -29,11 +38,22 @@ export function WalletProvider({ children, config = {} }: WalletProviderProps) {
     cacheTimeout = 5 * 60 * 1000, // 5 minutes
   } = config;
 
+  // Hydrate from localStorage after mount for SSR compatibility
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   const onConnected = (info: Connected) => {
     if (enableDebug) {
       // console.log('WalletProvider: Wallet connected', info);
     }
-    
+
+    // Save to localStorage when connected
+    WalletStorage.setAddress(info.address);
+    WalletStorage.setType(info.kind);
+    WalletStorage.setWallet(info.walletType);
+    WalletStorage.clearDisconnected();
+
     if (!isReady) {
       setIsReady(true);
     }
@@ -45,12 +65,21 @@ export function WalletProvider({ children, config = {} }: WalletProviderProps) {
   const contextValue: WalletContextType = {
     ...wallet,
     isReady,
-    // Override connectWallet to respect preferredWallet
+    // Override connectWallet to respect preferredWallet and save to localStorage
     connectWallet: async (walletType) => {
       if (preferredWallet && walletType !== preferredWallet) {
-        console.warn(`Preferred wallet is ${preferredWallet}, but trying to connect ${walletType}`);
+        console.warn(
+          `Preferred wallet is ${preferredWallet}, but trying to connect ${walletType}`
+        );
       }
-      return wallet.connectWallet(walletType);
+      const result = await wallet.connectWallet(walletType);
+      return result;
+    },
+    // Override disconnect to clear localStorage
+    disconnect: async () => {
+      const result = await wallet.disconnect();
+      WalletStorage.clear(); // Clear storage after disconnect
+      return result;
     },
   };
 
@@ -64,15 +93,22 @@ export function WalletProvider({ children, config = {} }: WalletProviderProps) {
 export function useWalletContext() {
   const context = useContext(WalletContext);
   if (!context) {
-    throw new Error('useWalletContext must be used within WalletProvider');
+    throw new Error("useWalletContext must be used within WalletProvider");
   }
   return context;
 }
 
 // Simplified hook for components that just need basic wallet info
 export function useWalletInfo() {
-  const { solAddress, connectedWallet, connectedType, loading, solBalanceText, isReady } = useWalletContext();
-  
+  const {
+    solAddress,
+    connectedWallet,
+    connectedType,
+    loading,
+    solBalanceText,
+    isReady,
+  } = useWalletContext();
+
   return {
     address: solAddress,
     wallet: connectedWallet,
@@ -86,8 +122,9 @@ export function useWalletInfo() {
 
 // Hook for wallet actions only
 export function useWalletActions() {
-  const { connectWallet, disconnect, refreshSolBalance, availableWallets } = useWalletContext();
-  
+  const { connectWallet, disconnect, refreshSolBalance, availableWallets } =
+    useWalletContext();
+
   return {
     connect: connectWallet,
     disconnect,

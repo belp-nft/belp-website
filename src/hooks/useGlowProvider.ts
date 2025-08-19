@@ -42,46 +42,23 @@ export function useGlowProvider() {
     };
   }, [glow]);
 
-  // Load user data từ backend
-  const loadUserData = useCallback(async (walletAddress: string) => {
-    try {
-      // console.log('📊 Loading user data for Glow...', { walletAddress });
-      
-      // Load user statistics
-      const statsResult = await UserService.getUserStatistics();
-      if (statsResult.success && statsResult.data) {
-        setUserStatistics(statsResult.data);
-        // console.log('✅ User statistics loaded:', statsResult.data);
-      }
-
-      // Load transaction history
-      const txResult = await UserService.getTransactions({ limit: 50 });
-      if (txResult.success && txResult.data) {
-        setTransactions(txResult.data);
-        // console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
-      }
-    } catch (error) {
-      console.error('⚠️ Failed to load user data:', error);
-    }
-  }, []);
-
   const connect = useCallback(async () => {
     if (!glow) {
       window.open("https://glow.app/", "_blank");
       return null;
     }
     if (!glow?.connect) return null;
-    
+
     try {
       setLoading(true);
       // console.log('🚀 Starting Glow wallet connection...');
-      
+
       // Bước 1: Kết nối với Glow wallet
       const resp = await glow.connect();
       const walletAddress = resp.publicKey?.toString?.() || null;
-      
+
       if (!walletAddress) {
-        throw new Error('Không thể lấy địa chỉ ví từ Glow');
+        throw new Error("Không thể lấy địa chỉ ví từ Glow");
       }
 
       setIsConnected(true);
@@ -93,7 +70,9 @@ export function useGlowProvider() {
       const connectResult = await UserService.connectWallet(walletAddress);
 
       if (!connectResult.success) {
-        throw new Error(connectResult.message || 'Backend authentication failed');
+        throw new Error(
+          connectResult.message || "Backend authentication failed"
+        );
       }
 
       // Bước 3: Lưu JWT token vào localStorage
@@ -102,34 +81,30 @@ export function useGlowProvider() {
         setAuthToken((connectResult as any).data.accessToken);
         // console.log('🔑 JWT token saved to localStorage');
       } else {
-        console.warn('⚠️ No JWT token received from backend');
+        console.warn("⚠️ No JWT token received from backend");
       }
-
-      // Bước 4: Load user data với JWT token
-      await loadUserData(walletAddress);
 
       // console.log('🎉 Glow wallet connection successful!');
       return resp;
-      
     } catch (error: any) {
-      console.error('❌ Glow connection failed:', error);
-      
+      console.error("❌ Glow connection failed:", error);
+
       // Cleanup nếu có lỗi
       setIsConnected(false);
       setPublicKey(null);
       setAuthToken(null);
       AuthService.removeToken();
-      
+
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [glow, loadUserData]);
+  }, [glow]);
 
   const disconnect = useCallback(async () => {
     if (!glow?.disconnect) return;
     await glow.disconnect();
-    
+
     // Cleanup tất cả state và localStorage
     setIsConnected(false);
     setPublicKey(null);
@@ -137,7 +112,7 @@ export function useGlowProvider() {
     setUserStatistics(null);
     setTransactions([]);
     AuthService.removeToken();
-    
+
     // console.log('🔌 Glow wallet disconnected');
   }, [glow]);
 
@@ -151,6 +126,5 @@ export function useGlowProvider() {
     transactions,
     connect,
     disconnect,
-    loadUserData,
   };
 }

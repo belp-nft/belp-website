@@ -5,16 +5,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
 interface FeatureAnnouncementModalProps {
+  isHiddenRemindMe: boolean;
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (action?: "remind") => void;
 }
 
 const FeatureAnnouncementModal = ({
+  isHiddenRemindMe,
   isOpen,
   onClose,
 }: FeatureAnnouncementModalProps) => {
   const handleTwitterClick = () => {
     window.open("https://x.com/BELP_official", "_blank");
+    handleCloseClick();
+  };
+
+  const handleRemindTomorrow = () => {
+    onClose("remind");
+  };
+
+  const handleCloseClick = () => {
     onClose();
   };
 
@@ -28,7 +38,7 @@ const FeatureAnnouncementModal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleCloseClick}
           />
 
           {/* Modal */}
@@ -41,7 +51,7 @@ const FeatureAnnouncementModal = ({
           >
             {/* Close Button */}
             <button
-              onClick={onClose}
+              onClick={handleCloseClick}
               className="absolute top-3 sm:top-4 right-3 sm:right-4 w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-[#BBABD7] hover:opacity-85 cursor-pointer transition-colors"
             >
               <svg
@@ -113,9 +123,14 @@ const FeatureAnnouncementModal = ({
                 </button>
 
                 {/* Remind Tomorrow Button */}
-                <button className="w-full bg-gray-200 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200">
-                  Remind me tomorrow
-                </button>
+                {!isHiddenRemindMe && (
+                  <button
+                    onClick={handleRemindTomorrow}
+                    className="w-full bg-gray-200 py-3 px-6 rounded-xl font-semibold hover:opacity-80 transition-all duration-200 cursor-pointer"
+                  >
+                    Remind me tomorrow
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

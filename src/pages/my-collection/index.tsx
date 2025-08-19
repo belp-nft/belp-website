@@ -16,10 +16,12 @@ const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(20);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
-  const { solAddress } = useWallet();
-  const { showLoading, hideLoading } = useLoading();
+  const { solAddress, loading, authToken } = useWallet();
+  console.log("🚀 ~ MyCollectionPage ~ solAddress:", solAddress);
+  const { hideLoading } = useLoading();
 
   const collectionAddress = useCollectionAddress();
 
@@ -30,33 +32,46 @@ const MyCollectionPage = () => {
     router.push("/my-collection/history");
   };
 
+  const loadNfts = async (address: string) => {
+    try {
+      setError(null);
+
+      const response = await NftService.getUserNfts(address);
+
+      if (response.success) {
+        setNfts(response.nfts || []);
+      } else {
+        setError("Failed to load NFTs");
+        console.error("❌ Failed to load NFTs");
+      }
+    } catch (err) {
+      console.error("❌ Error loading NFTs:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      hideLoading();
+    }
+  };
+
   useEffect(() => {
-    const loadNfts = async () => {
-      if (!solAddress) {
-        return;
-      }
+    // Initialize when component mounts
+    const timer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 100);
 
-      try {
-        setError(null);
+    return () => clearTimeout(timer);
+  }, []);
 
-        const response = await NftService.getUserNfts(solAddress);
-
-        if (response.success) {
-          setNfts(response.nfts || []);
-        } else {
-          setError("Failed to load NFTs");
-          console.error("❌ Failed to load NFTs");
-        }
-      } catch (err) {
-        console.error("❌ Error loading NFTs:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        hideLoading();
-      }
-    };
-
-    loadNfts();
-  }, [solAddress, showLoading, hideLoading]);
+  useEffect(() => {
+    if (isInitialized && solAddress) {
+      console.log("🔍 Loading NFTs for address:", solAddress);
+      loadNfts(solAddress);
+    } else if (isInitialized && !solAddress && !loading) {
+      console.log("⚠️ No wallet connected, clearing NFTs");
+      setNfts([]);
+      setError(null);
+      hideLoading();
+    }
+  }, [solAddress, isInitialized, loading]);
 
   return (
     <main className={clsx("min-h-screen", themeClasses.bg.page)}>
@@ -80,7 +95,23 @@ const MyCollectionPage = () => {
       </section>
 
       <section className="main-container pt-5 md:pt-10 pb-20">
-        {totalCount === 0 ? (
+        {error ? (
+          <div className="text-center flex flex-col items-center pb-12">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">
+                Error Loading Collection
+              </h3>
+              <p className="text-red-600 mb-4">{error}</p>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                onClick={() => solAddress && loadNfts(solAddress)}
+              >
+                Retry
+              </motion.button>
+            </div>
+          </div>
+        ) : totalCount === 0 ? (
           <div className="text-center flex flex-col items-center pb-12">
             <Image
               src="/images/mint/random-cat.svg"
