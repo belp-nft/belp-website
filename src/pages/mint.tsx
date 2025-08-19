@@ -79,6 +79,7 @@ const BelpyMintPage = ({
   const [nftAddress, setNftAddress] = useState<string>("");
   const [nftDetailData, setNftDetailData] = useState<any>(null);
   const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(true);
+  const [isHiddenRemindMe, setIsHiddenRemindMe] = useState(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   // Auto-connect wallet if authToken exists but no solAddress
@@ -258,7 +259,15 @@ const BelpyMintPage = ({
 
         <FeatureAnnouncementModal
           isOpen={showFeatureAnnouncement}
-          onClose={() => setShowFeatureAnnouncement(false)}
+          isHiddenRemindMe={isHiddenRemindMe}
+          onClose={(action) => {
+            if (action === "remind") {
+              setIsHiddenRemindMe(true);
+              // Set reminder for tomorrow (you can implement localStorage logic here)
+              localStorage.setItem('belp-feature-reminder', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+            }
+            setShowFeatureAnnouncement(false);
+          }}
         />
 
         <MintConfirmModal

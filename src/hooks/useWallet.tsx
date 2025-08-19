@@ -6,7 +6,6 @@ import { useLoading } from "@/providers/LoadingProvider";
 import { AuthService } from "@/services";
 import { WalletStorage } from "@/constants/storage";
 
-
 // Import separated services
 import { WalletType, LoadingKind, Connected } from "./wallet/types";
 import {
@@ -106,7 +105,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const isProcessingRef = useRef(false);
   const hasProcessedConnectionRef = useRef(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const listenersRef = useRef<Map<WalletType, any>>(new Map());
 
   const { clearConfig } = useConfigActions();
   const { showLoading, hideLoading } = useLoading();
@@ -425,22 +424,28 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         const parts = existingToken.split(".");
         if (parts.length === 3) {
           const payload = JSON.parse(atob(parts[1]));
-          const walletAddress = payload.walletAddress || payload.address || payload.wallet;
-          
+          const walletAddress =
+            payload.walletAddress || payload.address || payload.wallet;
+
           if (walletAddress) {
-            console.log("🔄 Restoring wallet address from token:", walletAddress);
+            console.log(
+              "🔄 Restoring wallet address from token:",
+              walletAddress
+            );
             setSolAddress(walletAddress);
             setAuthToken(existingToken);
-            
+
             // Try to determine which wallet type was used (fallback to phantom)
-            const lastWalletType = window.localStorage.getItem("last-wallet-type") as WalletType || "phantom";
+            const lastWalletType =
+              (window.localStorage.getItem("last-wallet-type") as WalletType) ||
+              "phantom";
             setConnectedWallet(lastWalletType);
             setConnectedType("sol");
-            
+
             // Load balance and user data
             refreshSolBalance();
             loadUserData(walletAddress);
-            
+
             onConnected?.({
               kind: "sol",
               address: walletAddress,
@@ -590,7 +595,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       // Set disconnected flag to prevent auto-reconnect
       window.localStorage.setItem("wallet-disconnected", "true");
-      
+
       // Clear wallet type
       window.localStorage.removeItem("last-wallet-type");
 
@@ -616,7 +621,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       AuthService.removeToken();
       window.localStorage.setItem("wallet-disconnected", "true");
       window.localStorage.removeItem("last-wallet-type");
-
     }
   }, [connectedWallet, cleanupWalletListeners, clearConfig, clearWalletState]);
 
