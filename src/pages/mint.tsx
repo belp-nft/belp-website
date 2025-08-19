@@ -110,10 +110,12 @@ const BelpyMintPage = ({
       }
 
       // Call mint from CandyMachine provider
-      const result = await mint();
-
-      // save tx
-      // lay nft len
+      const mintResult = await mint();
+      const result = await NftService.sendSignedTransaction(
+        mintResult?.signature || '',
+        solAddress,
+        '9MTRpcfQCGfpBgeruvVH5sDYCP58xVjEf7k3QjKE8pkf'
+      );
 
       if (result.success) {
         console.log("✅ NFT minted successfully!");
