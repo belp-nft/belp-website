@@ -49,34 +49,6 @@ export function usePhantomProvider() {
     };
   }, [phantom]);
 
-  const loadUserData = useCallback(async (walletAddress: string) => {
-    try {
-      // console.log("Loading user data...", { walletAddress });
-
-      // Load user statistics
-      const statsResult = await UserService.getUserStatistics();
-      if (statsResult.success && statsResult.data) {
-        setUserStatistics(statsResult.data);
-        // console.log("User statistics loaded:", statsResult.data);
-      }
-
-      // Load transaction history
-      const txResult = await UserService.getTransactions({
-        limit: 50,
-      });
-      if (txResult.success && txResult.data) {
-        setTransactions(txResult.data);
-        console.log(
-          "Transaction history loaded:",
-          txResult.data.length,
-          "transactions"
-        );
-      }
-    } catch (error) {
-      console.error("Failed to load user data:", error);
-    }
-  }, []);
-
   const connect = useCallback(async () => {
     if (!phantom?.connect) {
       const currentUrl = window.location.href;
@@ -148,9 +120,6 @@ export function usePhantomProvider() {
         console.warn("No JWT token received from backend");
       }
 
-      // Load user data with JWT token
-      await loadUserData(walletAddress);
-
       // console.log("Phantom wallet connection successful!");
       return resp;
     } catch (error: any) {
@@ -181,7 +150,7 @@ export function usePhantomProvider() {
     } finally {
       setLoading(false);
     }
-  }, [phantom, loadUserData]);
+  }, [phantom]);
 
   const disconnect = useCallback(async () => {
     try {
@@ -207,8 +176,6 @@ export function usePhantomProvider() {
     if (!phantom?.isConnected || !phantom?.publicKey) return null;
 
     try {
-      // console.log("Attempting auto-connect...");
-
       // Try connect with onlyIfTrusted
       const response = await phantom.connect({ onlyIfTrusted: true });
       const walletAddress = response.publicKey.toString();
@@ -223,10 +190,6 @@ export function usePhantomProvider() {
       if (connectResult.success && (connectResult as any).data?.accessToken) {
         AuthService.setToken((connectResult as any).data.accessToken);
         setAuthToken((connectResult as any).data.accessToken);
-        // console.log("JWT token saved from auto-connect");
-
-        // Load user data
-        await loadUserData(walletAddress);
 
         return response;
       }
@@ -235,7 +198,7 @@ export function usePhantomProvider() {
     }
 
     return null;
-  }, [phantom, loadUserData]);
+  }, [phantom]);
 
   return {
     phantom,
@@ -248,6 +211,5 @@ export function usePhantomProvider() {
     connect,
     disconnect,
     autoConnect,
-    loadUserData,
   };
 }

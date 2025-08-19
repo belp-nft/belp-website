@@ -5,7 +5,6 @@ import { useRouter } from "next/router";
 import { useWalletContext } from "@/providers/WalletProvider";
 import { useCandyMachine } from "@/providers/CandyMachineProvider";
 import { useToast } from "@/components/ToastContainer";
-import PageLoading from "@/components/PageLoading";
 
 import { NftService } from "@/services";
 import {

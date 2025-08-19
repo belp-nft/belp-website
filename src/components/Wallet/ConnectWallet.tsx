@@ -1,18 +1,16 @@
 "use client";
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import WalletModal from "./WalletModal";
 import WalletButton from "./WalletButton";
 import { Connected, useWallet } from "@/hooks/useWallet";
-import { useSolflareProvider } from "@/hooks/useSolflareProvider";
-import { useBackpackProvider } from "@/hooks/useBackpackProvider";
-import { useGlowProvider } from "@/hooks/useGlowProvider";
-import { useOKXProvider } from "@/hooks/useOKXProvider";
 
 type Props = {
   className?: string;
   onConnected?: (info: Connected) => void;
 };
+
+type WalletType = "phantom" | "solflare" | "backpack" | "glow" | "okx";
 
 export default function ConnectWallet({ className, onConnected }: Props) {
   const router = useRouter();
@@ -20,10 +18,15 @@ export default function ConnectWallet({ className, onConnected }: Props) {
 
   const [open, setOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const {
     solAddress,
     hasPhantom,
+    hasSolflare,
+    hasBackpack,
+    hasGlow,
+    hasOKX,
     loading,
     connectWallet,
     shorten,
@@ -31,31 +34,25 @@ export default function ConnectWallet({ className, onConnected }: Props) {
     solBalanceText,
   } = useWallet(onConnected);
 
-  const {
-    solflare,
-    isConnected: isSolflareConnected,
-    disconnect: disconnectSolflare,
-  } = useSolflareProvider();
-  const {
-    backpack,
-    isConnected: isBackpackConnected,
-    disconnect: disconnectBackpack,
-  } = useBackpackProvider();
-  const {
-    glow,
-    isConnected: isGlowConnected,
-    disconnect: disconnectGlow,
-  } = useGlowProvider();
-  const {
-    okx,
-    isConnected: isOKXConnected,
-    disconnect: disconnectOKX,
-  } = useOKXProvider();
+  const isConnecting = !!loading && !solAddress;
 
   const label = useMemo(
     () => (solAddress && shorten(solAddress)) || "",
     [solAddress, shorten]
   );
+
+  useEffect(() => {
+    const initializeWallet = async () => {
+      // WalletStateProvider sẽ handle auto-reconnect, chỉ cần set initialized
+      setIsInitialized(true);
+    };
+
+    if (!isInitialized) {
+      initializeWallet();
+    }
+  }, [isInitialized]);
+
+  // Remove duplicate localStorage management - WalletStateProvider handles this
 
   useEffect(() => {
     if (!showMenu) return;
@@ -68,25 +65,43 @@ export default function ConnectWallet({ className, onConnected }: Props) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showMenu]);
 
-  const handleDisconnect = () => {
-    if (isSolflareConnected) {
-      disconnectSolflare();
-    } else if (isBackpackConnected) {
-      disconnectBackpack();
-    } else if (isGlowConnected) {
-      disconnectGlow();
-    } else if (isOKXConnected) {
-      disconnectOKX();
-    } else if (hasPhantom) {
-      disconnect();
-    }
-    window.localStorage.removeItem("wallet");
+  const handleDisconnect = useCallback(() => {
+    disconnect();
+    // localStorage management handled by WalletStateProvider
     setShowMenu(false);
-  };
 
-  // useEffect(() => {
-  //   getSolBalanceLamports("HnmbrKehyBp2Kj6vXKytjiPFJe2KCmWydK5WPrHHd9sM");
-  // }, []);
+    if (pathname.startsWith("/my-collection")) {
+      router.push("/");
+    }
+  }, [disconnect, router, pathname]);
+
+  const handleWalletConnection = useCallback(
+    async (walletType: WalletType) => {
+      try {
+        await connectWallet(walletType);
+        setOpen(false);
+        setShowMenu(false);
+        console.log(`Connected to ${walletType} wallet successfully`);
+      } catch (error) {
+        console.error(`Failed to connect to ${walletType}:`, error);
+      }
+    },
+    [connectWallet]
+  );
+
+  if (!isInitialized) {
+    return (
+      <WalletButton
+        isOpen={false}
+        label=""
+        balance={undefined}
+        loadingBalance={true}
+        isConnecting={false}
+        onClick={() => {}}
+        className={className}
+      />
+    );
+  }
 
   return (
     <>
@@ -95,6 +110,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
         label={label}
         balance={solAddress ? solBalanceText : undefined}
         loadingBalance={loading === "sol-balance"}
+        isConnecting={isConnecting}
         onClick={() => {
           if (solAddress) {
             setShowMenu((prev) => !prev);
@@ -136,36 +152,12 @@ export default function ConnectWallet({ className, onConnected }: Props) {
         open={open}
         onClose={() => setOpen(false)}
         hasPhantom={hasPhantom}
-        hasSolflare={!!solflare}
-        hasBackpack={!!backpack}
-        hasGlow={!!glow}
-        hasOKX={!!okx}
+        hasSolflare={hasSolflare}
+        hasBackpack={hasBackpack}
+        hasGlow={hasGlow}
+        hasOKX={hasOKX}
         loading={loading}
-        connectPhantom={async () => {
-          await connectWallet("phantom");
-          setOpen(false);
-          setShowMenu(false);
-        }}
-        connectSolflare={async () => {
-          await connectWallet("solflare");
-          setOpen(false);
-          setShowMenu(false);
-        }}
-        connectBackpack={async () => {
-          await connectWallet("backpack");
-          setOpen(false);
-          setShowMenu(false);
-        }}
-        connectGlow={async () => {
-          await connectWallet("glow");
-          setOpen(false);
-          setShowMenu(false);
-        }}
-        connectOKX={async () => {
-          await connectWallet("okx");
-          setOpen(false);
-          setShowMenu(false);
-        }}
+        connectWallet={handleWalletConnection}
       />
     </>
   );

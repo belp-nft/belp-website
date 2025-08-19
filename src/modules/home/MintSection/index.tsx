@@ -26,7 +26,7 @@ export default function MintSection() {
               fontFamily: "var(--font-oxanium)",
             }}
           >
-            Mint <span className="text-nowrap">now !</span>
+            Mint <span className="text-nowrap">Now !</span>
           </motion.button>
         </Link>
 

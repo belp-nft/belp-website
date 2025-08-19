@@ -1,192 +1,94 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
-import {
-  Connection,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-  Transaction,
-} from "@solana/web3.js";
-import {
-  UserService,
-  AuthService,
-  NftService,
-  ConfigService,
-  BLOCKCHAIN_CONFIG,
-} from "@/services";
 import { useConfigActions } from "@/stores/config";
 import { useLoading } from "@/providers/LoadingProvider";
-import { useToast } from "@/components/ToastContainer";
 
-export type WalletType = "phantom" | "solflare" | "backpack" | "glow" | "okx";
-export type Connected = {
-  kind: "sol";
-  address: string;
-  walletType: WalletType;
-};
+import { AuthService } from "@/services";
+import { WalletStorage } from "@/constants/storage";
 
-declare global {
-  interface Window {
-    ethereum?: any;
-    solana?: {
-      isPhantom?: boolean;
-      connect: (args?: any) => Promise<{ publicKey: { toString(): string } }>;
-      disconnect?: () => Promise<void>;
-      on?: (event: string, cb: (...args: any[]) => void) => void;
-      off?: (event: string, cb: (...args: any[]) => void) => void;
-      publicKey?: { toString(): string };
-      signTransaction?: (transaction: Transaction) => Promise<Transaction>;
-      signAllTransactions?: (
-        transactions: Transaction[]
-      ) => Promise<Transaction[]>;
-    };
-    solflare?: any;
-    backpack?: any;
-    glowSolana?: any;
-    okxwallet?: {
-      solana?: any;
-    };
-  }
-}
 
-export type LoadingKind = WalletType | "sol-balance" | null;
+// Import separated services
+import { WalletType, LoadingKind, Connected } from "./wallet/types";
+import {
+  generateWalletAvailabilityChecks,
+  generateWalletConnectors,
+} from "./wallet/walletHelpers";
+import { WALLET_CONFIGS } from "./wallet/configs";
+import { formatSol, shortenAddress } from "./wallet/utils";
+import { BalanceService } from "./wallet/balanceService";
+import { UserDataService } from "./wallet/userDataService";
+import { AuthenticationService } from "./wallet/authService";
+import { WalletConnectionService } from "./wallet/connectionService";
+import { WalletListenerService } from "./wallet/listenerService";
+import { getSolBalanceLamports } from "./wallet/blockchainService";
 
-export interface WalletConfig {
-  name: string;
-  displayName: string;
-  downloadUrl: {
-    desktop: string;
-    mobile?: {
-      ios: string;
-      android: string;
-    };
-  };
-  deepLinkTemplate?: string;
-  getProvider: () => any;
-  isAvailable: () => boolean;
-}
+// Global flags to prevent duplicate operations
+let globalConnectionProcessed = false;
 
-const WALLET_CONFIGS: Record<WalletType, WalletConfig> = {
-  phantom: {
-    name: "phantom",
-    displayName: "Phantom",
-    downloadUrl: {
-      desktop: "https://phantom.app/download",
-      mobile: {
-        ios: "https://apps.apple.com/app/phantom-solana-wallet/1598432977",
-        android: "https://play.google.com/store/apps/details?id=app.phantom",
-      },
-    },
-    deepLinkTemplate: "https://phantom.app/ul/browse/{{url}}?ref=belp",
-    getProvider: () => {
-      if (typeof window === "undefined") return null;
-      return window.solana?.isPhantom
-        ? window.solana
-        : (window as any).phantom?.solana ||
-            window.solana ||
-            (window.ethereum as any)?.solana;
-    },
-    isAvailable: () => {
-      if (typeof window === "undefined") return false;
-      return !!(
-        window.solana?.isPhantom ||
-        (window as any).phantom?.solana ||
-        window.solana
-      );
-    },
-  },
-  solflare: {
-    name: "solflare",
-    displayName: "Solflare",
-    downloadUrl: {
-      desktop: "https://solflare.com/download",
-      mobile: {
-        ios: "https://apps.apple.com/app/solflare/id1580902717",
-        android:
-          "https://play.google.com/store/apps/details?id=com.solflare.mobile",
-      },
-    },
-    getProvider: () => {
-      if (typeof window === "undefined") return null;
-      return (window as any).solflare;
-    },
-    isAvailable: () => {
-      if (typeof window === "undefined") return false;
-      return !!(window as any).solflare;
-    },
-  },
-  backpack: {
-    name: "backpack",
-    displayName: "Backpack",
-    downloadUrl: {
-      desktop: "https://backpack.app/download",
-      mobile: {
-        ios: "https://apps.apple.com/app/backpack-wallet/id1614235142",
-        android:
-          "https://play.google.com/store/apps/details?id=app.backpack.mobile",
-      },
-    },
-    getProvider: () => {
-      if (typeof window === "undefined") return null;
-      return (window as any).backpack;
-    },
-    isAvailable: () => {
-      if (typeof window === "undefined") return false;
-      return !!(window as any).backpack;
-    },
-  },
-  glow: {
-    name: "glow",
-    displayName: "Glow",
-    downloadUrl: {
-      desktop: "https://glow.app/download",
-    },
-    getProvider: () => {
-      if (typeof window === "undefined") return null;
-      return (window as any).glowSolana;
-    },
-    isAvailable: () => {
-      if (typeof window === "undefined") return false;
-      return !!(window as any).glowSolana;
-    },
-  },
-  okx: {
-    name: "okx",
-    displayName: "OKX Wallet",
-    downloadUrl: {
-      desktop: "https://www.okx.com/web3",
-      mobile: {
-        ios: "https://apps.apple.com/app/okx/id1327268470",
-        android:
-          "https://play.google.com/store/apps/details?id=com.okinc.okex.gp",
-      },
-    },
-    getProvider: () => {
-      if (typeof window === "undefined") return null;
-      return (window as any).okxwallet?.solana;
-    },
-    isAvailable: () => {
-      if (typeof window === "undefined") return false;
-      return !!(window as any).okxwallet?.solana;
-    },
-  },
-};
-
-function formatSol(lamports: number): string {
-  const sol = lamports / 1_000_000_000;
-  return sol.toLocaleString(undefined, {
-    maximumFractionDigits: 6,
-  });
-}
+export type { WalletType, Connected };
+export { getSolBalanceLamports };
 
 export function useWallet(onConnected?: (info: Connected) => void) {
-  const [solAddress, setSolAddress] = useState<string | null>(null);
-  const [connectedType, setConnectedType] = useState<Connected["kind"] | null>(
-    null
-  );
-  const [connectedWallet, setConnectedWallet] = useState<WalletType | null>(
-    null
-  );
+  // State management với localStorage initialization
+  const [solAddress, setSolAddressState] = useState<string | null>(null);
+  const [connectedType, setConnectedTypeState] = useState<"sol" | null>(null);
+  const [connectedWallet, setConnectedWalletState] =
+    useState<WalletType | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Wrapper functions for localStorage sync
+  const setSolAddress = useCallback((address: string | null) => {
+    console.log("💾 Setting solAddress:", address);
+    setSolAddressState(address);
+    WalletStorage.setAddress(address);
+  }, []);
+
+  const setConnectedType = useCallback((type: "sol" | null) => {
+    console.log("💾 Setting connectedType:", type);
+    setConnectedTypeState(type);
+    WalletStorage.setType(type);
+  }, []);
+
+  const setConnectedWallet = useCallback((wallet: WalletType | null) => {
+    console.log("💾 Setting connectedWallet:", wallet);
+    setConnectedWalletState(wallet);
+    WalletStorage.setWallet(wallet);
+  }, []);
+
+  const clearWalletState = useCallback(() => {
+    console.log("🧹 Clearing wallet state");
+    setSolAddressState(null);
+    setConnectedTypeState(null);
+    setConnectedWalletState(null);
+    WalletStorage.clear();
+  }, []);
+
+  // Hydrate from localStorage after mount (SSR safe)
+  useEffect(() => {
+    if (typeof window !== "undefined" && !isHydrated) {
+      // Only hydrate if not manually disconnected
+      if (!WalletStorage.isDisconnected()) {
+        const storedAddress = WalletStorage.getAddress();
+        const storedType = WalletStorage.getType();
+        const storedWallet = WalletStorage.getWallet();
+
+        console.log("🔄 Hydrating wallet state:", {
+          storedAddress,
+          storedType,
+          storedWallet,
+        });
+
+        if (storedAddress) setSolAddressState(storedAddress);
+        if (storedType) setConnectedTypeState(storedType as "sol");
+        if (storedWallet) setConnectedWalletState(storedWallet as WalletType);
+      } else {
+        console.log("⏹️ User disconnected, skipping hydration");
+      }
+      setIsHydrated(true);
+    }
+  }, [isHydrated]);
+
+  // Local state for non-persistent data
   const [loading, setLoading] = useState<LoadingKind>(null);
   const [solLamports, setSolLamports] = useState<number>(0);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -200,242 +102,63 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const [userStatsLastLoaded, setUserStatsLastLoaded] = useState<number>(0);
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
 
-  // Add refs for debouncing and preventing duplicate calls
+  // Refs for preventing duplicate operations
   const isProcessingRef = useRef(false);
   const hasProcessedConnectionRef = useRef(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const balanceLoadingRef = useRef(false);
-  const lastBalanceLoadRef = useRef(0);
-  const toast = useToast();
+
 
   const { clearConfig } = useConfigActions();
   const { showLoading, hideLoading } = useLoading();
 
+  // Computed values
   const solBalanceText = useMemo(
     () => (solLamports === null ? "—" : formatSol(solLamports)),
     [solLamports]
   );
 
-  const listenersRef = useRef<
-    Map<
-      WalletType,
-      {
-        connect?: (...args: any[]) => void;
-        disconnect?: (...args: any[]) => void;
-      }
-    >
-  >(new Map());
-
+  // Balance management
   const refreshSolBalance = useCallback(async (forceRefresh = false) => {
-    // Add stack trace to see where this is being called from
-    console.log(
-      "Refreshing SOL balance... Called from:",
-      new Error().stack?.split("\n")[2]?.trim(),
-      forceRefresh ? "(FORCED)" : ""
+    await BalanceService.refreshSolBalance(
+      forceRefresh,
+      setSolLamports,
+      setLoading
     );
-
-    // Prevent concurrent calls globally across all instances
-    if (globalBalanceLoading || balanceLoadingRef.current) {
-      console.log(
-        "💰 Balance already loading globally, skipping duplicate call"
-      );
-      return;
-    }
-
-    // Increased debounce - only allow one call per 30 seconds globally (unless forced)
-    const now = Date.now();
-    const MIN_INTERVAL = 30000; // 30 seconds
-    if (!forceRefresh && now - globalLastBalanceLoad < MIN_INTERVAL) {
-      console.log(
-        "💰 Balance called too recently globally, skipping (last call was",
-        Math.floor((now - globalLastBalanceLoad) / 1000),
-        "seconds ago, need to wait",
-        Math.floor((MIN_INTERVAL - (now - globalLastBalanceLoad)) / 1000),
-        "more seconds)"
-      );
-      return;
-    }
-
-    try {
-      globalBalanceLoading = true;
-      balanceLoadingRef.current = true;
-      globalLastBalanceLoad = now;
-      lastBalanceLoadRef.current = now;
-      setLoading("sol-balance");
-
-      console.log(
-        "💰 Using API to fetch wallet balance... (call #" +
-          Math.floor(now / 1000) +
-          ")"
-      );
-      const balanceResult = await UserService.getWalletBalance();
-      if (balanceResult.success && balanceResult.data) {
-        // Check for different possible response structures
-        const lamports =
-          balanceResult.data.lamports ||
-          balanceResult.data.balance ||
-          balanceResult.data.solBalance ||
-          0;
-        setSolLamports(lamports);
-        console.log("✅ Balance loaded from API:", lamports);
-      } else {
-        // toast by english
-        toast.showError("Balance fetch failed", "Please try again later", 8000);
-        // If API fails, set to 0
-        console.warn(
-          "API balance fetch failed:",
-          balanceResult.message || "Unknown error"
-        );
-        setSolLamports(0);
-      }
-    } catch (error: any) {
-      console.error("Failed to refresh SOL balance:", error);
-
-      toast.showError("Balance fetch failed", "Please try again later", 8000);
-      // Handle rate limit error specifically
-      if (
-        error.message?.includes("Rate limit") ||
-        error.message?.includes("Too many")
-      ) {
-        console.warn(
-          "⚠️ Rate limit hit, will skip balance refresh for a while"
-        );
-        // Set a longer cooldown for rate limit
-        globalLastBalanceLoad = now + 60000; // Extra 60 seconds cooldown
-        lastBalanceLoadRef.current = now + 60000;
-      }
-
-      setSolLamports(0);
-    } finally {
-      globalBalanceLoading = false;
-      balanceLoadingRef.current = false;
-      setLoading((l) => (l === "sol-balance" ? null : l));
-    }
   }, []);
 
-  // Load transactions with caching and debouncing
+  // User data management
   const loadTransactions = useCallback(
     async (forceRefresh: boolean = false) => {
-      // Prevent concurrent loading
-      if (isLoadingTransactions) {
-        console.log("Transactions already loading, skipping...");
-        return;
-      }
-
-      // Cache check - only reload if forced or data is older than 5 minutes
-      const now = Date.now();
-      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-      if (
-        !forceRefresh &&
-        transactions.length > 0 &&
-        now - transactionsLastLoaded < CACHE_DURATION
-      ) {
-        console.log("Using cached transactions data");
-        return;
-      }
-
-      try {
-        setIsLoadingTransactions(true);
-        console.log("Loading transaction history...");
-
-        const txResult = await UserService.getTransactions({
-          limit: 50,
-        });
-
-        if (txResult.success && txResult.data) {
-          setTransactions(txResult.data);
-          setTransactionsLastLoaded(now);
-          console.log(
-            "Transaction history loaded:",
-            txResult.data.length,
-            "transactions"
-          );
-        } else if (
-          txResult.message?.includes("Unauthorized") ||
-          txResult.message?.includes("401")
-        ) {
-          console.warn("Token expired while loading transactions");
-          // Don't retry here - let the main auth flow handle it
-        }
-      } catch (error: any) {
-        console.error("Failed to load transactions:", error);
-
-        // Handle authentication errors
-        if (
-          error.response?.status === 401 ||
-          error.message?.includes("Unauthorized")
-        ) {
-          console.warn("Authentication error while loading transactions");
-          // Clear invalid data but don't retry - main auth flow will handle
-        }
-      } finally {
-        setIsLoadingTransactions(false);
-      }
+      await UserDataService.loadTransactions(
+        isLoadingTransactions,
+        transactions,
+        transactionsLastLoaded,
+        setIsLoadingTransactions,
+        setTransactions,
+        setTransactionsLastLoaded,
+        forceRefresh
+      );
     },
-    [isLoadingTransactions, transactions.length, transactionsLastLoaded]
+    [isLoadingTransactions, transactions, transactionsLastLoaded]
   );
 
-  // Load user statistics with caching and debouncing
   const loadUserStatistics = useCallback(
     async (forceRefresh: boolean = false) => {
-      // Prevent concurrent loading
-      if (isLoadingUserStats) {
-        console.log("User statistics already loading, skipping...");
-        return;
-      }
-
-      // Cache check - only reload if forced or data is older than 5 minutes
-      const now = Date.now();
-      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-      if (
-        !forceRefresh &&
-        userStatistics &&
-        now - userStatsLastLoaded < CACHE_DURATION
-      ) {
-        console.log("Using cached user statistics data");
-        return;
-      }
-
-      try {
-        setIsLoadingUserStats(true);
-        console.log("Loading user statistics...");
-
-        const statsResult = await UserService.getUserStatistics();
-
-        if (statsResult.success && statsResult.data) {
-          setUserStatistics(statsResult.data);
-          setUserStatsLastLoaded(now);
-          console.log("User statistics loaded:", statsResult.data);
-        } else if (
-          statsResult.message?.includes("Unauthorized") ||
-          statsResult.message?.includes("401")
-        ) {
-          console.warn("Token expired while loading user statistics");
-          // Don't retry here - let the main auth flow handle it
-        }
-      } catch (error: any) {
-        console.error("Failed to load user statistics:", error);
-
-        // Handle authentication errors
-        if (
-          error.response?.status === 401 ||
-          error.message?.includes("Unauthorized")
-        ) {
-          console.warn("Authentication error while loading user statistics");
-          // Clear invalid data but don't retry - main auth flow will handle
-        }
-      } finally {
-        setIsLoadingUserStats(false);
-      }
+      await UserDataService.loadUserStatistics(
+        isLoadingUserStats,
+        userStatistics,
+        userStatsLastLoaded,
+        setIsLoadingUserStats,
+        setUserStatistics,
+        setUserStatsLastLoaded,
+        forceRefresh
+      );
     },
     [isLoadingUserStats, userStatistics, userStatsLastLoaded]
   );
 
   const loadUserData = useCallback(
     async (walletAddress: string, retryAuth: boolean = false) => {
-      // Prevent multiple calls during initial load
       if (!retryAuth && isLoadingUserStats && isLoadingTransactions) {
         console.log("User data already loading, skipping duplicate call...");
         return;
@@ -443,16 +166,11 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       try {
         console.log("Loading user data...", { walletAddress, retryAuth });
-
-        // Load user statistics using optimized function
         await loadUserStatistics(retryAuth);
-
-        // Load transaction history using optimized function
         await loadTransactions(retryAuth);
       } catch (error: any) {
         console.error("Failed to load user data:", error);
 
-        // Handle authentication errors
         if (
           error.response?.status === 401 ||
           error.message?.includes("Unauthorized")
@@ -475,127 +193,50 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     ]
   );
 
-  // Authenticate wallet with backend - centralized function to prevent duplicate calls
+  // Authentication
   const authenticateWallet = useCallback(
     async (
       walletAddress: string,
       forceBalanceRefresh: boolean = false
     ): Promise<boolean> => {
-      // Prevent multiple simultaneous authentication calls
-      if (isAuthenticating) {
-        console.log("Authentication already in progress, skipping...");
-        return false;
-      }
-
-      // Check if we already have a valid token for this wallet
-      const existingToken = AuthService.getToken();
-      if (existingToken && AuthService.isTokenValid()) {
-        console.log("Valid token already exists, skipping authentication");
-        setAuthToken(existingToken);
-
-        // Always refresh balance when connecting wallet manually
-        if (forceBalanceRefresh) {
-          console.log("Force refreshing balance for existing token...");
-          await refreshSolBalance();
-        }
-
-        return true;
-      }
-
-      try {
-        setIsAuthenticating(true);
-        console.log("🔐 Authenticating wallet with backend:", walletAddress);
-
-        const connectResult = await UserService.connectWallet(walletAddress);
-
-        if (connectResult.success && (connectResult as any).data?.accessToken) {
-          const token = (connectResult as any).data.accessToken;
-          AuthService.setToken(token);
-          setAuthToken(token);
-          console.log("✅ Authentication successful, token saved");
-
-          // Load balance only once after successful authentication (force refresh)
-          await refreshSolBalance(true);
-
-          // Dispatch wallet connected event for AuthProvider
-          window.dispatchEvent(new CustomEvent("wallet:connected"));
-
-          return true;
-        } else {
-          console.error("❌ Authentication failed:", connectResult.message);
-          return false;
-        }
-      } catch (error) {
-        console.error("❌ Authentication error:", error);
-        return false;
-      } finally {
-        setIsAuthenticating(false);
-      }
+      return await AuthenticationService.authenticateWallet(
+        walletAddress,
+        forceBalanceRefresh,
+        isAuthenticating,
+        setIsAuthenticating,
+        setAuthToken,
+        refreshSolBalance
+      );
     },
     [isAuthenticating, refreshSolBalance]
   );
 
-  // Common wallet event handlers
+  // Wallet listeners setup
   const setupWalletListeners = useCallback(
     (walletType: WalletType) => {
-      const config = WALLET_CONFIGS[walletType];
-      const provider = config.getProvider();
-
-      if (!provider?.on) return;
-
-      const onConnect = (..._args: any[]) => {
-        const addr = provider.publicKey?.toString?.() || null;
-        if (addr) {
-          setSolAddress(addr);
-          setConnectedWallet(walletType);
-          setConnectedType("sol");
-          // Balance will be loaded once after successful authentication
-        }
-      };
-
-      const onDisconnect = () => {
-        setSolAddress(null);
-        setSolLamports(0);
-        setConnectedWallet(null);
-        setConnectedType(null);
-      };
-
-      provider.on("connect", onConnect);
-      provider.on("disconnect", onDisconnect);
-
-      listenersRef.current.set(walletType, {
-        connect: onConnect,
-        disconnect: onDisconnect,
-      });
+      WalletListenerService.setupWalletListeners(
+        walletType,
+        listenersRef,
+        setSolAddress,
+        setConnectedWallet,
+        setConnectedType,
+        setSolLamports
+      );
     },
-    [] // Remove refreshSolBalance dependency since it's not used in listeners
+    [setSolAddress, setConnectedWallet, setConnectedType]
   );
 
   const cleanupWalletListeners = useCallback((walletType: WalletType) => {
-    const config = WALLET_CONFIGS[walletType];
-    const provider = config.getProvider();
-    const listeners = listenersRef.current.get(walletType);
-
-    if (!provider?.off || !listeners) return;
-
-    if (listeners.connect) {
-      provider.off("connect", listeners.connect);
-    }
-    if (listeners.disconnect) {
-      provider.off("disconnect", listeners.disconnect);
-    }
-
-    listenersRef.current.delete(walletType);
+    WalletListenerService.cleanupWalletListeners(walletType, listenersRef);
   }, []);
 
-  // Simplified connection handler to prevent duplicates
+  // Connection handling
   const handleConnection = useCallback(
     async (
       walletType: WalletType,
       addr: string,
       isExisting: boolean = false
     ) => {
-      // Prevent duplicate processing globally
       if (globalConnectionProcessed || hasProcessedConnectionRef.current) {
         console.log("Connection already processed globally, skipping...");
         return;
@@ -616,42 +257,29 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       );
 
       try {
-        // Check for valid token first
         const existingToken = AuthService.getToken();
         if (existingToken && AuthService.isTokenValid()) {
           console.log("Valid token exists, loading data");
           setAuthToken(existingToken);
-
-          // Only refresh balance if we don't have recent data
-          const now = Date.now();
-          if (solLamports === 0 || now - lastBalanceLoadRef.current > 60000) {
-            await refreshSolBalance();
-          }
-          await loadUserData(addr);
         } else {
           console.log("Authenticating wallet...");
           const authSuccess = await authenticateWallet(addr);
           if (authSuccess) {
-            // Balance already loaded in authenticateWallet, no need to call again
-            await loadUserData(addr);
+            await refreshSolBalance();
           }
         }
 
-        onConnected?.({
-          kind: "sol",
-          address: addr,
-          walletType,
-        });
+        onConnected?.({ kind: "sol", address: addr, walletType });
       } catch (error) {
         console.error("Connection handling error:", error);
-        globalConnectionProcessed = false; // Reset global on error
-        hasProcessedConnectionRef.current = false; // Reset on error
+        globalConnectionProcessed = false;
+        hasProcessedConnectionRef.current = false;
       }
     },
-    [refreshSolBalance, loadUserData, authenticateWallet, onConnected]
+    [refreshSolBalance, authenticateWallet, onConnected]
   );
 
-  // Generic wallet connection function
+  // Main wallet connection function
   const connectWallet = useCallback(
     async (walletType: WalletType) => {
       const config = WALLET_CONFIGS[walletType];
@@ -782,7 +410,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         hideLoading();
       }
     },
-    [onConnected, loadUserData, showLoading, hideLoading, authenticateWallet]
+    [showLoading, hideLoading, authenticateWallet, refreshSolBalance]
   );
 
   // Restore wallet state from localStorage on initial load
@@ -837,34 +465,27 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     )
       return;
 
-    // Clear any existing timeout
     if (initTimeoutRef.current) {
       clearTimeout(initTimeoutRef.current);
     }
 
-    // Debounce to prevent multiple calls during React hydration
     initTimeoutRef.current = setTimeout(() => {
       if (isProcessingRef.current) return;
 
       isProcessingRef.current = true;
 
-      // Setup wallet listeners first
       Object.keys(WALLET_CONFIGS).forEach((walletType) => {
         setupWalletListeners(walletType as WalletType);
       });
 
       // Check if user manually disconnected
-      const wasManuallyDisconnected =
-        window.localStorage.getItem("wallet-disconnected") === "true";
-
-      if (wasManuallyDisconnected) {
+      if (WalletStorage.isDisconnected()) {
         console.log("User manually disconnected, skipping auto-connect");
         setIsInitialLoadComplete(true);
         isProcessingRef.current = false;
         return;
       }
 
-      // Single scan for connected wallets
       const checkConnections = async () => {
         let foundConnection = false;
 
@@ -882,13 +503,11 @@ export function useWallet(onConnected?: (info: Connected) => void) {
               `Found existing ${config.displayName} connection:`,
               addr
             );
-
             await handleConnection(walletType as WalletType, addr, true);
             break;
           }
         }
 
-        // Try trusted connections if no existing connection
         if (!foundConnection) {
           for (const [walletType, config] of Object.entries(WALLET_CONFIGS)) {
             const provider = config.getProvider();
@@ -905,7 +524,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
                     `Trusted ${config.displayName} connection:`,
                     addr
                   );
-
                   await handleConnection(walletType as WalletType, addr, false);
                   break;
                 }
@@ -921,7 +539,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       };
 
       checkConnections();
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => {
       if (initTimeoutRef.current) {
@@ -940,16 +558,11 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     solAddress, // Add solAddress to dependencies
   ]);
 
-  // Generic disconnect function
+  // Disconnect function
   const disconnect = useCallback(async () => {
     try {
-      console.log("Disconnecting wallet...", {
-        connectedWallet,
-        hasToken: AuthService.hasToken(),
-        address: solAddress,
-      });
+      console.log("Disconnecting wallet...");
 
-      // Disconnect from current wallet if connected
       if (connectedWallet) {
         const config = WALLET_CONFIGS[connectedWallet];
         const provider = config.getProvider();
@@ -962,22 +575,17 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         cleanupWalletListeners(connectedWallet);
       }
 
-      // Reset all state
-      setConnectedType(null);
-      setSolAddress(null);
+      // Reset state but keep isInitialLoadComplete to prevent auto-reconnect
+      clearWalletState();
       setSolLamports(0);
-      setConnectedWallet(null);
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
-      setTransactionsLastLoaded(0); // Clear cache timestamp
-      setUserStatsLastLoaded(0); // Clear user stats cache timestamp
-      setIsInitialLoadComplete(false); // Reset initial load flag
+      setTransactionsLastLoaded(0);
+      setUserStatsLastLoaded(0);
+      // Don't reset isInitialLoadComplete to prevent auto-connect
 
-      // Dispatch wallet disconnected event for AuthProvider
       window.dispatchEvent(new CustomEvent("wallet:disconnected"));
-
-      // Clear all stores
       clearConfig();
 
       // Set disconnected flag to prevent auto-reconnect
@@ -987,39 +595,36 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       window.localStorage.removeItem("last-wallet-type");
 
       // Cleanup JWT token
+
       AuthService.removeToken();
 
       console.log("Wallet disconnected successfully");
     } catch (error) {
       console.error("Error disconnecting wallet:", error);
 
-      // Force cleanup even if there's an error
-      setConnectedType(null);
-      setSolAddress(null);
+      // Force cleanup on error but keep isInitialLoadComplete
+      clearWalletState();
       setSolLamports(0);
-      setConnectedWallet(null);
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
-      setTransactionsLastLoaded(0); // Clear cache timestamp
-      setUserStatsLastLoaded(0); // Clear user stats cache timestamp
-      setIsInitialLoadComplete(false); // Reset initial load flag
+      setTransactionsLastLoaded(0);
+      setUserStatsLastLoaded(0);
+      // Don't reset isInitialLoadComplete to prevent auto-connect
 
-      // Clear all stores
       clearConfig();
-
       AuthService.removeToken();
       window.localStorage.setItem("wallet-disconnected", "true");
       window.localStorage.removeItem("last-wallet-type");
-    }
-  }, [connectedWallet, cleanupWalletListeners, solAddress, clearConfig]);
 
-  // Listen for wallet events to sync state across instances
+    }
+  }, [connectedWallet, cleanupWalletListeners, clearConfig, clearWalletState]);
+
+  // Wallet event listeners
   useEffect(() => {
     const handleWalletConnected = async () => {
       console.log("🔗 Wallet connected event received - syncing state");
 
-      // Check for any connected wallet and update state
       for (const [walletType, config] of Object.entries(WALLET_CONFIGS)) {
         const provider = config.getProvider();
 
@@ -1031,22 +636,17 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setConnectedWallet(walletType as WalletType);
           setConnectedType("sol");
 
-          // Check for auth token
           const token = AuthService.getToken();
           if (token) {
             setAuthToken(token);
           }
 
-          // Load balance after syncing state (force refresh to ignore rate limit)
           await refreshSolBalance(true);
-
-          // Call onConnected callback if provided
           onConnected?.({
             kind: "sol",
             address: addr,
             walletType: walletType as WalletType,
           });
-
           break;
         }
       }
@@ -1054,14 +654,11 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
     const handleWalletDisconnected = () => {
       console.log("🔌 Wallet disconnected event received - syncing state");
-      setSolAddress(null);
-      setConnectedWallet(null);
-      setConnectedType(null);
+      clearWalletState();
       setAuthToken(null);
       setSolLamports(0);
     };
 
-    // Listen for custom wallet events
     window.addEventListener("wallet:connected", handleWalletConnected);
     window.addEventListener("wallet:disconnected", handleWalletDisconnected);
 
@@ -1072,81 +669,31 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         handleWalletDisconnected
       );
     };
-  }, [onConnected, refreshSolBalance]); // Add refreshSolBalance to dependencies
+  }, [onConnected, refreshSolBalance]);
 
   // Utility functions
   const shorten = useCallback(
-    (addr?: string | null) =>
-      addr ? addr.slice(0, 4) + "..." + addr.slice(-4) : "Connect wallet",
+    (addr?: string | null) => shortenAddress(addr),
     []
   );
 
-  // Check which wallets are available
+  // Generate available wallets list
   const availableWallets = useMemo(() => {
     return Object.entries(WALLET_CONFIGS)
       .filter(([_, config]) => config.isAvailable())
       .map(([walletType, config]) => ({
         type: walletType as WalletType,
-        ...config,
+        name: config.displayName,
+        isInstalled: true,
       }));
   }, []);
 
-  // Specific wallet connection functions for backward compatibility
-  const connectPhantom = useCallback(
-    () => connectWallet("phantom"),
-    [connectWallet]
-  );
-  const connectSolflare = useCallback(
-    () => connectWallet("solflare"),
-    [connectWallet]
-  );
-  const connectBackpack = useCallback(
-    () => connectWallet("backpack"),
-    [connectWallet]
-  );
-  const connectGlow = useCallback(() => connectWallet("glow"), [connectWallet]);
-  const connectOKX = useCallback(() => connectWallet("okx"), [connectWallet]);
+  // Generate wallet availability checks dynamically
+  const walletHelpers = useMemo(() => generateWalletAvailabilityChecks(), []);
 
-  // Check if specific wallets are available (backward compatibility)
-  const hasPhantom = WALLET_CONFIGS.phantom.isAvailable();
-  const hasSolflare = WALLET_CONFIGS.solflare.isAvailable();
-  const hasBackpack = WALLET_CONFIGS.backpack.isAvailable();
-  const hasGlow = WALLET_CONFIGS.glow.isAvailable();
-  const hasOKX = WALLET_CONFIGS.okx.isAvailable();
-
-  // Debug utilities
-  const getDebugInfo = useCallback(() => {
-    return {
-      solAddress,
-      connectedWallet,
-      connectedType,
-      loading,
-      hasToken: AuthService.hasToken(),
-      isTokenValid: AuthService.isTokenValid(),
-      disconnectedFlag: window.localStorage?.getItem("wallet-disconnected"),
-      availableWallets: availableWallets.map((w) => w.type),
-      providers: Object.entries(WALLET_CONFIGS).map(([type, config]) => ({
-        type,
-        available: config.isAvailable(),
-        provider: !!config.getProvider(),
-        connected: config.getProvider()?.isConnected,
-      })),
-    };
-  }, [solAddress, connectedWallet, connectedType, loading, availableWallets]);
-
-  // Force reconnect utility for debugging
-  const forceReconnect = useCallback(async () => {
-    console.log("Force reconnecting...");
-    window.localStorage.removeItem("wallet-disconnected");
-
-    if (connectedWallet) {
-      await disconnect();
-      setTimeout(() => {
-        connectWallet(connectedWallet);
-      }, 1000);
-    }
-  }, [connectedWallet, disconnect, connectWallet]);
-
+  // Extract availability checks for components that need them
+  const { hasPhantom, hasSolflare, hasBackpack, hasGlow, hasOKX } =
+    walletHelpers;
   return {
     // State
     solAddress,
@@ -1161,9 +708,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     isLoadingTransactions,
     isLoadingUserStats,
 
-    // Available wallets
-    availableWallets,
-
     // Generic actions
     connectWallet,
     disconnect,
@@ -1174,29 +718,20 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       loadUserStatistics(forceRefresh),
     shorten,
 
-    // Specific wallet actions (backward compatibility)
-    connectPhantom,
-    connectSolflare,
-    connectBackpack,
-    connectGlow,
-    connectOKX,
-
-    // Wallet availability checks (backward compatibility)
+    // Wallet availability checks
     hasPhantom,
     hasSolflare,
     hasBackpack,
     hasGlow,
     hasOKX,
-    getSolBalanceLamports,
+
+    // Available wallets list
+    availableWallets,
 
     // Wallet configs access
     getWalletConfig: (walletType: WalletType) => WALLET_CONFIGS[walletType],
     getWalletProvider: (walletType: WalletType) =>
       WALLET_CONFIGS[walletType].getProvider(),
-
-    // Debug utilities (for development)
-    getDebugInfo,
-    forceReconnect,
 
     // Token utilities
     hasValidToken: () => AuthService.isTokenValid(),
@@ -1206,18 +741,4 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       clearConfig();
     },
   };
-}
-
-// Global flag to prevent multiple balance calls across all instances
-let globalBalanceLoading = false;
-let globalLastBalanceLoad = 0;
-// Global flag to prevent multiple connection processing
-let globalConnectionProcessed = false;
-
-export async function getSolBalanceLamports(address: string): Promise<number> {
-  const rpcClient = new Connection(BLOCKCHAIN_CONFIG.SOLANA_RPC);
-  const pubkey = new PublicKey(address);
-
-  const lamports = await rpcClient.getBalance(pubkey);
-  return lamports / LAMPORTS_PER_SOL;
 }
