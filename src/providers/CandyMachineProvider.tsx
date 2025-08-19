@@ -389,9 +389,13 @@ export function CandyMachineProvider({ children, config = {} }: CandyMachineProv
 
       log('✅ Belp NFT transaction confirmed:', result.signature);
 
+      // Convert signature bytes to base64
+      const signatureBytes = new Uint8Array(result.signature);
+      const base64signature = Buffer.from(signatureBytes).toString('base64');
+
       const mintResult: MintResult = {
         success: true,
-        signature: result.signature.toString(),
+        signature: base64signature,
         nftAddress: nftMint.publicKey.toString(),
         message: "Belp NFT minted successfully! 🐱",
       };
