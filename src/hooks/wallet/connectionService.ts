@@ -15,7 +15,6 @@ export class WalletConnectionService {
       address: string,
       forceBalance?: boolean
     ) => Promise<boolean>,
-    loadUserData: (address: string) => Promise<void>,
     refreshSolBalance: () => Promise<void>,
     onConnected?: (info: any) => void
   ): Promise<void> {
@@ -58,12 +57,11 @@ export class WalletConnectionService {
       if (authSuccess) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         console.log("Loading user data...");
-        await loadUserData(addr);
+        await refreshSolBalance();
       } else {
         console.warn("Authentication failed, continuing without backend data");
       }
 
-      await refreshSolBalance();
       onConnected?.({ kind: "sol", address: addr, walletType });
       console.log(`${config.displayName} wallet connection successful!`);
     } catch (error: any) {

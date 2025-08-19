@@ -200,13 +200,11 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         if (existingToken && AuthService.isTokenValid()) {
           console.log("Valid token exists, loading data");
           setAuthToken(existingToken);
-          await refreshSolBalance();
-          await loadUserData(addr);
         } else {
           console.log("Authenticating wallet...");
           const authSuccess = await authenticateWallet(addr);
           if (authSuccess) {
-            await loadUserData(addr);
+            await refreshSolBalance();
           }
         }
 
@@ -217,7 +215,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         hasProcessedConnectionRef.current = false;
       }
     },
-    [refreshSolBalance, loadUserData, authenticateWallet, onConnected]
+    [refreshSolBalance, authenticateWallet, onConnected]
   );
 
   // Main wallet connection function
@@ -232,19 +230,10 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setConnectedType,
         setConnectedWallet,
         authenticateWallet,
-        loadUserData,
-        refreshSolBalance,
-        onConnected
+        refreshSolBalance
       );
     },
-    [
-      onConnected,
-      loadUserData,
-      showLoading,
-      hideLoading,
-      authenticateWallet,
-      refreshSolBalance,
-    ]
+    [showLoading, hideLoading, authenticateWallet, refreshSolBalance]
   );
 
   // Auto-connect effect

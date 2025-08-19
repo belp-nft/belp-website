@@ -48,8 +48,6 @@ const BelpyMintPage = ({
     solAddress,
     connectWallet,
     refreshSolBalance,
-    connectedWallet,
-    getWalletProvider,
     authToken,
     loadUserData,
   } = useWallet();
@@ -68,7 +66,65 @@ const BelpyMintPage = ({
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [nftAddress, setNftAddress] = useState<string>("");
   const [nftDetailData, setNftDetailData] = useState<any>(null);
-  const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(true);
+  const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(false);
+  const [isHiddenRemindMe, setIsHiddenRemindMe] = useState(false);
+
+  // Check if feature announcement should be shown
+  useEffect(() => {
+    const checkFeatureAnnouncementStatus = () => {
+      const remindTomorrow = localStorage.getItem(
+        "feature-announcement-remind-tomorrow"
+      );
+
+      if (remindTomorrow) {
+        const remindTime = new Date(remindTomorrow);
+        const now = new Date();
+
+        // Calculate the start of the next day from when reminder was set
+        const nextDay = new Date(remindTime);
+        nextDay.setHours(0, 0, 0, 0); // Set to 00:00:00 of the same day
+        nextDay.setDate(nextDay.getDate() + 1); // Move to next day
+
+        // Check if current time has passed the next day's midnight
+        const hasPassedMidnight = now >= nextDay;
+
+        if (hasPassedMidnight) {
+          // It's past midnight of the next day, remove the reminder and show modal
+          localStorage.removeItem("feature-announcement-remind-tomorrow");
+          setShowFeatureAnnouncement(true);
+          console.log(
+            "🌅 New day detected, showing feature announcement modal"
+          );
+        } else {
+          // Still within the "remind tomorrow" period, don't show modal
+          setShowFeatureAnnouncement(false);
+          const hoursLeft = Math.ceil(
+            (nextDay.getTime() - now.getTime()) / (1000 * 60 * 60)
+          );
+          console.log(
+            `⏰ Still in remind period, ${hoursLeft} hours until next show`
+          );
+        }
+      } else {
+        // No reminder set, show modal by default
+        setShowFeatureAnnouncement(true);
+      }
+    };
+
+    checkFeatureAnnouncementStatus();
+  }, []);
+
+  const handleFeatureAnnouncementClose = (action?: "remind") => {
+    setShowFeatureAnnouncement(false);
+
+    if (action === "remind") {
+      // Set reminder for tomorrow - save current timestamp
+      localStorage.setItem(
+        "feature-announcement-remind-tomorrow",
+        new Date().toISOString()
+      );
+    }
+  };
 
   // Auto-refresh stats every 30s
   useEffect(() => {
@@ -143,7 +199,6 @@ const BelpyMintPage = ({
 
         // Save user data after successful mint
         if (authToken && solAddress) {
-          console.log("💾 Saving user data after mint...");
           await loadUserData(solAddress);
         }
 
@@ -200,11 +255,18 @@ const BelpyMintPage = ({
 
   const handleMintClick = () => {
     setShowFeatureAnnouncement(true);
+    setIsHiddenRemindMe(true);
     // if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
     // return;
     // }
     // setShowMintModal(true);
   };
+
+  useEffect(() => {
+    if (solAddress) {
+      loadUserData(solAddress);
+    }
+  }, [solAddress]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
@@ -227,7 +289,8 @@ const BelpyMintPage = ({
 
         <FeatureAnnouncementModal
           isOpen={showFeatureAnnouncement}
-          onClose={() => setShowFeatureAnnouncement(false)}
+          isHiddenRemindMe={isHiddenRemindMe}
+          onClose={(action) => handleFeatureAnnouncementClose(action)}
         />
 
         <MintConfirmModal

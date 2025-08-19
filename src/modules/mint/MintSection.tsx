@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import CatGrid from "./CatGrid";
 import { useAuth } from "@/providers/AuthProvider";
-import ConnectWallet from "@/components/Wallet/ConnectWallet";
+import MintConnectButton from "@/components/Wallet/MintConnectButton";
 import { useSettings } from "@/providers/SettingsProvider";
 
 interface MintSectionProps {
@@ -155,7 +155,7 @@ const MintSection: React.FC<MintSectionProps> = ({
               )}
             </motion.button>
           ) : (
-            <ConnectWallet
+            <MintConnectButton
               className="!w-full py-3 px-8"
               onConnected={(info) => console.log("Connected:", info)}
             />

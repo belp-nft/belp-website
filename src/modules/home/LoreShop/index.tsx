@@ -79,6 +79,7 @@ export default function LoreShop() {
                   "md:h-[54px] rounded-xl md:rounded-2xl shadow-md text-xs md:text-xl md:font-bold",
                   "bg-gradient-to-b from-[#F896FF] to-[#AE4DCE] text-white",
                   "hover:bg-[#dfc6fd] transition-all w-full",
+                  "shadow-lg hover:scale-105 transition",
                   "h-11 cursor-pointer"
                 )}
               >
@@ -91,6 +92,7 @@ export default function LoreShop() {
                   "bg-[#E5CAFF] shadow-lg transition",
                   "border-1 border-[#8438CE] text-[#8438CE]",
                   "md:h-[54px] rounded-xl md:rounded-2xl text-xs md:text-xl md:font-bold w-full",
+                  "shadow-lg hover:scale-105 transition",
                   "h-11 cursor-pointer"
                 )}
               >

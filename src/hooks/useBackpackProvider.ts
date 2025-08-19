@@ -46,46 +46,23 @@ export function useBackpackProvider() {
     };
   }, [backpack]);
 
-  // Load user data từ backend
-  const loadUserData = useCallback(async (walletAddress: string) => {
-    try {
-      // console.log('📊 Loading user data for Backpack...', { walletAddress });
-      
-      // Load user statistics
-      const statsResult = await UserService.getUserStatistics();
-      if (statsResult.success && statsResult.data) {
-        setUserStatistics(statsResult.data);
-        // console.log('✅ User statistics loaded:', statsResult.data);
-      }
-
-      // Load transaction history
-      const txResult = await UserService.getTransactions({ limit: 50 });
-      if (txResult.success && txResult.data) {
-        setTransactions(txResult.data);
-        // console.log('✅ Transaction history loaded:', txResult.data.length, 'transactions');
-      }
-    } catch (error) {
-      console.error('⚠️ Failed to load user data:', error);
-    }
-  }, []);
-
   const connect = useCallback(async () => {
     if (!backpack) {
       window.open("https://backpack.app/download", "_blank");
       return null;
     }
     if (!backpack?.connect) return null;
-    
+
     try {
       setLoading(true);
       // console.log('🚀 Starting Backpack wallet connection...');
-      
+
       // Bước 1: Kết nối với Backpack wallet
       const resp = await backpack.connect();
       const walletAddress = resp.publicKey?.toString?.() || null;
-      
+
       if (!walletAddress) {
-        throw new Error('Không thể lấy địa chỉ ví từ Backpack');
+        throw new Error("Không thể lấy địa chỉ ví từ Backpack");
       }
 
       setIsConnected(true);
@@ -97,7 +74,9 @@ export function useBackpackProvider() {
       const connectResult = await UserService.connectWallet(walletAddress);
 
       if (!connectResult.success) {
-        throw new Error(connectResult.message || 'Backend authentication failed');
+        throw new Error(
+          connectResult.message || "Backend authentication failed"
+        );
       }
 
       // Bước 3: Lưu JWT token vào localStorage
@@ -106,36 +85,32 @@ export function useBackpackProvider() {
         setAuthToken((connectResult as any).data.accessToken);
         // console.log('🔑 JWT token saved to localStorage');
       } else {
-        console.warn('⚠️ No JWT token received from backend');
+        console.warn("⚠️ No JWT token received from backend");
       }
-
-      // Bước 4: Load user data với JWT token
-      await loadUserData(walletAddress);
 
       // console.log('🎉 Backpack wallet connection successful!');
       return resp;
-      
     } catch (e) {
-      console.error('❌ Backpack connection failed:', e);
-      
+      console.error("❌ Backpack connection failed:", e);
+
       // Cleanup nếu có lỗi
       setIsConnected(false);
       setPublicKey(null);
       setAuthToken(null);
       AuthService.removeToken();
-      
+
       return null;
     } finally {
       setLoading(false);
     }
-  }, [backpack, loadUserData]);
+  }, [backpack]);
 
   const disconnect = useCallback(async () => {
     if (!backpack?.disconnect) return;
     try {
       await backpack.disconnect();
     } catch (e) {}
-    
+
     // Cleanup tất cả state và localStorage
     setIsConnected(false);
     setPublicKey(null);
@@ -143,7 +118,7 @@ export function useBackpackProvider() {
     setUserStatistics(null);
     setTransactions([]);
     AuthService.removeToken();
-    
+
     // console.log('🔌 Backpack wallet disconnected');
   }, [backpack]);
 
@@ -157,6 +132,5 @@ export function useBackpackProvider() {
     transactions,
     connect,
     disconnect,
-    loadUserData,
   };
 }
