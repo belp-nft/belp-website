@@ -19,8 +19,7 @@ const MyCollectionPage = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
-  const { solAddress, loading, authToken } = useWallet();
-  console.log("🚀 ~ MyCollectionPage ~ solAddress:", solAddress);
+  const { solAddress, loading } = useWallet();
   const { hideLoading } = useLoading();
 
   const collectionAddress = useCollectionAddress();
