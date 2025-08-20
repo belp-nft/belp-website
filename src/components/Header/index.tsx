@@ -13,6 +13,7 @@ import {
 } from "react-icons/md";
 import { useRouter } from "next/router";
 import ConnectWallet from "../Wallet/ConnectWallet";
+import { useWallet } from "@/hooks/useWallet";
 
 const menu = [
   { label: "HOME", href: "/", icon: <MdHome size={22} /> },
@@ -31,17 +32,13 @@ export default function BelpHeader() {
 
   const [open, setOpen] = useState(false);
 
-  // Disable/enable scroll when menu opens/closes
   useEffect(() => {
     if (open) {
-      // Disable scroll
       document.body.style.overflow = "hidden";
     } else {
-      // Enable scroll
       document.body.style.overflow = "unset";
     }
 
-    // Cleanup function to ensure scroll is restored
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -87,10 +84,13 @@ export default function BelpHeader() {
                   <MdClose size={28} />
                 </button>
               </div>
-              <div className="flex items-center justify-center my-5 w-full">
-                <ConnectWallet
-                  onConnected={(info) => console.log("Connected:", info)}
-                />
+              <div className="px-6">
+                <div className="flex items-center justify-center my-5 w-full">
+                  <ConnectWallet
+                    hasCollapse
+                    onConnected={(info) => console.log("Connected:", info)}
+                  />
+                </div>
               </div>
               <nav className="flex-1 w-full">
                 <ul className="flex flex-col gap-2 px-6">

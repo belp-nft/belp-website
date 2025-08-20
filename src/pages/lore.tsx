@@ -34,7 +34,6 @@ const BelpFooter = dynamic(() => import("@/components/Footer"), {
 });
 
 interface LorePageProps {
-  // Có thể thêm data từ server nếu cần
   initialData?: any;
 }
 
@@ -44,7 +43,7 @@ export default function LorePage({ initialData }: LorePageProps) {
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth < 768) {
-        setCloudDuration(6);
+        setCloudDuration(7);
         setCloudX({ initial: "100vw", animate: "-300vw" });
       } else {
         setCloudDuration(10);

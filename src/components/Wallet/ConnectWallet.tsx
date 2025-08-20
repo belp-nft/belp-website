@@ -4,15 +4,22 @@ import { useRouter } from "next/router";
 import WalletModal from "./WalletModal";
 import WalletButton from "./WalletButton";
 import { Connected, useWallet } from "@/hooks/useWallet";
+import { AnimatePresence, motion } from "framer-motion";
+import { shortenAddress } from "@/hooks/wallet/utils";
 
 type Props = {
   className?: string;
+  hasCollapse?: boolean;
   onConnected?: (info: Connected) => void;
 };
 
 type WalletType = "phantom" | "solflare" | "backpack" | "glow" | "okx";
 
-export default function ConnectWallet({ className, onConnected }: Props) {
+export default function ConnectWallet({
+  className,
+  hasCollapse,
+  onConnected,
+}: Props) {
   const router = useRouter();
   const pathname = router.pathname;
 
@@ -37,7 +44,13 @@ export default function ConnectWallet({ className, onConnected }: Props) {
   const isConnecting = !!loading && !solAddress;
 
   const label = useMemo(
-    () => (solAddress && shorten(solAddress)) || "",
+    () =>
+      (solAddress &&
+        shortenAddress({
+          addr: solAddress,
+          number: 4,
+        })) ||
+      "",
     [solAddress, shorten]
   );
 
@@ -55,6 +68,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
   // Remove duplicate localStorage management - WalletStateProvider handles this
 
   useEffect(() => {
+    if (hasCollapse) return;
     if (!showMenu) return;
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -63,7 +77,7 @@ export default function ConnectWallet({ className, onConnected }: Props) {
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [showMenu]);
+  }, [showMenu, hasCollapse]);
 
   const handleDisconnect = useCallback(() => {
     disconnect();
@@ -105,49 +119,90 @@ export default function ConnectWallet({ className, onConnected }: Props) {
 
   return (
     <>
-      <WalletButton
-        isOpen={showMenu}
-        label={label}
-        balance={solAddress ? solBalanceText : undefined}
-        loadingBalance={loading === "sol-balance"}
-        isConnecting={isConnecting}
-        onClick={() => {
-          if (solAddress) {
-            setShowMenu((prev) => !prev);
-          } else {
-            setOpen(true);
-            setShowMenu(false);
-          }
-        }}
-        className={className}
-      />
-      {solAddress && showMenu && (
-        <div
-          ref={menuRef}
-          className="absolute right-0 mt-2 w-56 rounded-2xl bg-white shadow-xl border border-[#B6A3E6] z-50 p-3"
-        >
-          <a
-            href="/my-collection"
-            className={
-              `block px-2 py-2 rounded-lg transition cursor-pointer ` +
-              (pathname === "/my-collection"
-                ? "bg-[#F6F0FF] font-bold"
-                : "hover:bg-[#F6F0FF] font-medium")
+      <div className="relative inline-block w-full">
+        <WalletButton
+          isOpen={showMenu}
+          label={label}
+          balance={solAddress ? solBalanceText : undefined}
+          loadingBalance={loading === "sol-balance"}
+          isConnecting={isConnecting}
+          onClick={() => {
+            if (solAddress) {
+              if (hasCollapse) {
+                setShowMenu((prev) => !prev);
+              } else {
+                setShowMenu(true);
+              }
+            } else {
+              setOpen(true);
+              setShowMenu(false);
             }
-            onClick={() => setShowMenu(false)}
-          >
-            My collection
-          </a>
-          <div className="my-2 border-t border-[#E3D6F6]" />
-          <button
-            className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium cursor-pointer"
-            onClick={handleDisconnect}
-          >
-            Disconnect
-          </button>
-        </div>
-      )}
-
+          }}
+          className={className}
+        />
+        {hasCollapse ? (
+          <AnimatePresence>
+            {solAddress && showMenu && (
+              <motion.div
+                ref={menuRef}
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="mt-2 w-full rounded-2xl bg-white shadow-xl border border-[#B6A3E6] p-3"
+              >
+                <a
+                  href="/my-collection"
+                  className={
+                    `block px-2 py-2 rounded-lg transition cursor-pointer ` +
+                    (pathname === "/my-collection"
+                      ? "bg-[#F6F0FF] font-bold"
+                      : "hover:bg-[#F6F0FF] font-medium")
+                  }
+                  onClick={() => setShowMenu(false)}
+                >
+                  My collection
+                </a>
+                <div className="my-2 border-t border-[#E3D6F6]" />
+                <button
+                  className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium cursor-pointer"
+                  onClick={handleDisconnect}
+                >
+                  Disconnect
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ) : (
+          solAddress &&
+          showMenu && (
+            <div
+              ref={menuRef}
+              className="absolute right-0 mt-2 w-56 rounded-2xl bg-white shadow-xl border border-[#B6A3E6] z-50 p-3"
+            >
+              <a
+                href="/my-collection"
+                className={
+                  `block px-2 py-2 rounded-lg transition cursor-pointer ` +
+                  (pathname === "/my-collection"
+                    ? "bg-[#F6F0FF] font-bold"
+                    : "hover:bg-[#F6F0FF] font-medium")
+                }
+                onClick={() => setShowMenu(false)}
+              >
+                My collection
+              </a>
+              <div className="my-2 border-t border-[#E3D6F6]" />
+              <button
+                className="block w-full text-left px-2 py-2 rounded-lg text-[#401B79] hover:bg-[#F6F0FF] transition font-medium cursor-pointer"
+                onClick={handleDisconnect}
+              >
+                Disconnect
+              </button>
+            </div>
+          )
+        )}
+      </div>
       <WalletModal
         open={open}
         onClose={() => setOpen(false)}

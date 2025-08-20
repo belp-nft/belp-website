@@ -133,7 +133,7 @@ const HistoryPage = () => {
             { label: "History" },
           ]}
         />
-        <div className="flex items-center justify-between mt-5 mb-10">
+        <div className="flex md:flex-row flex-col items-center justify-between mt-5 mb-10 gap-5">
           <motion.h1
             className={clsx(
               "font-bold title-text",

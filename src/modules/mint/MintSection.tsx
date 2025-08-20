@@ -9,6 +9,14 @@ import MintConnectButton from "@/components/Wallet/MintConnectButton";
 import { useSettings } from "@/providers/SettingsProvider";
 import { useWalletContext } from "@/providers/WalletProvider";
 
+const cats = [
+  "tokens/1.png",
+  "tokens/2.png",
+  "tokens/3.png",
+  "tokens/4.png",
+  "tokens/5.png",
+];
+
 interface MintSectionProps {
   minted: number;
   supply: number;
@@ -55,29 +63,44 @@ const MintSection: React.FC<MintSectionProps> = ({
   const { scale, sizeClasses } = getScaleAndSize(mintText);
   return (
     <motion.div
-      className="mt-8 flex flex-col lg:flex-row items-center lg:items-stretch"
+      className={clsx([
+        "mt-8",
+        "flex flex-col lg:flex-row",
+        "items-center lg:items-stretch",
+      ])}
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.6 }}
     >
-      <div className="w-full lg:w-1/2 relative">
+      <div className={clsx(["w-full", "lg:w-1/2", "relative"])}>
         <img
           src="/gifs/cat-play-ball.gif"
           alt="Cat playing with ball"
           width={1442}
           height={665}
-          className="lg:absolute lg:h-full w-auto lg:max-w-xl xl:max-w-none lg:top-1/2 lg:left-[100px] lg:-translate-y-1/2"
+          className={clsx([
+            "lg:absolute lg:h-full w-auto",
+            "lg:max-w-xl xl:max-w-none",
+            "lg:top-1/2 lg:left-[10px] xl:left-[100px] 2xl:left-[200px]",
+            "lg:-translate-y-1/2",
+          ])}
         />
       </div>
 
       <motion.div
-        className="w-full lg:w-1/2 flex flex-col items-center justify-center gap-4"
+        className={clsx([
+          "w-full lg:w-1/2",
+          "flex flex-col items-center justify-center gap-4",
+        ])}
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 1 }}
       >
         <motion.p
-          className="text-xl sm:text-2xl font-bold text-center lg:text-left"
+          className={clsx([
+            "text-xl sm:text-2xl font-bold",
+            "text-center lg:text-left",
+          ])}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.2 }}
@@ -86,19 +109,19 @@ const MintSection: React.FC<MintSectionProps> = ({
         </motion.p>
 
         <motion.div
-          className="w-full"
+          className={clsx(["w-full"])}
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 1.4 }}
         >
           <div
-            className={clsx(
+            className={clsx([
               "font-bold text-center",
               "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight",
               "whitespace-nowrap transition-all duration-300",
               "mb-2",
-              sizeClasses
-            )}
+              sizeClasses,
+            ])}
             style={{
               transform: `scale(${scale})`,
               transformOrigin: "center lg:left center",
@@ -110,18 +133,18 @@ const MintSection: React.FC<MintSectionProps> = ({
         </motion.div>
 
         <motion.div
-          className="w-full max-w-xs"
+          className={clsx(["w-full", "max-w-xs"])}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.6 }}
         >
           {isAuthenticated ? (
             <motion.button
-              className={clsx(
+              className={clsx([
                 "bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-bold py-3 px-8 rounded-2xl text-lg sm:text-xl w-full shadow-md",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
-                "cursor-pointer"
-              )}
+                "cursor-pointer",
+              ])}
               whileHover={{ scale: isMinting ? 1 : 1.05 }}
               whileTap={{ scale: isMinting ? 1 : 0.95 }}
               onClick={onMintClick}
@@ -130,9 +153,9 @@ const MintSection: React.FC<MintSectionProps> = ({
               {isMinting ? (
                 <div className="flex items-center justify-center gap-2">
                   <motion.div
-                    className={clsx(
-                      "w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                    )}
+                    className={clsx([
+                      "w-4 h-4 border-2 border-white border-t-transparent rounded-full",
+                    ])}
                     animate={{ rotate: 360 }}
                     transition={{
                       duration: 1,
@@ -152,20 +175,24 @@ const MintSection: React.FC<MintSectionProps> = ({
             </motion.button>
           ) : (
             <MintConnectButton
-              className="!w-full py-3 px-8"
+              className={clsx(["!w-full", "py-3", "px-8"])}
               onConnected={(info) => console.log("Connected:", info)}
             />
           )}
         </motion.div>
 
-        {/* <CatGrid
-          cats={}
+        <CatGrid
+          cats={cats}
           selectedCat={selectedCat}
           mintSuccess={mintSuccess}
-        /> */}
+        />
 
         <motion.p
-          className={clsx("mt-3 text-xs sm:text-sm text-center lg:text-left")}
+          className={clsx([
+            "mt-3",
+            "text-xs sm:text-sm",
+            "text-center lg:text-left",
+          ])}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 2.4 }}

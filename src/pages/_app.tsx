@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { WalletProvider } from "@/providers/WalletProvider";
 import { CandyMachineProvider } from "@/providers/CandyMachineProvider";
 import { ToastProvider } from "@/components/ToastContainer";
+import { BalanceProvider } from "@/providers/BalanceProvider";
 
 // Components
 import BelpHeader from "@/components/Header";
@@ -57,30 +58,33 @@ export default function App({ Component, pageProps, router }: AppProps) {
       </Head>
 
       <div className={clsx("font-gmarket antialiased", oxanium.variable)}>
-        <ToastProvider>
-          <LoadingProvider>
-            <AuthProvider>
-              <SettingsProvider>
-                <ConfigProvider>
-                  <ThemeProvider>
-                    <WalletProvider config={{ enableDebug: true }}>
-                      <CandyMachineProvider config={{ enableDebug: true }}>
-                        <BelpHeader />
-                        <div
-                          className={clsx(
-                            !["/", "/my-collection"].includes(pathname) && "mt-16"
-                          )}
-                        >
-                          <Component {...pageProps} />
-                        </div>
-                      </CandyMachineProvider>
-                    </WalletProvider>
-                  </ThemeProvider>
-                </ConfigProvider>
-              </SettingsProvider>
-            </AuthProvider>
-          </LoadingProvider>
-        </ToastProvider>
+        <BalanceProvider>
+          <ToastProvider>
+            <LoadingProvider>
+              <AuthProvider>
+                <SettingsProvider>
+                  <ConfigProvider>
+                    <ThemeProvider>
+                      <WalletProvider config={{ enableDebug: true }}>
+                        <CandyMachineProvider config={{ enableDebug: true }}>
+                          <BelpHeader />
+                          <div
+                            className={clsx(
+                              !["/", "/my-collection"].includes(pathname) &&
+                                "mt-16"
+                            )}
+                          >
+                            <Component {...pageProps} />
+                          </div>
+                        </CandyMachineProvider>
+                      </WalletProvider>
+                    </ThemeProvider>
+                  </ConfigProvider>
+                </SettingsProvider>
+              </AuthProvider>
+            </LoadingProvider>
+          </ToastProvider>
+        </BalanceProvider>
       </div>
     </>
   );

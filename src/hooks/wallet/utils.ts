@@ -5,8 +5,16 @@ export function formatSol(lamports: number): string {
   });
 }
 
-export function shortenAddress(addr?: string | null): string {
-  return addr ? addr.slice(0, 4) + "..." + addr.slice(-4) : "Connect wallet";
+export function shortenAddress({
+  number = 4,
+  addr,
+}: {
+  number?: number;
+  addr?: string | null;
+}): string {
+  return addr
+    ? addr.slice(0, number) + "..." + addr.slice(-number)
+    : "Connect wallet";
 }
 
 export function isMobile(): boolean {
