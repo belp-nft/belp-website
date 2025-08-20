@@ -10,8 +10,8 @@ import { NftService } from "@/services";
 import {
   useConfig,
   useMintStats,
-  useConfigActions,
-  useCandyMachineAddress,
+  useRefreshStats,
+  useIncrementMinted,
 } from "@/stores/config";
 import MintHeader from "@/modules/mint/MintHeader";
 import MintSection from "@/modules/mint/MintSection";
@@ -32,18 +32,7 @@ const cats = [
   "tokens/10.png",
 ];
 
-interface MintPageProps {
-  candyMachineData?: any;
-  initialMintStats?: {
-    minted: number;
-    supply: number;
-  };
-}
-
-const BelpyMintPage = ({
-  candyMachineData,
-  initialMintStats,
-}: MintPageProps) => {
+const BelpyMintPage = () => {
   const router = useRouter();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const {
@@ -67,9 +56,9 @@ const BelpyMintPage = ({
 
   // Zustand store
   const candyMachineConfig = useConfig();
-  const candyMachineAddress = useCandyMachineAddress();
   const { minted, supply } = useMintStats();
-  const { refreshStats, incrementMinted } = useConfigActions();
+  const refreshStats = useRefreshStats();
+  const incrementMinted = useIncrementMinted();
 
   // Local state
   const [mintSuccess, setMintSuccess] = useState<boolean>(false);
@@ -97,19 +86,19 @@ const BelpyMintPage = ({
 
   // Auto-refresh stats every 30s
   useEffect(() => {
-    if (!candyMachineAddress) return;
+    if (!candyMachineConfig) return;
 
     const interval = setInterval(async () => {
       try {
         console.log("🔄 Auto-refreshing candy machine stats...");
-        await refreshStats(candyMachineAddress);
+        await refreshStats(candyMachineConfig.address);
       } catch (error) {
         console.error("⚠️ Failed to auto-refresh stats:", error);
       }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [candyMachineAddress]);
+  }, [candyMachineConfig]);
 
   const handleMint = async () => {
     setMintSuccess(false);
@@ -125,8 +114,13 @@ const BelpyMintPage = ({
 
       // Call mint from CandyMachine provider
       const mintResult = await mint();
+      if(!mintResult?.signature) {
+        setIsProcessing(false);
+        showError("Mint Failed", "Mint failed. Please try again.", 6000);
+        return;
+      }
       const result = await NftService.sendSignedTransaction(
-        mintResult?.signature || "",
+        mintResult.signature,
         solAddress,
         "9MTRpcfQCGfpBgeruvVH5sDYCP58xVjEf7k3QjKE8pkf"
       );
@@ -168,8 +162,8 @@ const BelpyMintPage = ({
         }
 
         // Refresh stats in background
-        if (candyMachineAddress) {
-          setTimeout(() => refreshStats(candyMachineAddress), 2000);
+        if (candyMachineConfig) {
+          setTimeout(() => refreshStats(candyMachineConfig.address), 2000);
         }
       } else {
         // Handle error result from CandyMachine provider
@@ -322,32 +316,6 @@ const BelpyMintPage = ({
       />
     </div>
   );
-};
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  try {
-    // Fetch candy machine configuration from server
-    // const candyMachineData = await ConfigService.getCandyMachineConfig();
-
-    // Fetch initial mint stats
-    // const mintStats = await NftService.getMintStats();
-
-    return {
-      props: {
-        // candyMachineData: candyMachineData?.data || null,
-        // initialMintStats: mintStats?.data || null,
-      },
-    };
-  } catch (error) {
-    console.error("Error fetching mint page data:", error);
-
-    return {
-      props: {
-        candyMachineData: null,
-        initialMintStats: null,
-      },
-    };
-  }
 };
 
 export default BelpyMintPage;

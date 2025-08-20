@@ -25,7 +25,12 @@ interface CloudItem {
 export default function RandomCloud() {
   const [cloudItems, setCloudItems] = useState<CloudItem[]>([]);
   const [parentSize, setParentSize] = useState({ width: 0, height: 0 });
+  const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     // Lấy kích thước parent thực tế
@@ -120,7 +125,7 @@ export default function RandomCloud() {
       ref={containerRef}
       className="absolute inset-0 overflow-hidden pointer-events-none w-full h-full top-0 left-0"
     >
-      {cloudItems.map((cloud) => (
+      {isMounted && cloudItems.map((cloud) => (
         <motion.div
           key={cloud.id}
           className="absolute"

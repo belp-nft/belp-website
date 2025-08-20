@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBalance } from "@/providers/BalanceProvider";
-import { useConfigActions } from "@/stores/config";
+import { useClearConfig, useConfig } from "@/stores/config";
 import { useLoading } from "@/providers/LoadingProvider";
 
 import { AuthService } from "@/services";
@@ -15,10 +15,8 @@ import {
 } from "./wallet/walletHelpers";
 import { WALLET_CONFIGS } from "./wallet/configs";
 import { formatSol, shortenAddress } from "./wallet/utils";
-import { BalanceService } from "./wallet/balanceService";
 import { UserDataService } from "./wallet/userDataService";
 import { AuthenticationService } from "./wallet/authService";
-import { WalletConnectionService } from "./wallet/connectionService";
 import { WalletListenerService } from "./wallet/listenerService";
 import { getSolBalanceLamports } from "./wallet/blockchainService";
 
@@ -26,7 +24,6 @@ import { getSolBalanceLamports } from "./wallet/blockchainService";
 let globalConnectionProcessed = false;
 
 export type { WalletType, Connected };
-export { getSolBalanceLamports };
 
 export function useWallet(onConnected?: (info: Connected) => void) {
   // State management với localStorage initialization
@@ -107,9 +104,12 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const hasProcessedConnectionRef = useRef(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const listenersRef = useRef<Map<WalletType, any>>(new Map());
+  const isLoadingUserDataRef = useRef(false);
+  const isLoadingTransactionsRef = useRef(false);
 
-  const { clearConfig } = useConfigActions();
+  const clearConfig = useClearConfig();
   const { showLoading, hideLoading } = useLoading();
+  const configData = useConfig();
 
   // Computed values
   const solBalanceText = useMemo(
@@ -117,27 +117,61 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     [solLamports]
   );
 
+  // Memoize RPC URL to prevent unnecessary re-renders
+  const rpcUrl = useMemo(() => {
+    return configData?.rpcUrl || "https://api.devnet.solana.com";
+  }, [configData?.rpcUrl]);
+
+  // Helper function to get SOL balance using config RPC URL
+  const getSolBalance = useCallback(async (address: string): Promise<number> => {
+    return await getSolBalanceLamports(address, rpcUrl);
+  }, [rpcUrl]);
+
   // Balance management
   const refreshSolBalance = useCallback(async (forceRefresh = false) => {
-    await BalanceService.refreshSolBalance(
-      forceRefresh,
-      setSolLamports,
-      setLoading
-    );
-  }, []);
+    if (!solAddress) {
+      console.warn("💰 No wallet address, cannot fetch balance");
+      setSolLamports(0);
+      return;
+    }
+
+    try {
+      setLoading("sol-balance");
+      console.log("💰 Fetching balance for:", solAddress);
+      const lamports = await getSolBalance(solAddress);
+      setSolLamports(lamports);
+      console.log("✅ Balance loaded:", lamports);
+    } catch (error) {
+      console.error("❌ Failed to fetch balance:", error);
+      setSolLamports(0);
+    } finally {
+      setLoading(null);
+    }
+  }, [solAddress]);
 
   // User data management
   const loadTransactions = useCallback(
     async (forceRefresh: boolean = false) => {
-      await UserDataService.loadTransactions(
-        isLoadingTransactions,
-        transactions,
-        transactionsLastLoaded,
-        setIsLoadingTransactions,
-        setTransactions,
-        setTransactionsLastLoaded,
-        forceRefresh
-      );
+      if (!forceRefresh && (isLoadingTransactions || isLoadingTransactionsRef.current)) {
+        console.log("Transactions already loading, skipping duplicate call...");
+        return;
+      }
+
+      isLoadingTransactionsRef.current = true;
+
+      try {
+        await UserDataService.loadTransactions(
+          isLoadingTransactions,
+          transactions,
+          transactionsLastLoaded,
+          setIsLoadingTransactions,
+          setTransactions,
+          setTransactionsLastLoaded,
+          forceRefresh
+        );
+      } finally {
+        isLoadingTransactionsRef.current = false;
+      }
     },
     [isLoadingTransactions, transactions, transactionsLastLoaded]
   );
@@ -159,10 +193,12 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
   const loadUserData = useCallback(
     async (walletAddress: string, retryAuth: boolean = false) => {
-      if (!retryAuth && isLoadingUserStats && isLoadingTransactions) {
+      if (!retryAuth && (isLoadingUserStats || isLoadingTransactions || isLoadingUserDataRef.current || isLoadingTransactionsRef.current)) {
         console.log("User data already loading, skipping duplicate call...");
         return;
       }
+
+      isLoadingUserDataRef.current = true;
 
       try {
         console.log("Loading user data...", { walletAddress, retryAuth });
@@ -183,6 +219,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
             console.log("Will retry authentication on next connect");
           }
         }
+      } finally {
+        isLoadingUserDataRef.current = false;
       }
     },
     [
@@ -445,7 +483,18 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
             // Load balance and user data
             refreshSolBalance();
-            loadUserData(walletAddress);
+            
+            // Only load user data if we don't have recent data
+            // Use setTimeout to avoid hydration mismatch with Date.now()
+            setTimeout(() => {
+              const now = Date.now();
+              const hasRecentUserStats = userStatistics && (now - userStatsLastLoaded < 5 * 60 * 1000); // 5 minutes
+              const hasRecentTransactions = transactions.length > 0 && (now - transactionsLastLoaded < 5 * 60 * 1000); // 5 minutes
+              
+              if (!hasRecentUserStats || !hasRecentTransactions) {
+                loadUserData(walletAddress);
+              }
+            }, 0);
 
             onConnected?.({
               kind: "sol",
@@ -717,6 +766,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     connectWallet,
     disconnect,
     refreshSolBalance,
+    getSolBalance,
     loadUserData,
     loadTransactions: (forceRefresh = false) => loadTransactions(forceRefresh),
     loadUserStatistics: (forceRefresh = false) =>

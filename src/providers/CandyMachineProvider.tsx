@@ -8,6 +8,7 @@ import {
   useEffect,
 } from "react";
 import { useWalletContext } from "./WalletProvider";
+import { useConfig, useCollectionAddress } from "@/stores/config";
 import { PublicKey } from "@solana/web3.js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
@@ -30,6 +31,7 @@ import {
   Umi,
 } from "@metaplex-foundation/umi";
 import bs58 from "bs58";
+import { useToast } from "@/components/ToastContainer";
 
 export interface MintResult {
   success: boolean;
@@ -93,13 +95,6 @@ const initialState: CandyMachineState = {
   itemsRedeemed: 0,
 };
 
-// Belp project constants
-const BELP_CONFIG = {
-  candyMachineAddress: "9MTRpcfQCGfpBgeruvVH5sDYCP58xVjEf7k3QjKE8pkf",
-  collectionAddress: "5rd46zx3aZKyRxrNTkU9vhJam5hBonCRMmM27bZepPBF",
-  updateAuthority: "BQKHinECp1JgTi4kvi3uR6fWVP6gFCq4YSch7yJGuBKX",
-};
-
 // Helper function để lấy transaction details từ Solana RPC
 async function getTransactionFromRPC(
   signature: string,
@@ -151,6 +146,11 @@ export function CandyMachineProvider({
 }: CandyMachineProviderProps) {
   const [state, setState] = useState<CandyMachineState>(initialState);
   const { solAddress, connectedWallet } = useWalletContext();
+  const { showError } = useToast()
+
+  // Get config from store
+  const configData = useConfig();
+  const collectionAddress = useCollectionAddress();
 
   const {
     enableDebug = false,
@@ -178,7 +178,7 @@ export function CandyMachineProvider({
     try {
       const collection = await fetchCollection(
         state.umi,
-        umiPublicKey(BELP_CONFIG.collectionAddress)
+        umiPublicKey(collectionAddress || configData?.collectionAddress || "")
       );
 
       log("✅ Collection fetched:", {
@@ -200,7 +200,7 @@ export function CandyMachineProvider({
 
   // Initialize UMI and Candy Machine
   const initializeCandyMachine = useCallback(async () => {
-    if (!solAddress || !connectedWallet || state.isLoading) {
+    if (!solAddress || !connectedWallet || state.isLoading || !configData) {
       return;
     }
 
@@ -301,18 +301,18 @@ export function CandyMachineProvider({
       };
 
       // Khởi tạo UMI
-      const rpcEndpoint = "https://api.devnet.solana.com";
+      const rpcEndpoint = configData.rpcUrl || "https://api.devnet.solana.com";
+      log("✅ UMI initialized with rpcEndpoint:", rpcEndpoint);
       const umi = createUmi(rpcEndpoint)
         .use(mplCandyMachine())
         .use(mplCore())
         .use(walletAdapterIdentity(walletAdapter));
 
       log("✅ UMI initialized");
-
       // Fetch Candy Machine
       const candyMachine = await fetchCandyMachine(
         umi,
-        umiPublicKey(BELP_CONFIG.candyMachineAddress)
+        umiPublicKey(configData.address || "")
       );
 
       log("✅ Candy Machine fetched:", {
@@ -376,13 +376,12 @@ export function CandyMachineProvider({
   }, []);
 
   const mintNft = useCallback(async (): Promise<MintResult> => {
-    if (!solAddress || !connectedWallet) {
+    if (!solAddress || !connectedWallet || !configData) {
       const result: MintResult = {
         success: false,
-        message: "Wallet chưa được kết nối",
+        message: "Wallet not connected",
         errorType: "warning",
       };
-
       setState((prev) => ({
         ...prev,
         lastMintResult: result,
@@ -395,7 +394,7 @@ export function CandyMachineProvider({
     if (!state.umi || !state.candyMachine || !state.isInitialized) {
       const result: MintResult = {
         success: false,
-        message: "Candy Machine chưa được khởi tạo",
+        message: "Candy Machine not initialized",
         errorType: "error",
       };
 
@@ -411,7 +410,7 @@ export function CandyMachineProvider({
     if (state.isMinting) {
       const result: MintResult = {
         success: false,
-        message: "Đang mint NFT, vui lòng đợi...",
+        message: "Minting NFT, please wait...",
         errorType: "info",
       };
 
@@ -430,25 +429,25 @@ export function CandyMachineProvider({
     try {
       // Kiểm tra candy machine còn NFT không
       if (state.candyMachine.itemsRedeemed >= state.candyMachine.itemsLoaded) {
-        throw new Error("Belp Candy Machine đã sold out!");
+        throw new Error("Belp Candy Machine sold out!");
       }
 
       // Tạo NFT mint signer
       const nftMint = generateSigner(state.umi);
-      log("🎯 Generated Belp NFT mint:", nftMint.publicKey);
+      log("🎯 Generated NFT mint:", nftMint.publicKey);
 
       // Tạo mint instruction
-      log("🔨 Building Belp mint transaction...");
+      log("🔨 Building mint transaction...");
       const mintBuilder = transactionBuilder().add(
         mintV2(state.umi, {
-          candyMachine: umiPublicKey(BELP_CONFIG.candyMachineAddress),
+          candyMachine: umiPublicKey(configData?.address || ""),
           nftMint,
           collectionMint: state.candyMachine.collectionMint,
           collectionUpdateAuthority: state.candyMachine.authority,
           tokenStandard: state.candyMachine.tokenStandard,
           mintArgs: {
             solPayment: {
-              destination: umiPublicKey(BELP_CONFIG.updateAuthority),
+              destination: umiPublicKey(configData?.updateAuthority || ""),
             },
           },
         })
@@ -469,7 +468,12 @@ export function CandyMachineProvider({
       let transactionDetails: any;
       // Tùy chọn: Lấy thông tin chi tiết transaction từ RPC
       try {
-        transactionDetails = await getTransactionFromRPC(base58Signature);
+        const rpcEndpoint =
+          configData?.rpcUrl || "https://api.devnet.solana.com";
+        transactionDetails = await getTransactionFromRPC(
+          base58Signature,
+          rpcEndpoint
+        );
         if (transactionDetails) {
           log("📋 Transaction details from RPC:", transactionDetails);
         }
@@ -480,7 +484,7 @@ export function CandyMachineProvider({
 
       const mintResult: MintResult = {
         success: true,
-        signature: transactionDetails.transaction.signatures[0] || '',
+        signature: transactionDetails.transaction.signatures[0] || "",
         nftAddress: nftMint.publicKey.toString(),
         message: "Belp NFT minted successfully! 🐱",
       };
@@ -569,6 +573,9 @@ export function CandyMachineProvider({
         errorType,
       };
 
+      // Hiển thị lỗi bằng toast
+      showError("Mint Error", errorMessage);
+
       setState((prev) => ({
         ...prev,
         isMinting: false,
@@ -587,6 +594,8 @@ export function CandyMachineProvider({
     state.isMinting,
     log,
     autoResetAfter,
+    showError,
+    configData,
   ]);
 
   const contextValue: CandyMachineContextType = {
@@ -597,7 +606,9 @@ export function CandyMachineProvider({
     resetState,
     initializeCandyMachine,
     fetchCollection: fetchCollectionData,
-    ...BELP_CONFIG,
+    candyMachineAddress: configData?.address || "",
+    collectionAddress: collectionAddress || configData?.collectionAddress || "",
+    updateAuthority: configData?.updateAuthority || "",
   };
 
   return (

@@ -29,9 +29,11 @@ export default function CatCarouselCuteness() {
   const [isPaused, setIsPaused] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(2);
   const [rotations, setRotations] = useState<number[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Khởi tạo rotation cho mỗi slide
   useEffect(() => {
+    setIsMounted(true);
     setRotations(cats.map(() => getRandomRotation()));
   }, []);
 
@@ -72,6 +74,10 @@ export default function CatCarouselCuteness() {
     },
     [rotations]
   );
+
+  if (!isMounted) {
+    return <div className="flex flex-col items-center w-full h-60" />;
+  }
 
   return (
     <div

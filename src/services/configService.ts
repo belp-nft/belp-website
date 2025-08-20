@@ -34,7 +34,7 @@ export class ConfigService extends BaseService {
         false // Public API - không cần auth
       );
 
-      // console.log('✅ Config fetched successfully:', result);
+      console.log('✅ Config fetched successfully:', result);
       return result;
     } catch (error) {
       console.error('❌ Failed to get candy machine config:', error);
