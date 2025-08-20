@@ -157,7 +157,7 @@ function DesktopCarousel() {
 export default function GetTheCuteness() {
   return (
     <div className="relative">
-      <section className="main-container pt-20 lg:py-32 w-full">
+      <div className="main-container pt-20 lg:py-32 w-full">
         <div className="w-full flex flex-col items-stretch md:hidden">
           <h2
             className="font-bold text-[28px] xs:text-[34px] sm:text-[40px] mb-4
@@ -214,7 +214,7 @@ export default function GetTheCuteness() {
             </motion.p>
           </div>
         </div>
-      </section>
+      </div>
       <div className="md:hidden pb-20 mt-10">
         <CatCarouselCuteness />
       </div>

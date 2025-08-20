@@ -18,7 +18,7 @@ export default function HeroSection() {
             "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 32%, rgba(255,255,255,0.06) 68%, #f2ecf6 100%)",
         }}
       >
-        <div className="main-container pt-10 sm:pt-20 md:pt-24 lg:pt-[100px] mt-20 pb-[350px] md:pb-[400px] lg:pb-[600px]">
+        <div className="main-container pt-10 sm:pt-20 md:pt-24 lg:pt-[100px] mt-20 pb-[150px] md:pb-[200px] xl:pb-[600px]">
           <motion.h1
             className={clsx(
               "font-oxanium font-bold mb-4 text-4xl md:text-6xl md:title-text relative z-20",
