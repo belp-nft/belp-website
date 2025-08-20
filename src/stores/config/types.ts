@@ -15,6 +15,9 @@ export interface CandyMachineConfig {
   whitelistMintSettings?: any;
   gatekeeper?: any;
   price?: number;
+  // BELP specific config
+  updateAuthority?: string;
+  rpcUrl?: string;
 }
 
 export interface CandyMachineState {

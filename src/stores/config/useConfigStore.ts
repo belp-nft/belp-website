@@ -46,22 +46,8 @@ const selectMintStats = (state: CandyMachineState) => {
   return cachedMintStats;
 };
 
-// Memoized selector for actions to prevent infinite re-renders
-let cachedActions: any = null;
-
-const selectActions = (state: CandyMachineState) => {
-  if (!cachedActions) {
-    cachedActions = {
-      fetchConfig: state.fetchConfig,
-      refreshStats: state.refreshStats,
-      setConfig: state.setConfig,
-      updateMintedCount: state.updateMintedCount,
-      incrementMinted: state.incrementMinted,
-      clearConfig: state.clearConfig,
-    };
-  }
-  return cachedActions;
-};
+// Stable selector for actions
+const selectActions = (state: CandyMachineState) => state;
 
 // Selectors for easier access
 export const useConfig = () => useConfigStore(selectConfig);
@@ -69,9 +55,31 @@ export const useConfigLoading = () => useConfigStore(selectLoading);
 export const useConfigError = () => useConfigStore(selectError);
 export const useCollectionAddress = () =>
   useConfigStore(selectCollectionAddress);
-export const useCandyMachineAddress = () =>
-  useConfigStore(selectCandyMachineAddress);
+
 export const useMintStats = () => useConfigStore(selectMintStats);
 
-// Action hooks for easier access
-export const useConfigActions = () => useConfigStore(selectActions);
+// Individual action hooks to prevent re-renders
+export const useFetchConfig = () =>
+  useConfigStore((state) => state.fetchConfig);
+export const useRefreshStats = () =>
+  useConfigStore((state) => state.refreshStats);
+export const useSetConfig = () => useConfigStore((state) => state.setConfig);
+export const useUpdateMintedCount = () =>
+  useConfigStore((state) => state.updateMintedCount);
+export const useIncrementMinted = () =>
+  useConfigStore((state) => state.incrementMinted);
+export const useClearConfig = () =>
+  useConfigStore((state) => state.clearConfig);
+
+// Legacy hook for backward compatibility - use individual hooks instead
+export const useConfigActions = () => {
+  console.warn("useConfigActions is deprecated, use individual hooks instead");
+  return {
+    fetchConfig: useFetchConfig(),
+    refreshStats: useRefreshStats(),
+    setConfig: useSetConfig(),
+    updateMintedCount: useUpdateMintedCount(),
+    incrementMinted: useIncrementMinted(),
+    clearConfig: useClearConfig(),
+  };
+};

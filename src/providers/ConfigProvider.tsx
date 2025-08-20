@@ -1,38 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import { useConfigActions } from "@/stores/config";
-import { useAuth } from "@/providers/AuthProvider";
+import { useFetchConfig } from "@/stores/config";
 
 interface ConfigProviderProps {
   children: React.ReactNode;
 }
 
 export const ConfigProvider = ({ children }: ConfigProviderProps) => {
-  const { fetchConfig } = useConfigActions();
-  const { isAuthenticated } = useAuth();
+  const fetchConfig = useFetchConfig();
 
   // Fetch config once when the app starts
   useEffect(() => {
     fetchConfig().catch((error: any) => {
       console.error(
-        "❌ ConfigProvider: Failed to fetch initial config:",
+        "❌ ConfigProvider: Failed to fetch config:",
         error
       );
     });
-  }, []); // Empty dependency array - only run once on mount
-
-  // Fetch config again when user is authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchConfig().catch((error: any) => {
-        console.error(
-          "❌ ConfigProvider: Failed to fetch authenticated config:",
-          error
-        );
-      });
-    }
-  }, [isAuthenticated, fetchConfig]);
+  }, []); // Empty dependency - only run once on mount
 
   return <>{children}</>;
 };

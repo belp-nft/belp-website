@@ -7,8 +7,15 @@ export {
   useConfigLoading,
   useConfigError,
   useCollectionAddress,
-  useCandyMachineAddress,
   useMintStats,
+  // Individual action hooks
+  useFetchConfig,
+  useRefreshStats,
+  useSetConfig,
+  useUpdateMintedCount,
+  useIncrementMinted,
+  useClearConfig,
+  // Legacy hook (deprecated)
   useConfigActions,
 } from "./useConfigStore";
 

@@ -23,21 +23,6 @@ export const API_CONFIG = {
     CONFIG: "/api/config",
   },
 } as const;
-
-/**
- * Blockchain Configuration
- */
-export const BLOCKCHAIN_CONFIG = {
-  // Solana RPC endpoint
-  SOLANA_RPC:
-    process.env.NODE_ENV === "production"
-      ? "https://api.mainnet-beta.solana.com"
-      : "https://api.devnet.solana.com",
-
-  // Network type
-  NETWORK: process.env.NODE_ENV === "production" ? "mainnet" : "devnet",
-} as const;
-
 /**
  * Application Configuration
  */
@@ -70,7 +55,6 @@ validateEnvironmentVariables();
 // Export default cho convenience
 export default {
   API_CONFIG,
-  BLOCKCHAIN_CONFIG,
   APP_CONFIG,
   validateEnvironmentVariables,
 };

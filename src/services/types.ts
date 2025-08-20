@@ -141,6 +141,8 @@ export interface CandyMachineConfig {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  rpcUrl?: string;
+  updateAuthority?: string
 }
 
 // Pagination types

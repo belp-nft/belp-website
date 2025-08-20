@@ -73,12 +73,14 @@ export const createConfigActions = (
     set({
       config,
       collectionAddress: config.collectionAddress || null,
-      candyMachineAddress: config.address || null,
+      candyMachineAddress: config.candyMachineAddress || config.address || null,
       totalMinted: config.totalProcessed || 0,
       totalSupply: config.itemsAvailable || 0,
       error: null,
     });
   },
+
+
 
   updateMintedCount: (newCount: number) => {
     set({ totalMinted: newCount });

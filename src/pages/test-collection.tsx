@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
+import { useConfig } from "@/stores";
 
 interface NFTData {
   id: string;
@@ -31,12 +32,14 @@ const TestCollectionPage = () => {
     "71bczjoaeoNVrV7uiBCybx5MyTcdL9SPojDei7ug7vJ7"
   );
 
+  const configData = useConfig();
+
   // Initialize Metaplex
   useEffect(() => {
     const initMetaplex = async () => {
       try {
         const connection = new Connection(
-          process.env.NEXT_PUBLIC_RPC_URL || "https://api.devnet.solana.com",
+          configData?.rpcUrl || "https://api.devnet.solana.com",
           "confirmed"
         );
 
@@ -50,7 +53,7 @@ const TestCollectionPage = () => {
     };
 
     initMetaplex();
-  }, []);
+  }, [configData?.rpcUrl]);
 
   const loadWalletNfts = async () => {
     if (!metaplex) {
