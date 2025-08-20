@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@layer base {
+  html,
+  body {
+    @apply overscroll-y-none;
+  }
+}
+
 /* Force light mode only - disable all dark mode */
 html {
   color-scheme: light only;
