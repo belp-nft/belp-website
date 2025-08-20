@@ -142,6 +142,7 @@ export interface CandyMachineConfig {
   createdAt: string;
   updatedAt: string;
   rpcUrl?: string;
+  updateAuthority?: string
 }
 
 // Pagination types

@@ -8,7 +8,13 @@ import {
   useEffect,
 } from "react";
 import { useWalletContext } from "./WalletProvider";
-import { useConfig, useCollectionAddress } from "@/stores/config";
+import {
+  useConfig,
+  useCollectionAddress,
+  useFetchConfig,
+  useConfigLoading,
+  useConfigError,
+} from "@/stores/config";
 import { PublicKey } from "@solana/web3.js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
@@ -54,6 +60,9 @@ interface CandyMachineState {
   isLoading: boolean;
   itemsLoaded: number;
   itemsRedeemed: number;
+  // Config state
+  configLoading: boolean;
+  configError: string | null;
 }
 
 interface CandyMachineContextType extends CandyMachineState {
@@ -93,6 +102,8 @@ const initialState: CandyMachineState = {
   isLoading: false,
   itemsLoaded: 0,
   itemsRedeemed: 0,
+  configLoading: false,
+  configError: null,
 };
 
 // Helper function để lấy transaction details từ Solana RPC
@@ -146,11 +157,14 @@ export function CandyMachineProvider({
 }: CandyMachineProviderProps) {
   const [state, setState] = useState<CandyMachineState>(initialState);
   const { solAddress, connectedWallet } = useWalletContext();
-  const { showError } = useToast()
+  const { showError } = useToast();
 
   // Get config from store
   const configData = useConfig();
   const collectionAddress = useCollectionAddress();
+  const fetchConfig = useFetchConfig();
+  const configLoading = useConfigLoading();
+  const configError = useConfigError();
 
   const {
     enableDebug = false,
@@ -169,11 +183,11 @@ export function CandyMachineProvider({
   // Fetch Collection data
   const fetchCollectionData = useCallback(async () => {
     if (!state.umi) {
-      log("UMI not initialized, cannot fetch collection");
+      console.log("UMI not initialized, cannot fetch collection");
       return;
     }
 
-    log("Fetching Collection...");
+    console.log("Fetching Collection...");
 
     try {
       const collection = await fetchCollection(
@@ -181,7 +195,7 @@ export function CandyMachineProvider({
         umiPublicKey(collectionAddress || configData?.collectionAddress || "")
       );
 
-      log("✅ Collection fetched:", {
+      console.log("✅ Collection fetched:", {
         address: collection.publicKey,
         name: collection.name,
         uri: collection.uri,
@@ -192,7 +206,7 @@ export function CandyMachineProvider({
         collection,
       }));
     } catch (error: any) {
-      log("❌ Failed to fetch Collection:", error);
+      console.log("❌ Failed to fetch Collection:", error);
       // Don't set error state for collection fetch failure
       // as it's not critical for minting
     }
@@ -200,12 +214,42 @@ export function CandyMachineProvider({
 
   // Initialize UMI and Candy Machine
   const initializeCandyMachine = useCallback(async () => {
-    if (!solAddress || !connectedWallet || state.isLoading || !configData) {
+    if (!solAddress || !connectedWallet || state.isLoading) {
+      return;
+    }
+
+    // Kiểm tra configData và báo lỗi rõ ràng
+    if (!configData) {
+      const errorMsg =
+        "❌ Config data not loaded! Cannot initialize Candy Machine. Please refresh the page.";
+      console.error(errorMsg);
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: "Config data not loaded. Please refresh the page.",
+      }));
+      showError(
+        "Configuration Error",
+        "Config data not loaded. Please refresh the page."
+      );
+      return;
+    }
+
+    // Kiểm tra các field bắt buộc trong configData
+    if (!configData.address) {
+      const errorMsg = "❌ Candy Machine address not found in config!";
+      console.error(errorMsg);
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: "Candy Machine address not configured.",
+      }));
+      showError("Configuration Error", "Candy Machine address not configured.");
       return;
     }
 
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    log("Initializing Candy Machine...");
+    console.log("Initializing Candy Machine...");
 
     try {
       // Lấy wallet provider từ window với fallback
@@ -214,25 +258,25 @@ export function CandyMachineProvider({
       // Thử các wallet providers phổ biến
       if ((window as any).solana && (window as any).solana.isPhantom) {
         walletProvider = (window as any).solana;
-        log("🔍 Found Phantom wallet");
+        console.log("🔍 Found Phantom wallet");
       } else if ((window as any).phantom?.solana) {
         walletProvider = (window as any).phantom.solana;
-        log("🔍 Found Phantom wallet (alt path)");
+        console.log("🔍 Found Phantom wallet (alt path)");
       } else if ((window as any).solflare) {
         walletProvider = (window as any).solflare;
-        log("🔍 Found Solflare wallet");
+        console.log("🔍 Found Solflare wallet");
       } else if ((window as any).backpack) {
         walletProvider = (window as any).backpack;
-        log("🔍 Found Backpack wallet");
+        console.log("🔍 Found Backpack wallet");
       } else if ((window as any).glow) {
         walletProvider = (window as any).glow;
-        log("🔍 Found Glow wallet");
+        console.log("🔍 Found Glow wallet");
       } else if ((window as any).okxwallet?.solana) {
         walletProvider = (window as any).okxwallet.solana;
-        log("🔍 Found OKX wallet");
+        console.log("🔍 Found OKX wallet");
       } else if ((window as any).solana) {
         walletProvider = (window as any).solana;
-        log("🔍 Found generic Solana wallet");
+        console.log("🔍 Found generic Solana wallet");
       }
 
       // Fallback: thử sử dụng connectedWallet nếu có methods cần thiết
@@ -242,7 +286,7 @@ export function CandyMachineProvider({
         (connectedWallet as any).signTransaction
       ) {
         walletProvider = connectedWallet;
-        log("🔍 Using connectedWallet as fallback");
+        console.log("🔍 Using connectedWallet as fallback");
       }
 
       // Final fallback: tìm bất kỳ wallet provider nào có signTransaction
@@ -259,7 +303,9 @@ export function CandyMachineProvider({
         for (const provider of allSolanaProviders) {
           if (provider && provider.signTransaction) {
             walletProvider = provider;
-            log("🔍 Found compatible wallet provider via fallback search");
+            console.log(
+              "🔍 Found compatible wallet provider via fallback search"
+            );
             break;
           }
         }
@@ -279,7 +325,7 @@ export function CandyMachineProvider({
       }
 
       // Debug wallet provider info
-      log("Using wallet provider:", {
+      console.log("Using wallet provider:", {
         isPhantom: walletProvider.isPhantom,
         isSolflare: walletProvider.isSolflare,
         isBackpack: walletProvider.isBackpack,
@@ -302,20 +348,20 @@ export function CandyMachineProvider({
 
       // Khởi tạo UMI
       const rpcEndpoint = configData.rpcUrl || "https://api.devnet.solana.com";
-      log("✅ UMI initialized with rpcEndpoint:", rpcEndpoint);
+      console.log("✅ UMI initialized with rpcEndpoint:", rpcEndpoint);
       const umi = createUmi(rpcEndpoint)
         .use(mplCandyMachine())
         .use(mplCore())
         .use(walletAdapterIdentity(walletAdapter));
 
-      log("✅ UMI initialized");
+      console.log("✅ UMI initialized");
       // Fetch Candy Machine
       const candyMachine = await fetchCandyMachine(
         umi,
         umiPublicKey(configData.address || "")
       );
 
-      log("✅ Candy Machine fetched:", {
+      console.log("✅ Candy Machine fetched:", {
         address: candyMachine.publicKey,
         itemsLoaded: candyMachine.itemsLoaded,
         itemsRedeemed: candyMachine.itemsRedeemed,
@@ -336,28 +382,74 @@ export function CandyMachineProvider({
         fetchCollectionData();
       }, 100);
     } catch (error: any) {
-      log("❌ Failed to initialize Candy Machine:", error);
+      console.log("❌ Failed to initialize Candy Machine:", error);
       setState((prev) => ({
         ...prev,
         isLoading: false,
         error: error.message || "Failed to initialize Candy Machine",
       }));
     }
-  }, [solAddress, connectedWallet, state.isLoading, log, fetchCollectionData]);
+  }, [
+    solAddress,
+    connectedWallet,
+    state.isLoading,
+    configData,
+    log,
+    fetchCollectionData,
+    showError,
+  ]);
 
-  // Auto-initialize when wallet connects
+  // Auto-fetch config if not available
   useEffect(() => {
+    if (!configData && !configLoading && !configError) {
+      console.log(
+        "🔄 [CandyMachineProvider] Config data not available, fetching..."
+      );
+      fetchConfig().catch((error) => {
+        console.error(
+          "❌ [CandyMachineProvider] Failed to fetch config:",
+          error
+        );
+      });
+    } else if (configData) {
+      console.log("✅ [CandyMachineProvider] Config data available:", {
+        address: configData.address,
+        collectionAddress: configData.collectionAddress,
+        updateAuthority: configData.updateAuthority,
+        rpcUrl: configData.rpcUrl,
+      });
+    }
+  }, [configData, configLoading, configError, fetchConfig]);
+
+  // Auto-initialize when wallet connects and config is ready
+  useEffect(() => {
+    console.log(
+      "🔍 [CandyMachineProvider] Checking initialization conditions:",
+      {
+        solAddress: !!solAddress,
+        connectedWallet: !!connectedWallet,
+        configData: !!configData,
+        isInitialized: state.isInitialized,
+        isLoading: state.isLoading,
+      }
+    );
+
     if (
       solAddress &&
       connectedWallet &&
+      configData &&
       !state.isInitialized &&
       !state.isLoading
     ) {
+      console.log(
+        "🚀 [CandyMachineProvider] All conditions met, initializing candy machine..."
+      );
       initializeCandyMachine();
     }
   }, [
     solAddress,
     connectedWallet,
+    configData,
     state.isInitialized,
     state.isLoading,
     initializeCandyMachine,
@@ -376,7 +468,7 @@ export function CandyMachineProvider({
   }, []);
 
   const mintNft = useCallback(async (): Promise<MintResult> => {
-    if (!solAddress || !connectedWallet || !configData) {
+    if (!solAddress || !connectedWallet) {
       const result: MintResult = {
         success: false,
         message: "Wallet not connected",
@@ -387,6 +479,38 @@ export function CandyMachineProvider({
         lastMintResult: result,
         error: result.message,
       }));
+
+      return result;
+    }
+
+    if (!configData) {
+      const result: MintResult = {
+        success: false,
+        message: "Config data not loaded. Please refresh the page.",
+        errorType: "error",
+      };
+      setState((prev) => ({
+        ...prev,
+        lastMintResult: result,
+        error: result.message,
+      }));
+      showError("Configuration Error", result.message);
+
+      return result;
+    }
+
+    if (!configData.address) {
+      const result: MintResult = {
+        success: false,
+        message: "Candy Machine address not configured.",
+        errorType: "error",
+      };
+      setState((prev) => ({
+        ...prev,
+        lastMintResult: result,
+        error: result.message,
+      }));
+      showError("Configuration Error", result.message);
 
       return result;
     }
@@ -424,20 +548,15 @@ export function CandyMachineProvider({
       lastMintResult: null,
     }));
 
-    log("Starting mint for wallet:", solAddress);
+    console.log("Starting mint for wallet:", solAddress);
 
     try {
-      // Kiểm tra candy machine còn NFT không
-      if (state.candyMachine.itemsRedeemed >= state.candyMachine.itemsLoaded) {
-        throw new Error("Belp Candy Machine sold out!");
-      }
-
       // Tạo NFT mint signer
       const nftMint = generateSigner(state.umi);
-      log("🎯 Generated NFT mint:", nftMint.publicKey);
+      console.log("🎯 Generated NFT mint:", nftMint.publicKey);
 
       // Tạo mint instruction
-      log("🔨 Building mint transaction...");
+      console.log("🔨 Building mint transaction...");
       const mintBuilder = transactionBuilder().add(
         mintV2(state.umi, {
           candyMachine: umiPublicKey(configData?.address || ""),
@@ -453,7 +572,7 @@ export function CandyMachineProvider({
         })
       );
 
-      log("📝 Sending and confirming Belp NFT transaction...");
+      console.log("📝 Sending and confirming Belp NFT transaction...");
 
       // Gửi và confirm transaction với error handling
       const result = await mintBuilder.sendAndConfirm(state.umi, {
@@ -475,10 +594,13 @@ export function CandyMachineProvider({
           rpcEndpoint
         );
         if (transactionDetails) {
-          log("📋 Transaction details from RPC:", transactionDetails);
+          console.log("📋 Transaction details from RPC:", transactionDetails);
         }
       } catch (rpcError) {
-        log("⚠️ Failed to fetch transaction details from RPC:", rpcError);
+        console.log(
+          "⚠️ Failed to fetch transaction details from RPC:",
+          rpcError
+        );
         // Không throw error vì đây chỉ là thông tin bổ sung
       }
 
@@ -515,15 +637,15 @@ export function CandyMachineProvider({
 
       return mintResult;
     } catch (error: any) {
-      log("❌ Belp NFT mint failed:", error);
+      console.log("❌ Belp NFT mint failed:", error);
 
       // Try to get detailed logs if it's a SendTransactionError
       if (error.getLogs && typeof error.getLogs === "function") {
         try {
           const logs = await error.getLogs();
-          log("🔍 Transaction logs:", logs);
+          console.log("🔍 Transaction logs:", logs);
         } catch (logError) {
-          log("❌ Failed to get transaction logs:", logError);
+          console.log("❌ Failed to get transaction logs:", logError);
         }
       }
 
@@ -600,6 +722,8 @@ export function CandyMachineProvider({
 
   const contextValue: CandyMachineContextType = {
     ...state,
+    configLoading,
+    configError,
     mintNft,
     clearLastResult,
     clearError,
@@ -640,12 +764,17 @@ export function useCandyMachine() {
     itemsLoaded,
     itemsRedeemed,
     collection,
+    configLoading,
+    configError,
     mintNft,
     clearLastResult,
     clearError,
     initializeCandyMachine,
     fetchCollection: fetchCollectionData,
   } = useCandyMachineContext();
+
+  // Get config data for status computation
+  const configData = useConfig();
 
   return {
     // State
@@ -658,6 +787,8 @@ export function useCandyMachine() {
     itemsLoaded,
     itemsRedeemed,
     collection,
+    configLoading,
+    configError,
 
     // Actions
     mint: mintNft,
@@ -667,11 +798,25 @@ export function useCandyMachine() {
     fetchCollection: fetchCollectionData,
 
     // Computed
-    canMint: !isMinting && isInitialized,
-    hasError: !!error,
+    canMint: !isMinting && isInitialized && !configLoading,
+    hasError: !!error || !!configError,
     hasMinted: mintCount > 0,
     soldOut: itemsRedeemed >= itemsLoaded,
     remaining: Math.max(0, itemsLoaded - itemsRedeemed),
+    isReady: isInitialized && !configLoading && !configError,
+
+    // Status for debugging
+    status: configLoading
+      ? "Loading config..."
+      : configError
+        ? `Config error: ${configError}`
+        : !configData
+          ? "No config data"
+          : isLoading
+            ? "Initializing candy machine..."
+            : !isInitialized
+              ? "Waiting for wallet connection"
+              : "Ready",
   };
 }
 
