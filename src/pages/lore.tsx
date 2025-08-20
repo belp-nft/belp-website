@@ -1,17 +1,22 @@
-import { GetServerSideProps } from 'next';
+import { GetServerSideProps } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
+import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import HeroSection from "@/modules/lore/HeroSection";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import VideoPreloader from "@/components/VideoPreloader";
 import CriticalLoreCSS from "@/components/CriticalLoreCSS";
+import clsx from "clsx";
 
 // Dynamic imports cho non-critical components
-const OriginStorySection = dynamic(() => import("@/modules/lore/OriginStorySection"), {
-  loading: () => <></>,
-  ssr: true,
-});
+const OriginStorySection = dynamic(
+  () => import("@/modules/lore/OriginStorySection"),
+  {
+    loading: () => <></>,
+    ssr: true,
+  }
+);
 
 const IntroSection = dynamic(() => import("@/modules/lore/IntroSection"), {
   loading: () => <></>,
@@ -35,51 +40,63 @@ interface LorePageProps {
 
 export default function LorePage({ initialData }: LorePageProps) {
   return (
-    <main className="relative min-h-screen">
+    <main className={clsx("relative min-h-screen overflow-hidden")}>
       <CriticalLoreCSS />
       <PerformanceMonitor />
 
-      <VideoPreloader src="/videos/bg-lore.webm">
-        {/* Optimized video with better loading strategy */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className="fixed inset-0 w-full h-full object-cover object-center z-0"
-          style={{
-            objectFit: "cover",
-            objectPosition: "center",
-          }}
-        >
-          <source src="/videos/bg-lore.webm" type="video/webm" />
-          <source src="/videos/bg-lore.mp4" type="video/mp4" />
-        </video>
-      </VideoPreloader>
+      <div className={clsx("bg-[url('/images/lore/background.svg')]")}>
+        <div className={clsx("relative z-20 min-h-screen top-36")}>
+          <motion.div
+            className={clsx(
+              "pointer-events-none select-none absolute left-1/2 top-20 md:top-10 -translate-x-1/2 w-[270vw] md:w-full h-70 md:h-80 -z-10"
+            )}
+            initial={{ x: "110%", opacity: 0 }}
+            animate={{ x: "-110%", opacity: 1 }}
+            transition={{
+              repeat: Infinity,
+              repeatType: "loop",
+              duration: 10,
+              ease: "linear",
+              opacity: { duration: 1, delay: 0.2 },
+            }}
+            style={{ willChange: "transform" }}
+            aria-hidden="true"
+          >
+            <Image
+              src="/images/lore/clouds.svg"
+              alt="Clouds"
+              fill
+              className={clsx("object-cover object-center")}
+              priority={false}
+              draggable={false}
+            />
+          </motion.div>
+          {/* Critical background image - load immediately */}
+          <div className={clsx("absolute inset-0")}>
+            <Image
+              src="/images/lore/hero-background.svg"
+              alt="Hero Background"
+              fill
+              className={clsx("object-cover object-center")}
+              sizes="100vw"
+              quality={75}
+              priority
+            />
+          </div>
 
-      <div className="relative z-20 min-h-screen top-36">
-        {/* Critical background image - load immediately */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/lore/hero-background.svg"
-            alt="Hero Background"
-            fill
-            className="object-cover object-center"
-            sizes="100vw"
-            quality={75}
-            priority
-          />
-        </div>
-
-        {/* Content layer - Critical LCP content */}
-        <div className="relative z-10 bottom-20 md:bottom-10">
-          <HeroSection />
+          {/* Content layer - Critical LCP content */}
+          <div className={clsx("relative z-30 bottom-20 md:bottom-10")}>
+            <HeroSection />
+          </div>
         </div>
       </div>
 
-      <div className="relative z-20 bg-gradient-to-b from-pink-100 to-purple-100">
-        <div className="main-container py-16">
+      <div
+        className={clsx(
+          "relative z-20 bg-gradient-to-b from-pink-100 to-purple-100"
+        )}
+      >
+        <div className={clsx("main-container py-16")}>
           <Suspense fallback={<></>}>
             <OriginStorySection />
           </Suspense>
@@ -90,13 +107,13 @@ export default function LorePage({ initialData }: LorePageProps) {
             <MissionSection />
           </Suspense>
         </div>
-        <div className="relative w-full h-auto">
+        <div className={clsx("relative w-full h-auto")}>
           <Image
             src="/images/lore/belpy-friends.png"
             alt="Belpy Friends"
             width={1200}
             height={600}
-            className="w-full h-auto object-contain"
+            className={clsx("w-full h-auto object-contain")}
             loading="lazy"
             quality={75}
           />
@@ -113,15 +130,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     // Có thể fetch lore content từ API nếu cần
     // const loreData = await fetch('...');
-    
+
     return {
       props: {
         // initialData: loreData,
       },
     };
   } catch (error) {
-    console.error('Error fetching lore page data:', error);
-    
+    console.error("Error fetching lore page data:", error);
+
     return {
       props: {
         initialData: null,
