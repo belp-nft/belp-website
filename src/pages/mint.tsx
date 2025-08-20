@@ -78,7 +78,9 @@ const BelpyMintPage = ({
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [nftAddress, setNftAddress] = useState<string>("");
   const [nftDetailData, setNftDetailData] = useState<any>(null);
-  const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(true);
+
+  const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(false);
+
   const [isHiddenRemindMe, setIsHiddenRemindMe] = useState(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
@@ -87,7 +89,8 @@ const BelpyMintPage = ({
     if (!solAddress && authToken) {
       console.log("🔄 Auto-connecting wallet with existing authToken...");
       // Try to get last used wallet type or default to phantom
-      const lastWalletType = (window.localStorage.getItem("last-wallet-type") as any) || "phantom";
+      const lastWalletType =
+        (window.localStorage.getItem("last-wallet-type") as any) || "phantom";
       connectWallet(lastWalletType);
     }
   }, [solAddress, authToken, connectWallet]);
@@ -123,9 +126,9 @@ const BelpyMintPage = ({
       // Call mint from CandyMachine provider
       const mintResult = await mint();
       const result = await NftService.sendSignedTransaction(
-        mintResult?.signature || '',
+        mintResult?.signature || "",
         solAddress,
-        '9MTRpcfQCGfpBgeruvVH5sDYCP58xVjEf7k3QjKE8pkf'
+        "9MTRpcfQCGfpBgeruvVH5sDYCP58xVjEf7k3QjKE8pkf"
       );
 
       if (result.success) {
@@ -158,7 +161,7 @@ const BelpyMintPage = ({
             const nftDetails = await NftService.getNftDetails(
               result.nftAddress
             );
-            setNftDetailData(nftDetails);
+            setNftDetailData(nftDetails?.nft);
           } catch (error) {
             console.warn("⚠️ Could not fetch NFT details:", error);
           }
@@ -231,13 +234,36 @@ const BelpyMintPage = ({
   };
 
   const handleMintClick = () => {
-    // setShowFeatureAnnouncement(true);
-    // if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
-    // return;
-    // }
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
+      setShowFeatureAnnouncement(true);
+      setIsHiddenRemindMe(true);
+      return;
+    }
     setShowMintModal(true);
   };
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const reminder = localStorage.getItem("belp-feature-reminder");
+      if (!reminder) {
+        setShowFeatureAnnouncement(true);
+      } else {
+        const now = new Date();
+        const expire = new Date(reminder);
+        if (
+          now.getFullYear() > expire.getFullYear() ||
+          (now.getFullYear() === expire.getFullYear() &&
+            now.getMonth() > expire.getMonth()) ||
+          (now.getFullYear() === expire.getFullYear() &&
+            now.getMonth() === expire.getMonth() &&
+            now.getDate() > expire.getDate())
+        ) {
+          localStorage.removeItem("belp-feature-reminder");
+          setShowFeatureAnnouncement(true);
+        }
+      }
+    }
+  }, []);
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
       <motion.div
@@ -264,7 +290,10 @@ const BelpyMintPage = ({
             if (action === "remind") {
               setIsHiddenRemindMe(true);
               // Set reminder for tomorrow (you can implement localStorage logic here)
-              localStorage.setItem('belp-feature-reminder', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+              localStorage.setItem(
+                "belp-feature-reminder",
+                new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+              );
             }
             setShowFeatureAnnouncement(false);
           }}

@@ -72,13 +72,23 @@ const TestCollectionPage = () => {
         owner: walletKey,
       });
 
-      console.log(`📦 Found ${allNfts.length} NFTs in wallet`);
+      const filteredNfts = allNfts.filter(
+        (nft: any) =>
+          nft.creators &&
+          nft.creators.some(
+            (c: any) =>
+              c.address.toString() !==
+              "5rd46zx3aZKyRxrNTkU9vhJam5hBonCRMmM27bZepPBF"
+          )
+      );
+
+      console.log(`📦 Found ${filteredNfts.length} NFTs in wallet`);
 
       // Store debug info
       setDebugInfo({
         walletAddress,
-        totalNfts: allNfts.length,
-        sampleNfts: allNfts.slice(0, 3).map((nft) => ({
+        totalNfts: filteredNfts.length,
+        sampleNfts: filteredNfts.slice(0, 3).map((nft) => ({
           address: nft.address.toString(),
           name: nft.name,
           symbol: nft.symbol,
@@ -94,10 +104,10 @@ const TestCollectionPage = () => {
 
       // Process NFTs with metadata
       const processedNfts: NFTData[] = await Promise.all(
-        allNfts.slice(0, 50).map(async (nft: any, index: number) => {
+        filteredNfts.slice(0, 50).map(async (nft: any, index: number) => {
           try {
             console.log(
-              `📄 Processing NFT ${index + 1}/${Math.min(allNfts.length, 50)}: ${nft.name || "Unnamed"}`
+              `📄 Processing NFT ${index + 1}/${Math.min(filteredNfts.length, 50)}: ${nft.name || "Unnamed"}`
             );
 
             let metadata = null;

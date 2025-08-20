@@ -99,32 +99,20 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
           >
             {nftDetails?.name || "BELPY NFT"}
           </motion.h1>
-          
+
           {/* Display attributes if available */}
-          {nftDetails?.attributes && nftDetails.attributes.length > 0 && (
-            <div className="flex flex-wrap gap-2 justify-center mb-4">
-              {nftDetails.attributes.slice(0, 3).map((attr, index) => (
-                <div
-                  key={index}
-                  className={clsx(
-                    "inline-block bg-gradient-to-r from-[#F356FF] to-[#AE4DCE]",
-                    "text-white px-3 py-1 rounded-full text-xs font-medium"
-                  )}
-                >
-                  {attr.trait_type}: {attr.value}
-                </div>
-              ))}
+          {nftDetails?.attributes?.some((attr) =>
+            attr?.trait_type?.toLowerCase().includes("special")
+          ) && (
+            <div
+              className={clsx(
+                "inline-block bg-gradient-to-r from-[#F356FF] to-[#AE4DCE]",
+                "text-white px-4 py-1 rounded-full text-sm font-medium"
+              )}
+            >
+              GENESIS BELPY!
             </div>
           )}
-          
-          <div
-            className={clsx(
-              "inline-block bg-gradient-to-r from-[#F356FF] to-[#AE4DCE]",
-              "text-white px-4 py-1 rounded-full text-sm font-medium"
-            )}
-          >
-            {nftDetails?.collectionName || "GENESIS BELPY"}!
-          </div>
         </div>
       </div>
     </Modal>
