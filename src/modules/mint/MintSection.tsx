@@ -66,7 +66,7 @@ const MintSection: React.FC<MintSectionProps> = ({
           alt="Cat playing with ball"
           width={1442}
           height={665}
-          className="lg:absolute h-full w-auto lg:max-w-xl xl:max-w-none"
+          className="lg:absolute lg:h-full w-auto lg:max-w-xl xl:max-w-none lg:top-1/2 lg:left-[100px] lg:-translate-y-1/2"
         />
       </div>
 
