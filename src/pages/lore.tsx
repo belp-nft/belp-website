@@ -46,6 +46,7 @@ export default function LorePage({ initialData }: LorePageProps) {
       if (window.innerWidth < 768) {
         setCloudDuration(6);
         setCloudX({ initial: "100vw", animate: "-300vw" });
+      } else {
         setCloudDuration(10);
         setCloudX({ initial: "100vw", animate: "-100vw" });
       }
