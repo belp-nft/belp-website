@@ -18,7 +18,7 @@ const CatGrid: React.FC<CatGridProps> = ({
   return (
     <motion.div
       className={clsx(
-        "flex gap-4 mt-8 flex-wrap justify-center lg:justify-start"
+        "flex gap-4 lg:gap-2 xl:gap-4 mt-8 flex-wrap justify-center lg:justify-start"
       )}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
