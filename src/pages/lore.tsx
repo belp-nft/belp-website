@@ -48,10 +48,10 @@ export default function LorePage({ initialData }: LorePageProps) {
         <div className={clsx("relative z-20 min-h-screen top-36")}>
           <motion.div
             className={clsx(
-              "pointer-events-none select-none absolute left-1/2 top-20 md:top-10 -translate-x-1/2 w-[270vw] md:w-full h-70 md:h-80 -z-10"
+              "pointer-events-none select-none absolute left-0 top-20 md:top-10 w-[300vw] md:w-[100vw] h-40 md:h-60 -z-10 flex items-center"
             )}
-            initial={{ x: "110%", opacity: 0 }}
-            animate={{ x: "-110%", opacity: 1 }}
+            initial={{ x: "100vw", opacity: 0 }}
+            animate={{ x: "-100vw", opacity: 1 }}
             transition={{
               repeat: Infinity,
               repeatType: "loop",
@@ -62,14 +62,22 @@ export default function LorePage({ initialData }: LorePageProps) {
             style={{ willChange: "transform" }}
             aria-hidden="true"
           >
-            <Image
-              src="/images/lore/clouds.svg"
-              alt="Clouds"
-              fill
-              className={clsx("object-cover object-center")}
-              priority={false}
-              draggable={false}
-            />
+            <div className={clsx("w-full flex justify-center")}>
+              <Image
+                src="/images/lore/clouds.svg"
+                alt="Clouds"
+                width={1920}
+                height={180}
+                className={clsx("select-none")}
+                priority={false}
+                draggable={false}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  filter: "brightness(1.05)",
+                }}
+              />
+            </div>
           </motion.div>
           {/* Critical background image - load immediately */}
           <div className={clsx("absolute inset-0")}>

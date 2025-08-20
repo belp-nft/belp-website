@@ -283,22 +283,6 @@ const BelpyMintPage = ({
           selectedCat={selectedCat}
         />
 
-        <FeatureAnnouncementModal
-          isOpen={showFeatureAnnouncement}
-          isHiddenRemindMe={isHiddenRemindMe}
-          onClose={(action) => {
-            if (action === "remind") {
-              setIsHiddenRemindMe(true);
-              // Set reminder for tomorrow (you can implement localStorage logic here)
-              localStorage.setItem(
-                "belp-feature-reminder",
-                new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-              );
-            }
-            setShowFeatureAnnouncement(false);
-          }}
-        />
-
         <MintConfirmModal
           isOpen={showMintModal}
           isMinting={isProcessing}
@@ -320,6 +304,22 @@ const BelpyMintPage = ({
           }}
         />
       </motion.div>
+
+      <FeatureAnnouncementModal
+        isOpen={showFeatureAnnouncement}
+        isHiddenRemindMe={isHiddenRemindMe}
+        onClose={(action) => {
+          if (action === "remind") {
+            setIsHiddenRemindMe(true);
+            // Set reminder for tomorrow (you can implement localStorage logic here)
+            localStorage.setItem(
+              "belp-feature-reminder",
+              new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            );
+          }
+          setShowFeatureAnnouncement(false);
+        }}
+      />
     </div>
   );
 };
