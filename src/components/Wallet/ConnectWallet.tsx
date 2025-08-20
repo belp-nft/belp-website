@@ -119,27 +119,29 @@ export default function ConnectWallet({
 
   return (
     <>
-      <div className="relative inline-block w-full">
-        <WalletButton
-          isOpen={showMenu}
-          label={label}
-          balance={solAddress ? solBalanceText : undefined}
-          loadingBalance={loading === "sol-balance"}
-          isConnecting={isConnecting}
-          onClick={() => {
-            if (solAddress) {
-              if (hasCollapse) {
-                setShowMenu((prev) => !prev);
+      <div className="relative w-full">
+        <div className="flex items-center justify-center w-full">
+          <WalletButton
+            isOpen={showMenu}
+            label={label}
+            balance={solAddress ? solBalanceText : undefined}
+            loadingBalance={loading === "sol-balance"}
+            isConnecting={isConnecting}
+            onClick={() => {
+              if (solAddress) {
+                if (hasCollapse) {
+                  setShowMenu((prev) => !prev);
+                } else {
+                  setShowMenu(true);
+                }
               } else {
-                setShowMenu(true);
+                setOpen(true);
+                setShowMenu(false);
               }
-            } else {
-              setOpen(true);
-              setShowMenu(false);
-            }
-          }}
-          className={className}
-        />
+            }}
+            className={className}
+          />
+        </div>
         {hasCollapse ? (
           <AnimatePresence>
             {solAddress && showMenu && (
