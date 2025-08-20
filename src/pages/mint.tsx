@@ -234,12 +234,12 @@ const BelpyMintPage = ({
   };
 
   const handleMintClick = () => {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === "production") {
-      setShowFeatureAnnouncement(true);
-      setIsHiddenRemindMe(true);
+    if (process.env.NEXT_PUBLIC_NODE_ENV === "development") {
+      setShowMintModal(true);
       return;
     }
-    setShowMintModal(true);
+    setShowFeatureAnnouncement(true);
+    setIsHiddenRemindMe(true);
   };
 
   useEffect(() => {
