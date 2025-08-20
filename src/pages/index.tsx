@@ -1,4 +1,4 @@
-import { GetServerSideProps } from 'next';
+import { GetServerSideProps } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import HeroSection from "@/modules/home/HeroSection";
@@ -12,7 +12,7 @@ const LoreShop = dynamic(() => import("@/modules/home/LoreShop"), {
 
 const GetTheCuteness = dynamic(() => import("@/modules/home/GetTheCuteness"), {
   loading: () => <></>,
-  ssr: false, // Component này có animation phức tạp
+  ssr: true,
 });
 
 const Roadmap = dynamic(() => import("@/modules/home/Roadmap"), {
@@ -51,23 +51,23 @@ export default function Home({ initialData }: HomeProps) {
       <Suspense fallback={<></>}>
         <BelpSection />
       </Suspense>
-      
+
       <Suspense fallback={<></>}>
         <LoreShop />
       </Suspense>
-      
+
       <Suspense fallback={<></>}>
         <GetTheCuteness />
       </Suspense>
-      
+
       <Suspense fallback={<></>}>
         <Roadmap />
       </Suspense>
-      
+
       <Suspense fallback={<></>}>
         <MintSection />
       </Suspense>
-      
+
       <Suspense fallback={<></>}>
         <BelpFooter />
       </Suspense>
@@ -79,15 +79,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   try {
     // Có thể fetch initial data từ API nếu cần
     // Ví dụ: fetch config data, stats, etc.
-    
+
     return {
       props: {
         // initialData: data,
       },
     };
   } catch (error) {
-    console.error('Error fetching home page data:', error);
-    
+    console.error("Error fetching home page data:", error);
+
     return {
       props: {
         initialData: null,
