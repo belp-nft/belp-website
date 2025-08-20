@@ -9,6 +9,14 @@ import MintConnectButton from "@/components/Wallet/MintConnectButton";
 import { useSettings } from "@/providers/SettingsProvider";
 import { useWalletContext } from "@/providers/WalletProvider";
 
+const cats = [
+  "tokens/1.png",
+  "tokens/2.png",
+  "tokens/3.png",
+  "tokens/4.png",
+  "tokens/5.png",
+];
+
 interface MintSectionProps {
   minted: number;
   supply: number;
@@ -66,7 +74,7 @@ const MintSection: React.FC<MintSectionProps> = ({
           alt="Cat playing with ball"
           width={1442}
           height={665}
-          className="lg:absolute lg:h-full w-auto lg:max-w-xl xl:max-w-none lg:top-1/2 lg:left-[100px] lg:-translate-y-1/2"
+          className="lg:absolute lg:h-full w-auto lg:max-w-xl xl:max-w-none lg:top-1/2 lg:left-[60px] lg:-translate-y-1/2"
         />
       </div>
 
@@ -158,11 +166,11 @@ const MintSection: React.FC<MintSectionProps> = ({
           )}
         </motion.div>
 
-        {/* <CatGrid
-          cats={}
+        <CatGrid
+          cats={cats}
           selectedCat={selectedCat}
           mintSuccess={mintSuccess}
-        /> */}
+        />
 
         <motion.p
           className={clsx("mt-3 text-xs sm:text-sm text-center lg:text-left")}

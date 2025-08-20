@@ -87,10 +87,13 @@ export default function BelpHeader() {
                   <MdClose size={28} />
                 </button>
               </div>
-              <div className="flex items-center justify-center my-5 w-full">
-                <ConnectWallet
-                  onConnected={(info) => console.log("Connected:", info)}
-                />
+              <div className="px-6">
+                <div className="flex items-center justify-center my-5 w-full">
+                  <ConnectWallet
+                    hasCollapse
+                    onConnected={(info) => console.log("Connected:", info)}
+                  />
+                </div>
               </div>
               <nav className="flex-1 w-full">
                 <ul className="flex flex-col gap-2 px-6">

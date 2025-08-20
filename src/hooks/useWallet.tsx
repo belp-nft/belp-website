@@ -677,7 +677,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
   // Utility functions
   const shorten = useCallback(
-    (addr?: string | null) => shortenAddress(addr),
+    (addr?: string | null) => shortenAddress({ addr }),
     []
   );
 
