@@ -1,6 +1,6 @@
 import { GetServerSideProps } from "next";
 import Image from "next/image";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import HeroSection from "@/modules/lore/HeroSection";
@@ -39,6 +39,22 @@ interface LorePageProps {
 }
 
 export default function LorePage({ initialData }: LorePageProps) {
+  const [cloudDuration, setCloudDuration] = useState(10);
+  const [cloudX, setCloudX] = useState({ initial: "100vw", animate: "-100vw" });
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth < 768) {
+        setCloudDuration(6);
+        setCloudX({ initial: "100vw", animate: "-300vw" });
+        setCloudDuration(10);
+        setCloudX({ initial: "100vw", animate: "-100vw" });
+      }
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <main className={clsx("relative min-h-screen overflow-hidden")}>
       <CriticalLoreCSS />
@@ -48,14 +64,14 @@ export default function LorePage({ initialData }: LorePageProps) {
         <div className={clsx("relative z-20 min-h-screen top-36")}>
           <motion.div
             className={clsx(
-              "pointer-events-none select-none absolute left-0 top-20 md:top-10 w-[300vw] md:w-[100vw] h-40 md:h-60 -z-10 flex items-center"
+              "pointer-events-none select-none absolute left-0 top-20 w-[300vw] md:w-[100vw] h-40 md:h-60 -z-10 flex items-center"
             )}
-            initial={{ x: "100vw", opacity: 0 }}
-            animate={{ x: "-100vw", opacity: 1 }}
+            initial={{ x: cloudX.initial, opacity: 0 }}
+            animate={{ x: cloudX.animate, opacity: 1 }}
             transition={{
               repeat: Infinity,
               repeatType: "loop",
-              duration: 10,
+              duration: cloudDuration,
               ease: "linear",
               opacity: { duration: 1, delay: 0.2 },
             }}
