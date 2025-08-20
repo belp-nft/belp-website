@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useBalance } from "@/providers/BalanceProvider";
 import { useConfigActions } from "@/stores/config";
 import { useLoading } from "@/providers/LoadingProvider";
 
@@ -89,7 +90,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
   // Local state for non-persistent data
   const [loading, setLoading] = useState<LoadingKind>(null);
-  const [solLamports, setSolLamports] = useState<number>(0);
+  const { solLamports, setSolLamports } = useBalance();
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [userStatistics, setUserStatistics] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
