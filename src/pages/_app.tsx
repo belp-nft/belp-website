@@ -40,21 +40,30 @@ export default function App({ Component, pageProps, router }: AppProps) {
           name="description"
           content="Belpy NFT - The first limited collection of unique NFT tokens"
         />
+
+        {/* Favicon + Icons */}
         <link rel="icon" href="/favicon.ico" />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="96x96"
-          href="/favicon-96x96.png"
-        />
+        <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link
-          rel="apple-touch-icon"
-          sizes="180x180"
-          href="/apple-touch-icon.png"
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* Theme */}
+        <meta name="apple-mobile-web-app-title" content="Belpy" />
+        <meta name="theme-color" content="#000000" />
+
+        {/* OpenGraph cho Phantom Wallet lấy ảnh */}
+        <meta property="og:title" content="Belpy" />
+        <meta
+          property="og:description"
+          content="Belpy NFT - The first limited collection of unique NFT tokens"
         />
-        <link rel="manifest" href="/site.webmanifest" />
-        <meta name="apple-mobile-web-app-title" content="MyWebSite" />
+        <meta property="og:image" content="https://belpy.xyz/web-app-manifest-512x512.png" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://belpy.xyz/" />
       </Head>
 
       <div className={clsx("font-gmarket antialiased", oxanium.variable)}>
@@ -71,7 +80,7 @@ export default function App({ Component, pageProps, router }: AppProps) {
                           <div
                             className={clsx(
                               !["/", "/my-collection"].includes(pathname) &&
-                                "mt-16"
+                              "mt-16"
                             )}
                           >
                             <Component {...pageProps} />
