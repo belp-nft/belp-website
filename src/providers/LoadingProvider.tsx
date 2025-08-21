@@ -25,7 +25,7 @@ interface LoadingProviderProps {
 export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   children,
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const showLoading = useCallback(() => {
     setIsLoading(true);
@@ -44,7 +44,7 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({
   return (
     <LoadingContext.Provider value={value}>
       {children}
-      {isLoading && <PageLoading />}
+      {isLoading && <PageLoading isFullScreen={true} />}
     </LoadingContext.Provider>
   );
 };

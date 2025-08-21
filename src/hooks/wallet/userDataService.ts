@@ -1,4 +1,5 @@
-import { UserService } from "@/services";
+import { UserService, AuthService } from "@/services";
+import { ApiCallHelper } from "./apiCallHelper";
 
 export class UserDataService {
   static async loadTransactions(
@@ -10,6 +11,14 @@ export class UserDataService {
     setTransactionsLastLoaded: (value: number) => void,
     forceRefresh: boolean = false
   ): Promise<void> {
+    // Check authentication before proceeding
+    if (!ApiCallHelper.canMakeAuthenticatedCall()) {
+      console.warn(
+        "⚠️ Skipping transaction loading - authentication not ready"
+      );
+      return;
+    }
+
     if (isLoadingTransactions) {
       console.log("Transactions already loading, skipping...");
       return;
@@ -29,11 +38,13 @@ export class UserDataService {
 
     try {
       setIsLoadingTransactions(true);
-      console.log("Loading transaction history...");
 
-      const txResult = await UserService.getTransactions({ limit: 50 });
+      const txResult = await ApiCallHelper.executeWithAuthCheck(
+        () => UserService.getTransactions({ limit: 50 }),
+        "Load Transactions"
+      );
 
-      if (txResult.success && txResult.data) {
+      if (txResult && txResult.success && txResult.data) {
         setTransactions(txResult.data);
         setTransactionsLastLoaded(now);
         console.log(
@@ -41,21 +52,11 @@ export class UserDataService {
           txResult.data.length,
           "transactions"
         );
-      } else if (
-        txResult.message?.includes("Unauthorized") ||
-        txResult.message?.includes("401")
-      ) {
-        console.warn("Token expired while loading transactions");
+      } else if (txResult === null) {
+        console.warn("Transaction loading failed due to authentication");
       }
     } catch (error: any) {
       console.error("Failed to load transactions:", error);
-
-      if (
-        error.response?.status === 401 ||
-        error.message?.includes("Unauthorized")
-      ) {
-        console.warn("Authentication error while loading transactions");
-      }
     } finally {
       setIsLoadingTransactions(false);
     }
@@ -70,6 +71,14 @@ export class UserDataService {
     setUserStatsLastLoaded: (value: number) => void,
     forceRefresh: boolean = false
   ): Promise<void> {
+    // Check authentication before proceeding
+    if (!ApiCallHelper.canMakeAuthenticatedCall()) {
+      console.warn(
+        "⚠️ Skipping user statistics loading - authentication not ready"
+      );
+      return;
+    }
+
     if (isLoadingUserStats) {
       console.log("User statistics already loading, skipping...");
       return;
@@ -89,29 +98,21 @@ export class UserDataService {
 
     try {
       setIsLoadingUserStats(true);
-      console.log("Loading user statistics...");
 
-      const statsResult = await UserService.getUserStatistics();
+      const statsResult = await ApiCallHelper.executeWithAuthCheck(
+        () => UserService.getUserStatistics(),
+        "Load User Statistics"
+      );
 
-      if (statsResult.success && statsResult.data) {
+      if (statsResult && statsResult.success && statsResult.data) {
         setUserStatistics(statsResult.data);
         setUserStatsLastLoaded(now);
         console.log("User statistics loaded:", statsResult.data);
-      } else if (
-        statsResult.message?.includes("Unauthorized") ||
-        statsResult.message?.includes("401")
-      ) {
-        console.warn("Token expired while loading user statistics");
+      } else if (statsResult === null) {
+        console.warn("User statistics loading failed due to authentication");
       }
     } catch (error: any) {
       console.error("Failed to load user statistics:", error);
-
-      if (
-        error.response?.status === 401 ||
-        error.message?.includes("Unauthorized")
-      ) {
-        console.warn("Authentication error while loading user statistics");
-      }
     } finally {
       setIsLoadingUserStats(false);
     }
