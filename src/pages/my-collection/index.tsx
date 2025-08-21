@@ -154,7 +154,7 @@ const MyCollectionPage = () => {
 
             return {
               id: nft.address.toString(),
-              name: nft.name || metadata?.name || `NFT #${index + 1}`,
+              name: metadata?.name || nft.name || `NFT #${index + 1}`,
               description: metadata?.description || "No description available",
               image: imageUrl,
               attributes: metadata?.attributes || [],

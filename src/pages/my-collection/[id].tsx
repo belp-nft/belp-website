@@ -2,22 +2,93 @@ import BreadCrumbs from "@/components/Breadcrumb";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
-import { NftService } from "@/services/nftService";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { Metaplex } from "@metaplex-foundation/js";
 import { BLOCKCHAIN_CONFIG } from "@/services";
-import type { NFT } from "@/services/types";
 import { BiStar } from "react-icons/bi";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { HiOutlineInformationCircle, HiViewGrid } from "react-icons/hi";
 import { useLoading } from "@/providers/LoadingProvider";
+import { useConfig } from "@/stores";
+
+interface SimpleNFTDetail {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  attributes: any[];
+  owner: string;
+  creator?: string;
+  nftAddress: string;
+  collection?: {
+    address: string;
+    name: string;
+    verified: boolean;
+  };
+  createdAt?: string;
+}
+
+// Function to fetch metadata from NFT URI
+const fetchNftMetadata = async (uri: string): Promise<any> => {
+  try {
+    let formattedUri = uri;
+    if (uri.startsWith("ipfs://")) {
+      formattedUri = `https://ipfs.io/ipfs/${uri.replace("ipfs://", "")}`;
+    }
+
+    const response = await fetch(formattedUri, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      mode: "cors",
+    });
+
+    if (response.ok) {
+      const responseText = await response.text();
+      if (responseText.trim()) {
+        return JSON.parse(responseText);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(`❌ Error fetching metadata:`, error);
+    return null;
+  }
+};
 
 const NftDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [nft, setNft] = useState<NFT | null>(null);
+  const [nft, setNft] = useState<SimpleNFTDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [metaplex, setMetaplex] = useState<Metaplex | null>(null);
 
   const { showLoading, hideLoading } = useLoading();
+  const configData = useConfig();
+
+  // Initialize Metaplex
+  useEffect(() => {
+    const initMetaplex = async () => {
+      try {
+        const connection = new Connection(
+          configData?.rpcUrl || "https://api.devnet.solana.com",
+          "confirmed"
+        );
+
+        const metaplexInstance = new Metaplex(connection);
+        setMetaplex(metaplexInstance);
+        console.log("✅ Metaplex initialized for NFT detail");
+      } catch (err) {
+        console.error("❌ Failed to initialize Metaplex:", err);
+        setError(`Failed to initialize Metaplex: ${err}`);
+      }
+    };
+
+    initMetaplex();
+  }, [configData?.rpcUrl]);
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
@@ -32,7 +103,7 @@ const NftDetailPage = () => {
 
   useEffect(() => {
     const loadNftDetails = async () => {
-      if (!router.isReady || !id || typeof id !== "string") {
+      if (!router.isReady || !id || typeof id !== "string" || !metaplex) {
         hideLoading();
         return;
       }
@@ -41,17 +112,127 @@ const NftDetailPage = () => {
         showLoading();
         setError(null);
 
-        const response = await NftService.getNftDetails(id);
+        console.log("🔍 Loading NFT details for ID:", id);
+        console.log("🔍 ID type:", typeof id, "Length:", id.length);
 
-        if (response.success && response.nft) {
-          setNft(response.nft);
-        } else {
-          setError("NFT not found");
-          console.error("❌ Failed to load NFT details");
+        // Validate the address format
+        try {
+          new PublicKey(id);
+          console.log("✅ Valid PublicKey format");
+        } catch (keyError) {
+          throw new Error(
+            `Invalid address format: ${id}. Please provide a valid Solana address.`
+          );
         }
+
+        let nftData;
+        let addressType = "mint"; // Track what type of address we're dealing with
+
+        try {
+          // First try to get NFT by mint address
+          const mintAddress = new PublicKey(id);
+          nftData = await metaplex.nfts().findByMint({
+            mintAddress: mintAddress,
+          });
+          console.log("✅ Found NFT by mint address");
+        } catch (mintError) {
+          console.log("⚠️ Failed to find by mint address:", mintError);
+
+          try {
+            // Try to find the NFT by searching for it in metadata
+            // This is a fallback approach
+            addressType = "metadata";
+            const metadataAddress = new PublicKey(id);
+
+            // Use findByMetadata approach
+            const metadataAccount = await metaplex.nfts().findByMetadata({
+              metadata: metadataAddress,
+            });
+            nftData = metadataAccount;
+            console.log("✅ Found NFT by metadata address");
+          } catch (metadataError) {
+            console.error(
+              "❌ Failed to find NFT by both mint and metadata address"
+            );
+            console.error("Mint error:", mintError);
+            console.error("Metadata error:", metadataError);
+
+            // Final attempt: try to get all NFTs and find by address
+            console.log("🔄 Final attempt: searching through NFTs...");
+            try {
+              // This is a last resort - very inefficient but might work
+              const allNfts = await metaplex.nfts().findAllByOwner({
+                owner: new PublicKey(id), // This might fail, but let's try
+              });
+
+              if (allNfts.length > 0) {
+                nftData = allNfts[0]; // Take the first one
+                console.log("✅ Found NFT by owner search");
+                addressType = "owner";
+              } else {
+                throw new Error("No NFTs found");
+              }
+            } catch (ownerError) {
+              console.error("❌ All methods failed:", ownerError);
+              throw new Error(
+                `Cannot load NFT with address: ${id}\n\n` +
+                  `This could be because:\n` +
+                  `• The address is not a valid mint address\n` +
+                  `• The NFT doesn't exist\n` +
+                  `• The NFT is not on the current network (${configData?.rpcUrl?.includes("devnet") ? "devnet" : "mainnet"})\n\n` +
+                  `Please verify the address and try again.`
+              );
+            }
+          }
+        }
+
+        console.log(`📄 NFT data from Metaplex (${addressType}):`, nftData);
+
+        let metadata = null;
+        if (nftData.uri) {
+          metadata = await fetchNftMetadata(nftData.uri);
+          console.log("📝 Fetched metadata:", metadata);
+        }
+
+        // Get image URL from metadata
+        let imageUrl =
+          "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF"; // fallback
+
+        if (metadata?.image) {
+          if (metadata.image.startsWith("ipfs://")) {
+            imageUrl = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
+          } else if (metadata.image.startsWith("http")) {
+            imageUrl = metadata.image;
+          } else {
+            imageUrl = `https://ipfs.io/ipfs/${metadata.image}`;
+          }
+        }
+
+        const nftDetail: SimpleNFTDetail = {
+          id: id,
+          name: metadata?.name || nftData.name || "Unnamed NFT",
+          description: metadata?.description || "No description available",
+          image: imageUrl,
+          attributes: metadata?.attributes || [],
+          owner:
+            (nftData as any).mint?.supply?.basisPoints?.toString() || "Unknown",
+          creator: (nftData as any).creators?.[0]?.address?.toString(),
+          nftAddress: id,
+          collection: (nftData as any).collection
+            ? {
+                address: (nftData as any).collection.address.toString(),
+                name: "BELPY Collection",
+                verified: (nftData as any).collection.verified || false,
+              }
+            : undefined,
+          createdAt: new Date().toISOString(), // placeholder since we don't have this from blockchain
+        };
+
+        setNft(nftDetail);
+        console.log("✅ NFT details loaded successfully");
       } catch (err) {
         console.error("❌ Error loading NFT details:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(err instanceof Error ? err.message : "Failed to load NFT");
         setNft(null);
       } finally {
         hideLoading();
@@ -59,7 +240,7 @@ const NftDetailPage = () => {
     };
 
     loadNftDetails();
-  }, [router.isReady, id, showLoading, hideLoading]);
+  }, [router.isReady, id, metaplex]);
 
   if (error || !nft) {
     return (
@@ -107,7 +288,7 @@ const NftDetailPage = () => {
           {/* Left: Image + Info */}
           <div className="flex flex-col gap-4 w-full md:w-[340px] items-center">
             <Image
-              src={nft.imageUrl}
+              src={nft.image}
               alt={nft.name}
               width={260}
               height={260}
@@ -172,9 +353,17 @@ const NftDetailPage = () => {
 
           {/* Right: Trait Info */}
           <div className="flex-1 flex flex-col gap-4">
-            <button className="self-start px-6 py-2 rounded-xl bg-[#7a4bd6] text-white font-bold shadow text-base mb-2">
-              GENESIS BELPY !
-            </button>
+            {nft?.attributes?.some((attr) =>
+              attr?.trait_type?.toLowerCase().includes("special")
+            ) && (
+              <div
+                className={clsx(
+                  "self-start px-6 py-2 rounded-xl bg-[#7a4bd6] text-white font-bold shadow text-base mb-2"
+                )}
+              >
+                GENESIS BELPY!
+              </div>
+            )}
             <div className="bg-[#E3CEF6] rounded-xl p-4">
               <div className="font-bold mb-2 flex items-center gap-2 text-base">
                 <BiStar />
