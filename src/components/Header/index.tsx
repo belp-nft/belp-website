@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import clsx from "clsx";
@@ -13,7 +13,6 @@ import {
 } from "react-icons/md";
 import { useRouter } from "next/router";
 import ConnectWallet from "../Wallet/ConnectWallet";
-import { useWallet } from "@/hooks/useWallet";
 
 const menu = [
   { label: "HOME", href: "/", icon: <MdHome size={22} /> },
@@ -31,6 +30,24 @@ export default function BelpHeader() {
   const pathname = router.pathname;
 
   const [open, setOpen] = useState(false);
+
+  // Fast navigation handler
+  const handleNavigation = useCallback(
+    (href: string, closeMenu = false) => {
+      if (closeMenu) {
+        setOpen(false);
+      }
+
+      // Don't navigate if already on the same page
+      if (pathname === href) {
+        return;
+      }
+
+      // Use router.push for faster navigation
+      router.push(href);
+    },
+    [router, pathname]
+  );
 
   useEffect(() => {
     if (open) {
@@ -110,25 +127,34 @@ export default function BelpHeader() {
                           delay: 0.05,
                         }}
                       >
-                        <Link
-                          href={item.href}
-                          onClick={() => setOpen(false)}
-                          target={item.label === "DOC" ? "_blank" : undefined}
-                          rel={
-                            item.label === "DOC"
-                              ? "noopener noreferrer"
-                              : undefined
-                          }
-                          className={clsx(
-                            "flex items-center gap-3 py-2 px-2 rounded-lg font-semibold uppercase tracking-wider text-[18px]",
-                            isActive
-                              ? "font-extrabold"
-                              : "text-[#6B6475] hover:bg-[#e8d8fb] transition-all"
-                          )}
-                        >
-                          <span className="opacity-80">{item.icon}</span>
-                          {item.label}
-                        </Link>
+                        {item.label === "DOC" ? (
+                          <Link
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setOpen(false)}
+                            className={clsx(
+                              "flex items-center gap-3 py-2 px-2 rounded-lg font-semibold uppercase tracking-wider text-[18px]",
+                              "text-[#6B6475] hover:bg-[#e8d8fb] transition-all"
+                            )}
+                          >
+                            <span className="opacity-80">{item.icon}</span>
+                            {item.label}
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => handleNavigation(item.href, true)}
+                            className={clsx(
+                              "flex items-center gap-3 py-2 px-2 rounded-lg font-semibold uppercase tracking-wider text-[18px] w-full text-left cursor-pointer",
+                              isActive
+                                ? "font-extrabold"
+                                : "text-[#6B6475] hover:bg-[#e8d8fb] transition-all"
+                            )}
+                          >
+                            <span className="opacity-80">{item.icon}</span>
+                            {item.label}
+                          </button>
+                        )}
                       </motion.li>
                     );
                   })}
@@ -156,24 +182,28 @@ export default function BelpHeader() {
             <MdMenu size={28} color="#5B357D" />
           </button>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link href="/" className="flex items-center gap-2" tabIndex={-1}>
+            <button
+              onClick={() => handleNavigation("/")}
+              className="flex items-center gap-2 cursor-pointer"
+              tabIndex={-1}
+            >
               <img
                 src="/belp-logo.svg"
                 alt="belp logo"
                 width={120}
                 height={36}
               />
-            </Link>
+            </button>
           </div>
           <div className="w-[44px] h-[44px]" />
         </div>
 
-        <Link
-          href="/"
-          className="hidden md:flex items-center gap-2 h-[40px] min-w-[120px] md:ml-1"
+        <button
+          onClick={() => handleNavigation("/")}
+          className="hidden md:flex items-center gap-2 h-[40px] min-w-[120px] md:ml-1 cursor-pointer"
         >
           <img src="/belp-logo.svg" alt="belp logo" width={151} height={51} />
-        </Link>
+        </button>
 
         <nav className="hidden md:block">
           <ul className="flex gap-12 items-center">
@@ -183,24 +213,35 @@ export default function BelpHeader() {
 
               return (
                 <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    target={item.label === "DOC" ? "_blank" : undefined}
-                    rel={
-                      item.label === "DOC" ? "noopener noreferrer" : undefined
-                    }
-                    className={clsx(
-                      "uppercase text-[16px] lg:text-[20px] xl:text-[24px] font-bold tracking-[.08em] transition-all duration-150 px-1 bg-gradient-to-b from-[#a44bfd] to-[#1C007C] bg-clip-text text-transparent",
-                      clsx(
-                        "hover:text-[#5B357D]",
-                        isActive &&
-                          "underline underline-offset-[9px] decoration-2 decoration-[#5B357D]"
-                      )
-                    )}
-                    style={{ letterSpacing: 2 }}
-                  >
-                    {item.label}
-                  </Link>
+                  {item.label === "DOC" ? (
+                    <Link
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={clsx(
+                        "uppercase text-[16px] lg:text-[20px] xl:text-[24px] font-bold tracking-[.08em] transition-all duration-150 px-1 bg-gradient-to-b from-[#a44bfd] to-[#1C007C] bg-clip-text text-transparent",
+                        "hover:text-[#5B357D]"
+                      )}
+                      style={{ letterSpacing: 2 }}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => handleNavigation(item.href)}
+                      className={clsx(
+                        "uppercase text-[16px] lg:text-[20px] xl:text-[24px] font-bold tracking-[.08em] transition-all duration-150 px-1 bg-gradient-to-b from-[#a44bfd] to-[#1C007C] bg-clip-text text-transparent cursor-pointer",
+                        clsx(
+                          "hover:text-[#5B357D]",
+                          isActive &&
+                            "underline underline-offset-[9px] decoration-2 decoration-[#5B357D]"
+                        )
+                      )}
+                      style={{ letterSpacing: 2 }}
+                    >
+                      {item.label}
+                    </button>
+                  )}
                 </li>
               );
             })}

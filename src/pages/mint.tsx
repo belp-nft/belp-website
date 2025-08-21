@@ -9,10 +9,11 @@ import { useToast } from "@/components/ToastContainer";
 import { NftService } from "@/services";
 import {
   useConfig,
-  useMintStats,
   useRefreshStats,
   useIncrementMinted,
+  useMintStats,
 } from "@/stores/config";
+// import { useCandyMachineInfo } from "@/providers/CandyMachineProvider";
 import MintHeader from "@/modules/mint/MintHeader";
 import MintSection from "@/modules/mint/MintSection";
 import MintConfirmModal from "@/modules/mint/MintConfirmModal";
@@ -57,6 +58,7 @@ const BelpyMintPage = () => {
   // Zustand store
   const candyMachineConfig = useConfig();
   const { minted, supply } = useMintStats();
+  // const { minted, supply } = useCandyMachineInfo();
   const refreshStats = useRefreshStats();
   const incrementMinted = useIncrementMinted();
 
@@ -114,7 +116,7 @@ const BelpyMintPage = () => {
 
       // Call mint from CandyMachine provider
       const mintResult = await mint();
-      if(!mintResult?.signature) {
+      if (!mintResult?.signature) {
         setIsProcessing(false);
         showError("Mint Failed", "Mint failed. Please try again.", 6000);
         return;

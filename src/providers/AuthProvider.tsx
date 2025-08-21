@@ -34,7 +34,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = router.pathname;
-  const { showLoading, hideLoading } = useLoading();
 
   const checkAuth = (): boolean => {
     const currentToken = AuthService.getToken();
@@ -68,7 +67,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const initAuth = () => {
       try {
-        showLoading();
         const isValid = checkAuth();
         console.log("Auth initialization:", { isValid, pathname });
       } catch (error) {
@@ -76,12 +74,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         clearAuth();
       } finally {
         setIsLoading(false);
-        hideLoading();
       }
     };
 
     initAuth();
-  }, [showLoading, hideLoading, pathname]);
+  }, [pathname]);
 
   // Route protection
   useEffect(() => {

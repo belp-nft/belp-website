@@ -28,7 +28,6 @@ export class WalletConnectionService {
       const provider = config.getProvider();
 
       if (!provider) {
-        hideLoading();
         this.handleWalletNotFound(walletType, config);
         return;
       }

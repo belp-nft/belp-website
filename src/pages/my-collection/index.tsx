@@ -11,6 +11,7 @@ import NftGrid from "@/modules/my-collection//NftGrid";
 import { useLoading } from "@/providers/LoadingProvider";
 import { useCollectionAddress } from "@/stores/config";
 import { themeClasses } from "@/providers/ThemeProvider";
+import { ApiCallHelper } from "@/hooks/wallet/apiCallHelper";
 
 const MyCollectionPage = () => {
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -19,8 +20,8 @@ const MyCollectionPage = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
-  const { solAddress, loading } = useWallet();
-  const { hideLoading } = useLoading();
+  const { solAddress, loading, isWalletReady, isAuthenticating } = useWallet();
+  const { hideLoading, showLoading } = useLoading();
 
   const collectionAddress = useCollectionAddress();
 
@@ -34,11 +35,28 @@ const MyCollectionPage = () => {
   const loadNfts = async (address: string) => {
     try {
       setError(null);
+      showLoading(); // Show loading overlay
 
-      const response = await NftService.getUserNfts(address);
+      // Check authentication before making API call
+      if (!ApiCallHelper.canMakeAuthenticatedCall()) {
+        console.warn("⚠️ Cannot load NFTs - authentication not ready");
+        setError(
+          "Authentication required. Please wait for wallet connection to complete."
+        );
+        return;
+      }
 
-      if (response.success) {
+      console.log("🔐 Loading NFTs with authentication check passed");
+      const response = await ApiCallHelper.executeWithAuthCheck(
+        () => NftService.getUserNfts(address),
+        "Load User NFTs"
+      );
+
+      if (response && response.success) {
         setNfts(response.nfts || []);
+      } else if (response === null) {
+        // Authentication failed
+        setError("Authentication failed. Please reconnect your wallet.");
       } else {
         setError("Failed to load NFTs");
         console.error("❌ Failed to load NFTs");
@@ -61,16 +79,21 @@ const MyCollectionPage = () => {
   }, []);
 
   useEffect(() => {
-    if (isInitialized && solAddress) {
-      console.log("🔍 Loading NFTs for address:", solAddress);
+    if (isInitialized && solAddress && isWalletReady) {
+      console.log(
+        "🔍 Loading NFTs for address:",
+        solAddress,
+        "- Wallet is ready"
+      );
       loadNfts(solAddress);
+    } else if (isInitialized && solAddress && isAuthenticating) {
+      console.log("🔄 Wallet is authenticating, waiting...", solAddress);
     } else if (isInitialized && !solAddress && !loading) {
       console.log("⚠️ No wallet connected, clearing NFTs");
       setNfts([]);
       setError(null);
-      hideLoading();
     }
-  }, [solAddress, isInitialized, loading]);
+  }, [solAddress, isInitialized, loading, isWalletReady, isAuthenticating]);
 
   return (
     <main className={clsx("min-h-screen", themeClasses.bg.page)}>
@@ -94,7 +117,19 @@ const MyCollectionPage = () => {
       </section>
 
       <section className="main-container pt-5 md:pt-10 pb-20">
-        {error ? (
+        {isAuthenticating && solAddress ? (
+          <div className="text-center flex flex-col items-center pb-12">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                Authenticating Wallet...
+              </h3>
+              <p className="text-blue-600">
+                Please wait while we verify your wallet connection.
+              </p>
+            </div>
+          </div>
+        ) : error ? (
           <div className="text-center flex flex-col items-center pb-12">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
               <h3 className="text-lg font-semibold text-red-800 mb-2">
@@ -103,10 +138,13 @@ const MyCollectionPage = () => {
               <p className="text-red-600 mb-4">{error}</p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                onClick={() => solAddress && loadNfts(solAddress)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() =>
+                  solAddress && isWalletReady && loadNfts(solAddress)
+                }
+                disabled={!isWalletReady || isAuthenticating}
               >
-                Retry
+                {isAuthenticating ? "Authenticating..." : "Retry"}
               </motion.button>
             </div>
           </div>

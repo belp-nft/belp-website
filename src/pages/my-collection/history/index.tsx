@@ -18,7 +18,6 @@ const HistoryPage = () => {
   const { showLoading, hideLoading } = useLoading();
   const [backendNfts, setBackendNfts] = useState<NFT[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(10);
   const [showTransactions, setShowTransactions] = useState(false);
@@ -40,7 +39,7 @@ const HistoryPage = () => {
     if (!solAddress) return;
 
     try {
-      setSyncing(true);
+      showLoading();
       setError(null);
 
       const response = await NftService.getUserNfts(solAddress);
@@ -55,7 +54,7 @@ const HistoryPage = () => {
       console.error("❌ Error loading backend NFTs:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
-      setSyncing(false);
+      hideLoading();
     }
   };
 
@@ -64,7 +63,7 @@ const HistoryPage = () => {
     if (!solAddress) return;
 
     try {
-      setSyncing(true);
+      showLoading();
       setError(null);
 
       const response = await UserService.getTransactions();
@@ -79,16 +78,14 @@ const HistoryPage = () => {
       console.error("❌ Error loading transactions:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
-      setSyncing(false);
+      hideLoading();
     }
   };
 
   // Auto-refresh backend data khi có wallet address
   useEffect(() => {
     if (solAddress) {
-      Promise.all([loadBackendNfts(), loadTransactions()]).finally(() => {
-        hideLoading();
-      });
+      Promise.all([loadBackendNfts(), loadTransactions()]);
     } else {
       // Reset data khi không có wallet
       setBackendNfts([]);
@@ -173,13 +170,6 @@ const HistoryPage = () => {
                   Transactions ({transactions?.length || 0})
                 </button>
               </div>
-
-              {syncing && (
-                <div className="flex items-center gap-2 text-[#7A4BD6] text-sm">
-                  <div className="animate-spin w-4 h-4 border-2 border-[#7A4BD6] border-t-transparent rounded-full"></div>
-                  Syncing...
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -230,25 +220,27 @@ const HistoryPage = () => {
                     >
                       <div className="grid grid-cols-12 gap-4 items-center">
                         {/* Transaction Icon */}
-                        <div className="col-span-2">
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6] bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] flex items-center justify-center">
-                            <span className="text-white text-lg">📄</span>
+                        <div className="col-span-12 sm:col-span-1">
+                          <div className="flex justify-center sm:justify-start">
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6] bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] flex items-center justify-center">
+                              <span className="text-white text-lg">📄</span>
+                            </div>
                           </div>
                         </div>
 
                         {/* Transaction Details */}
-                        <div className="col-span-3">
+                        <div className="col-span-12 sm:col-span-3 text-center sm:text-left">
                           <div className="text-[#2b1a5e] font-semibold">
                             Transaction
                           </div>
-                          <div className="text-xs text-[#6c5a99] mt-1">
+                          <div className="text-xs text-[#6c5a99] mt-1 font-mono break-all">
                             {transaction.transactionSignature?.slice(0, 8)}...
                             {transaction.transactionSignature?.slice(-8)}
                           </div>
                         </div>
 
                         {/* Candy Machine */}
-                        <div className="col-span-2">
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <div className="text-sm text-[#6c5a99] font-mono">
                             {transaction.candyMachineAddress?.slice(0, 4)}...
                             {transaction.candyMachineAddress?.slice(-4)}
@@ -256,26 +248,26 @@ const HistoryPage = () => {
                         </div>
 
                         {/* Tx Hash Link */}
-                        <div className="col-span-2">
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <a
                             href={`https://solscan.io/tx/${transaction.transactionSignature}?cluster=devnet`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#7a4bd6] hover:underline text-sm font-mono"
+                            className="text-[#7a4bd6] hover:underline text-sm font-mono cursor-pointer"
                           >
                             View →
                           </a>
                         </div>
 
                         {/* Type */}
-                        <div className="col-span-2">
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             Transaction
                           </span>
                         </div>
 
                         {/* Time */}
-                        <div className="col-span-1">
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <div className="text-sm text-[#6c5a99]">
                             {transaction.createdAt || transaction.timestamp ? (
                               <>
@@ -315,19 +307,21 @@ const HistoryPage = () => {
                     >
                       <div className="grid grid-cols-12 gap-4 items-center">
                         {/* Image */}
-                        <div className="col-span-2">
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
-                            <Image
-                              src={nft.imageUrl}
-                              alt={nft.name}
-                              fill
-                              className="object-cover"
-                            />
+                        <div className="col-span-12 sm:col-span-1">
+                          <div className="flex justify-center sm:justify-start">
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
+                              <Image
+                                src={nft.imageUrl}
+                                alt={nft.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
                           </div>
                         </div>
 
                         {/* NFT Details */}
-                        <div className="col-span-3">
+                        <div className="col-span-12 sm:col-span-3 text-center sm:text-left">
                           <Link
                             href={`/my-collection/${nft.nftAddress}`}
                             className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
@@ -340,7 +334,7 @@ const HistoryPage = () => {
                         </div>
 
                         {/* NFT Address */}
-                        <div className="col-span-2">
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <div
                             className="text-sm text-[#6c5a99] font-mono cursor-pointer hover:text-[#7A4BD6] transition-colors"
                             onClick={() => openTokenOnSolscan(nft.nftAddress)}
@@ -351,15 +345,25 @@ const HistoryPage = () => {
                           </div>
                         </div>
 
+                        {/* Solscan Link */}
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
+                          <button
+                            onClick={() => openTokenOnSolscan(nft.nftAddress)}
+                            className="text-[#7a4bd6] hover:underline text-sm cursor-pointer"
+                          >
+                            View →
+                          </button>
+                        </div>
+
                         {/* Type */}
-                        <div className="col-span-2">
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             NFT
                           </span>
                         </div>
 
                         {/* Time */}
-                        <div className="col-span-3">
+                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <div className="text-sm text-[#6c5a99]">
                             <div>
                               {new Date(nft.createdAt).toLocaleDateString()}
@@ -380,7 +384,7 @@ const HistoryPage = () => {
                 <div className="flex justify-center py-6">
                   <motion.button
                     whileTap={{ scale: 0.98 }}
-                    className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-[#7A4BD6] font-semibold shadow-md hover:shadow-lg transition"
+                    className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-[#7A4BD6] font-semibold shadow-md hover:shadow-lg transition cursor-pointer"
                     onClick={() =>
                       setVisible((v) => Math.min(v + 10, sortedData.length))
                     }

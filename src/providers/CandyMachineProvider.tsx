@@ -360,6 +360,7 @@ export function CandyMachineProvider({
         umi,
         umiPublicKey(configData.address || "")
       );
+      console.log("🚀 ~ CandyMachineProvider ~ candyMachine:", candyMachine);
 
       console.log("✅ Candy Machine fetched:", {
         address: candyMachine.publicKey,
