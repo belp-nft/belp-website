@@ -1,5 +1,8 @@
 import { ConfigService } from "@/services";
 import type { CandyMachineConfig, CandyMachineState } from "./types";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { mplCandyMachine, fetchCandyMachine } from "@metaplex-foundation/mpl-candy-machine";
+import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
 
 export const createConfigActions = (
   set: (partial: Partial<CandyMachineState>) => void,
@@ -14,14 +17,29 @@ export const createConfigActions = (
       if (result.success && result.data) {
         const config = result.data;
 
+        // Lấy stats trực tiếp từ Metaplex để đảm bảo chính xác ngay từ đầu
+        let totalMinted = 0;
+        let totalSupply = 0;
+        try {
+          const rpcEndpoint = config.rpcUrl || "https://api.devnet.solana.com";
+          const umi = createUmi(rpcEndpoint).use(mplCandyMachine());
+          const cm = await fetchCandyMachine(umi, umiPublicKey(config.address));
+          totalMinted = Number(cm.itemsRedeemed || 0);
+          totalSupply = Number(cm.itemsLoaded || 0);
+        } catch (onChainErr) {
+          console.warn("⚠️ Fallback to API stats due to Metaplex fetch error:", onChainErr);
+          totalMinted = config.totalProcessed || 0;
+          totalSupply = config.itemsAvailable || 0;
+        }
+
         set({
           config,
           loading: false,
           error: null,
           collectionAddress: config.collectionAddress || null,
           candyMachineAddress: config.address || null,
-          totalMinted: config.totalProcessed || 0,
-          totalSupply: config.itemsAvailable || 0,
+          totalMinted,
+          totalSupply,
         });
       } else {
         throw new Error(
@@ -53,19 +71,19 @@ export const createConfigActions = (
     }
 
     try {
-      const result = await ConfigService.getCandyMachineConfig(targetAddress);
+      const rpcEndpoint = state.config?.rpcUrl || "https://api.devnet.solana.com";
+      const umi = createUmi(rpcEndpoint).use(mplCandyMachine());
+      const cm = await fetchCandyMachine(umi, umiPublicKey(targetAddress));
 
-      if (result.success && result.data) {
-        const totalProcessed = result.data.totalProcessed || 0;
-        const totalSupply = result.data.itemsAvailable || 0;
+      const totalProcessed = Number(cm.itemsRedeemed || 0);
+      const totalSupply = Number(cm.itemsLoaded || 0);
 
-        set({
-          totalMinted: totalProcessed,
-          totalSupply: totalSupply,
-        });
-      }
+      set({
+        totalMinted: totalProcessed,
+        totalSupply: totalSupply,
+      });
     } catch (error) {
-      console.error("⚠️ Failed to refresh stats:", error);
+      console.error("⚠️ Failed to refresh stats from Metaplex:", error);
     }
   },
 
@@ -73,7 +91,7 @@ export const createConfigActions = (
     set({
       config,
       collectionAddress: config.collectionAddress || null,
-      candyMachineAddress: config.candyMachineAddress || config.address || null,
+      candyMachineAddress: config.address || null,
       totalMinted: config.totalProcessed || 0,
       totalSupply: config.itemsAvailable || 0,
       error: null,

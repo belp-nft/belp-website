@@ -10,10 +10,8 @@ import { NftService } from "@/services";
 import {
   useConfig,
   useRefreshStats,
-  useIncrementMinted,
   useMintStats,
 } from "@/stores/config";
-// import { useCandyMachineInfo } from "@/providers/CandyMachineProvider";
 import MintHeader from "@/modules/mint/MintHeader";
 import MintSection from "@/modules/mint/MintSection";
 import MintConfirmModal from "@/modules/mint/MintConfirmModal";
@@ -60,7 +58,6 @@ const BelpyMintPage = () => {
   const { minted, supply } = useMintStats();
   // const { minted, supply } = useCandyMachineInfo();
   const refreshStats = useRefreshStats();
-  const incrementMinted = useIncrementMinted();
 
   // Local state
   const [mintSuccess, setMintSuccess] = useState<boolean>(false);
