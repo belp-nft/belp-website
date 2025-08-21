@@ -10,8 +10,8 @@ export { AuthService } from "./authService";
 export { BaseService, ApiErrorException } from "./baseService";
 
 // Re-export environment configuration
-export { 
-  API_CONFIG, 
-  BLOCKCHAIN_CONFIG, 
-  APP_CONFIG 
+export {
+  API_CONFIG,
+  BLOCKCHAIN_CONFIG,
+  APP_CONFIG,
 } from "../config/env.config";
