@@ -135,7 +135,7 @@ export default function UserInfo({
           </div>
 
           <div className="mt-1 sm:mt-2 text-xs sm:text-sm font-bold flex flex-wrap items-center gap-1 sm:gap-2">
-            <span>Contract</span>
+            <span>Contract NFT</span>
             <code
               className={clsx(
                 "bg-white border border-[#e9defd] rounded-md px-1.5 sm:px-2 py-0.5",
@@ -173,7 +173,7 @@ export default function UserInfo({
           onClick={onHistoryClick}
           className={clsx(
             "sm:hidden p-2 rounded-lg bg-white border border-[#e9defd]",
-            "text-[#5b3e9e] hover:bg-[#f7f2ff] transition-colors"
+            "text-[#5b3e9e] hover:bg-[#f7f2ff] transition-colors cursor-pointer"
           )}
           aria-label="History"
           title="History"

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
 import { useConfig } from "@/stores";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import clsx from "clsx";
+import { themeClasses } from "@/providers/ThemeProvider";
 
 interface NFTData {
   id: string;
@@ -22,8 +26,54 @@ interface NFTData {
   rawNft?: any;
 }
 
+const fetchNftMetadata = async (uri: string): Promise<any> => {
+  try {
+    // Format IPFS URIs properly
+    let formattedUri = uri;
+    if (uri.startsWith("ipfs://")) {
+      formattedUri = `https://ipfs.io/ipfs/${uri.replace("ipfs://", "")}`;
+    }
+
+    console.log(`🔄 Formatted URI: ${formattedUri}`);
+
+    const response = await fetch(formattedUri, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      mode: "cors",
+    });
+
+    if (response.ok) {
+      const responseText = await response.text();
+      console.log(`📝 Response length: ${responseText.length} characters`);
+
+      if (responseText.trim()) {
+        const metadata = JSON.parse(responseText);
+        console.log(`✅ Metadata parsed successfully:`, metadata);
+        return metadata;
+      } else {
+        console.warn(`⚠️ Empty response from ${formattedUri}`);
+        return null;
+      }
+    } else {
+      const errorText = await response.text();
+      console.warn(
+        `⚠️ HTTP error ${response.status}:`,
+        errorText.substring(0, 100)
+      );
+      return null;
+    }
+  } catch (error) {
+    console.error(`❌ Error fetching metadata from ${uri}:`, error);
+    return null;
+  }
+};
+
 const TestCollectionPage = () => {
   const [nfts, setNfts] = useState<NFTData[]>([]);
+  console.log("🚀 ~ TestCollectionPage ~ nfts:", nfts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metaplex, setMetaplex] = useState<Metaplex | null>(null);
@@ -77,15 +127,11 @@ const TestCollectionPage = () => {
 
       const filteredNfts = allNfts.filter(
         (nft: any) =>
-          nft.creators &&
-          nft.creators.some(
-            (c: any) =>
-              c.address.toString() !==
-              "5rd46zx3aZKyRxrNTkU9vhJam5hBonCRMmM27bZepPBF"
-          )
+          nft.collection &&
+          nft.collection.verified &&
+          nft.collection.address ==
+            "3C4VFXpwbJ73YdDMN3JKN9ZoNQs62ZXnjabMo1ABtHDc"
       );
-
-      console.log(`📦 Found ${filteredNfts.length} NFTs in wallet`);
 
       // Store debug info
       setDebugInfo({
@@ -115,32 +161,44 @@ const TestCollectionPage = () => {
 
             let metadata = null;
             if (nft.uri) {
-              try {
-                console.log(`🔗 Fetching metadata from: ${nft.uri}`);
-                const response = await fetch(nft.uri);
-                if (response.ok) {
-                  metadata = await response.json();
-                  console.log(`✅ Metadata loaded for ${nft.name}`);
-                } else {
-                  console.warn(`⚠️ HTTP ${response.status} for ${nft.uri}`);
-                }
-              } catch (metaError) {
-                console.warn(`⚠️ Failed to fetch metadata:`, metaError);
+              metadata = await fetchNftMetadata(nft.uri);
+            }
+
+            console.log(metadata, "metadata");
+
+            // Get image URL from metadata, not from nft.uri
+            let imageUrl =
+              "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF"; // fallback
+
+            if (metadata?.image) {
+              if (metadata.image.startsWith("ipfs://")) {
+                imageUrl = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
+              } else if (metadata.image.startsWith("http")) {
+                imageUrl = metadata.image;
+              } else {
+                // Might be a direct IPFS hash
+                imageUrl = `https://ipfs.io/ipfs/${metadata.image}`;
               }
+              console.log(
+                `🖼️ Image URL from metadata: ${metadata.image} → ${imageUrl}`
+              );
+            } else {
+              console.warn(`⚠️ No image found in metadata for ${nft.name}`);
             }
 
             return {
               id: nft.address.toString(),
-              name: nft.name || metadata?.name || `NFT #${index + 1}`,
+              name:
+                metadata?.name || `BELPY #${nft.name}` || `NFT #${index + 1}`,
               symbol: nft.symbol || metadata?.symbol || "",
               description: metadata?.description || "No description available",
-              image: metadata?.image || metadata?.image_url || null,
+              image: imageUrl,
               uri: nft.uri || null,
               owner: walletAddress,
               collection: nft.collection
                 ? {
                     address: nft.collection.address.toString(),
-                    name: "Collection", // Collection name might not be available in basic fetch
+                    name: "Collection",
                     verified: nft.collection.verified || false,
                   }
                 : undefined,
@@ -186,388 +244,164 @@ const TestCollectionPage = () => {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "30px" }}>
-        <h1 style={{ color: "#333", marginBottom: "20px" }}>
-          🎨 NFT Wallet Viewer (Metaplex.js)
-        </h1>
+    <main className={clsx("min-h-screen", themeClasses.bg.page)}>
+      <section className="relative w-full h-[414px] overflow-hidden">
+        <Image
+          src="/images/my-collection/collection-banner.png"
+          alt="banner"
+          fill
+          priority
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-white/60 pointer-events-none z-0" />
+      </section>
 
-        {/* Wallet Input */}
-        <div style={{ marginBottom: "15px" }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "5px",
-              fontWeight: "bold",
-            }}
-          >
-            Wallet Address:
-          </label>
-          <input
-            type="text"
-            value={walletAddress}
-            onChange={(e) => setWalletAddress(e.target.value)}
-            style={{
-              width: "100%",
-              maxWidth: "500px",
-              padding: "10px",
-              fontSize: "14px",
-              border: "1px solid #ddd",
-              borderRadius: "5px",
-            }}
-            placeholder="Enter Solana wallet address..."
-          />
-        </div>
+      <section className="main-container mt-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <h1 className="font-bold title-text bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] bg-clip-text text-transparent leading-tight">
+            🎨 NFT Test Collection
+          </h1>
 
-        {/* Load Button */}
-        <button
-          onClick={loadWalletNfts}
-          disabled={loading || !metaplex || !walletAddress}
-          style={{
-            padding: "12px 24px",
-            backgroundColor: loading ? "#ccc" : "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: loading ? "not-allowed" : "pointer",
-            fontSize: "16px",
-            fontWeight: "bold",
-          }}
-        >
-          {loading ? "🔄 Loading NFTs..." : "🔍 Load Wallet NFTs"}
-        </button>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div
-          style={{
-            padding: "15px",
-            backgroundColor: "#ffebee",
-            color: "#c62828",
-            borderRadius: "5px",
-            marginBottom: "20px",
-            border: "1px solid #ffcdd2",
-          }}
-        >
-          <strong>❌ Error:</strong> {error}
-        </div>
-      )}
-
-      {/* Debug Information */}
-      {debugInfo && (
-        <div style={{ marginBottom: "30px" }}>
-          <h2 style={{ color: "#555", fontSize: "18px" }}>
-            📊 Wallet Information
-          </h2>
-          <div
-            style={{
-              backgroundColor: "#f8f9fa",
-              padding: "15px",
-              borderRadius: "5px",
-              fontSize: "14px",
-              border: "1px solid #e9ecef",
-            }}
-          >
-            <div>
-              <strong>Wallet:</strong> {debugInfo.walletAddress}
-            </div>
-            <div>
-              <strong>Total NFTs Found:</strong> {debugInfo.totalNfts}
-            </div>
-            <div>
-              <strong>Displayed:</strong> {Math.min(debugInfo.totalNfts, 50)}{" "}
-              (limited to 50)
-            </div>
-
-            {debugInfo.sampleNfts && debugInfo.sampleNfts.length > 0 && (
-              <details style={{ marginTop: "10px" }}>
-                <summary style={{ cursor: "pointer", fontWeight: "bold" }}>
-                  🔍 Sample NFTs (First 3)
-                </summary>
-                <pre
-                  style={{
-                    fontSize: "12px",
-                    overflow: "auto",
-                    backgroundColor: "#fff",
-                    padding: "10px",
-                    borderRadius: "3px",
-                    marginTop: "5px",
-                  }}
-                >
-                  {JSON.stringify(debugInfo.sampleNfts, null, 2)}
-                </pre>
-              </details>
-            )}
+          {/* Wallet Input */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <input
+              type="text"
+              value={walletAddress}
+              onChange={(e) => setWalletAddress(e.target.value)}
+              className="px-3 py-2 border border-[#e9defd] rounded-lg text-sm font-mono max-w-[300px]"
+              placeholder="Enter wallet address..."
+            />
+            <button
+              onClick={loadWalletNfts}
+              disabled={loading || !metaplex || !walletAddress}
+              className={clsx(
+                "px-4 py-2 rounded-lg font-semibold transition cursor-pointer",
+                loading || !metaplex || !walletAddress
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] text-white hover:shadow-lg"
+              )}
+            >
+              {loading ? "🔄 Loading..." : "🔍 Load NFTs"}
+            </button>
           </div>
         </div>
-      )}
 
-      {/* NFT Results */}
-      {nfts.length > 0 && (
-        <div>
-          <h2 style={{ color: "#333", marginBottom: "20px" }}>
-            🎨 Found {nfts.length} NFTs
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            {nfts.map((nft, index) => (
-              <div
-                key={nft.id}
-                style={{
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "10px",
-                  padding: "20px",
-                  backgroundColor: "#fff",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                }}
-              >
-                {/* NFT Image */}
-                {nft.image && (
-                  <div style={{ marginBottom: "15px" }}>
-                    <img
-                      src={nft.image}
-                      alt={nft.name}
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                        backgroundColor: "#f5f5f5",
-                      }}
-                      onError={(e) => {
-                        console.warn(`Failed to load image for ${nft.name}`);
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* NFT Info */}
-                <div>
-                  <h3
-                    style={{
-                      margin: "0 0 10px 0",
-                      fontSize: "18px",
-                      color: "#333",
-                    }}
-                  >
-                    {nft.name}
-                  </h3>
-
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      color: "#666",
-                      lineHeight: "1.5",
-                    }}
-                  >
-                    {nft.symbol && (
-                      <div>
-                        <strong>Symbol:</strong> {nft.symbol}
-                      </div>
-                    )}
-
-                    <div>
-                      <strong>ID:</strong> {nft.id.slice(0, 16)}...
-                    </div>
-
-                    {nft.collection && (
-                      <div>
-                        <strong>Collection:</strong> {nft.collection.name}
-                        {nft.collection.verified && (
-                          <span style={{ color: "#4CAF50" }}> ✓</span>
-                        )}
-                      </div>
-                    )}
-
-                    {nft.description && (
-                      <div style={{ marginTop: "10px" }}>
-                        <strong>Description:</strong>
-                        <div
-                          style={{
-                            marginTop: "5px",
-                            fontSize: "13px",
-                            maxHeight: "60px",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {nft.description}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Attributes */}
-                    {nft.attributes && nft.attributes.length > 0 && (
-                      <details style={{ marginTop: "10px" }}>
-                        <summary
-                          style={{ cursor: "pointer", fontWeight: "bold" }}
-                        >
-                          📋 Attributes ({nft.attributes.length})
-                        </summary>
-                        <div
-                          style={{
-                            marginTop: "8px",
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fit, minmax(120px, 1fr))",
-                            gap: "5px",
-                          }}
-                        >
-                          {nft.attributes
-                            .slice(0, 8)
-                            .map((attr: any, i: number) => (
-                              <div
-                                key={i}
-                                style={{
-                                  fontSize: "12px",
-                                  backgroundColor: "#f8f9fa",
-                                  padding: "4px 8px",
-                                  borderRadius: "4px",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontWeight: "bold",
-                                    color: "#495057",
-                                  }}
-                                >
-                                  {attr.trait_type}
-                                </div>
-                                <div style={{ color: "#6c757d" }}>
-                                  {attr.value}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </details>
-                    )}
-
-                    {/* Links */}
-                    <div
-                      style={{
-                        marginTop: "15px",
-                        display: "flex",
-                        gap: "10px",
-                      }}
-                    >
-                      {nft.uri && (
-                        <a
-                          href={nft.uri}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            fontSize: "12px",
-                            color: "#007acc",
-                            textDecoration: "none",
-                            padding: "4px 8px",
-                            backgroundColor: "#e3f2fd",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          🔗 Metadata
-                        </a>
-                      )}
-
-                      <a
-                        href={`https://solscan.io/token/${nft.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          fontSize: "12px",
-                          color: "#8e24aa",
-                          textDecoration: "none",
-                          padding: "4px 8px",
-                          backgroundColor: "#f3e5f5",
-                          borderRadius: "4px",
-                        }}
-                      >
-                        🔍 Solscan
-                      </a>
-                    </div>
-
-                    {/* Technical Details */}
-                    <details style={{ marginTop: "10px" }}>
-                      <summary
-                        style={{
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          color: "#888",
-                        }}
-                      >
-                        🔧 Technical Details
-                      </summary>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "#666",
-                          marginTop: "5px",
-                        }}
-                      >
-                        <div>
-                          <strong>Seller Fee:</strong>{" "}
-                          {(nft.sellerFeeBasisPoints || 0) / 100}%
-                        </div>
-                        <div>
-                          <strong>Creators:</strong> {nft.creators?.length || 0}
-                        </div>
-                        <div>
-                          <strong>Full Address:</strong> {nft.id}
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                </div>
+        {/* Debug Info */}
+        {debugInfo && (
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="font-semibold text-blue-800 mb-2">📊 Wallet Info</h3>
+            <div className="text-sm text-blue-700">
+              <div>
+                <strong>Total NFTs:</strong> {debugInfo.totalNfts}
               </div>
-            ))}
+              <div>
+                <strong>Displayed:</strong> {Math.min(debugInfo.totalNfts, 50)}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* No Results */}
-      {!loading && !error && nfts.length === 0 && debugInfo && (
-        <div
-          style={{
-            padding: "40px",
-            backgroundColor: "#fff3e0",
-            color: "#ef6c00",
-            borderRadius: "10px",
-            textAlign: "center",
-            border: "1px solid #ffcc02",
-          }}
-        >
-          <h3>📭 No NFTs Found</h3>
-          <p>
-            This wallet doesn't contain any NFTs, or they couldn't be loaded.
-          </p>
-          <p style={{ fontSize: "14px", color: "#666" }}>
-            Wallet: {walletAddress}
-          </p>
-        </div>
-      )}
+        {/* Error Display */}
+        {error && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <h3 className="font-semibold text-red-800 mb-2">❌ Error</h3>
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
+      </section>
 
-      {/* Footer */}
-      <div
-        style={{
-          marginTop: "50px",
-          fontSize: "14px",
-          color: "#888",
-          textAlign: "center",
-        }}
-      >
-        <p>
-          🔧 Using Metaplex JavaScript SDK | Status:{" "}
-          {metaplex ? "✅ Connected" : "❌ Disconnected"} | Network: Mainnet
-        </p>
-      </div>
-    </div>
+      <section className="main-container pt-5 md:pt-10 pb-20">
+        {loading ? (
+          <div className="text-center flex flex-col items-center pb-12">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                Loading NFTs...
+              </h3>
+              <p className="text-blue-600">
+                Please wait while we fetch NFT data from the blockchain.
+              </p>
+            </div>
+          </div>
+        ) : nfts.length === 0 ? (
+          <div className="text-center flex flex-col items-center pb-12">
+            <Image
+              src="/images/mint/random-cat.svg"
+              width={200}
+              height={200}
+              alt="Random Cat"
+              className="opacity-50"
+            />
+            <h3 className="text-xl font-semibold my-2">
+              No NFTs found in this wallet
+            </h3>
+            <p className="mb-6">
+              Enter a wallet address with NFTs to view the collection.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="text-right text-xs text-primary-muted mb-2">
+              {nfts.length} Items
+            </div>
+
+            {/* NFT Grid - Same as My Collection */}
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+              {nfts.map((nft) => (
+                <motion.div
+                  key={nft.id}
+                  whileHover={{ y: -3 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="block w-full text-left rounded-xl p-2 sm:p-3 bg-white/80 backdrop-blur border border-[#eadffd] hover:border-[#d8c7ff] cursor-pointer"
+                >
+                  <div className="relative rounded-lg overflow-hidden">
+                    {nft.image ? (
+                      <Image
+                        src={nft.image}
+                        alt={nft.name}
+                        width={480}
+                        height={480}
+                        className="w-full aspect-square object-cover rounded-lg"
+                        onError={(e) => {
+                          console.warn(`Failed to load image for ${nft.name}`);
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-400">No Image</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-2 sm:mt-3">
+                    <div className="text-[#2b1a5e] font-semibold text-sm sm:text-[15px]">
+                      {nft.name}
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-[#6c5a99] mt-1">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#7a4bd6]" />
+                        NFT
+                      </span>
+                      <span className="opacity-60">{nft.id.slice(-4)}</span>
+                    </div>
+                  </div>
+
+                  {/* Additional Info - Collapsible */}
+                  {nft.attributes && nft.attributes.length > 0 && (
+                    <div className="mt-2 text-xs text-[#6c5a99]">
+                      <span className="opacity-70">
+                        {nft.attributes.length} traits
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+    </main>
   );
 };
 

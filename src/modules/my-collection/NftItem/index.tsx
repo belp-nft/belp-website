@@ -1,12 +1,11 @@
 "use client";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import type { NFT } from "@/services/types";
 import Link from "next/link";
 
-export default function NftItem({ item }: { item: NFT }) {
+export default function NftItem({ item }: { item: any }) {
   return (
-    <Link href={`/my-collection/${item.nftAddress}`}>
+    <Link href={`/my-collection/${item.id}`}>
       <motion.div
         whileHover={{ y: -3 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -16,7 +15,7 @@ export default function NftItem({ item }: { item: NFT }) {
       >
         <div className="relative rounded-lg overflow-hidden">
           <Image
-            src={item.imageUrl}
+            src={item.image}
             alt={item.name}
             width={480}
             height={480}
@@ -33,7 +32,7 @@ export default function NftItem({ item }: { item: NFT }) {
               <span className="w-2 h-2 rounded-full bg-[#7a4bd6]" />
               NFT
             </span>
-            <span className="opacity-60">{item.nftAddress.slice(-4)}</span>
+            <span className="opacity-60">{item?.id.slice(-4)}</span>
           </div>
         </div>
       </motion.div>
