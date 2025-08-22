@@ -577,11 +577,8 @@ export function CandyMachineProvider({
 
       // Gửi và confirm transaction với error handling
       const result = await mintBuilder.sendAndConfirm(state.umi, {
-        confirm: { commitment: "confirmed" },
-        send: {
-          skipPreflight: true, // Skip preflight to avoid simulation issues
-          maxRetries: 3,
-        },
+        send: { commitment: 'finalized' },
+        confirm: { commitment: "finalized" },
       });
 
       const base58Signature = bs58.encode(result.signature);
