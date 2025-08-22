@@ -25,16 +25,11 @@ import {
   mplCandyMachine,
   CandyMachine,
 } from "@metaplex-foundation/mpl-candy-machine";
-import {
-  fetchCollection,
-  CollectionV1,
-  mplCore,
-} from "@metaplex-foundation/mpl-core";
+import { CollectionV1, mplCore } from "@metaplex-foundation/mpl-core";
 import {
   generateSigner,
   transactionBuilder,
   publicKey as umiPublicKey,
-  sol,
   Umi,
 } from "@metaplex-foundation/umi";
 import bs58 from "bs58";
@@ -84,6 +79,7 @@ interface SimpleNFT {
   description: string;
   image: string;
   attributes: any[];
+  createdAt?: string;
 }
 
 export interface MintResult {
@@ -123,7 +119,6 @@ interface CandyMachineContextType extends CandyMachineState {
   clearError: () => void;
   resetState: () => void;
   initializeCandyMachine: () => Promise<void>;
-  fetchCollection: () => Promise<void>;
   loadWalletNfts: (address: string) => Promise<SimpleNFT[]>;
 
   // Config
@@ -342,14 +337,40 @@ export function CandyMachineProvider({
 
         console.log("✅ Successfully processed NFTs:", processedNfts.length);
 
-        // Update state with loaded NFTs
+        // Filter và sort NFTs từ mới nhất trước khi return
+        const sortedNfts = processedNfts.sort((a, b) => {
+          // Ưu tiên sử dụng createdAt nếu có
+          const dateA = a.createdAt;
+          const dateB = b.createdAt;
+
+          // Nếu có createdAt, sort theo ngày (mới nhất trước)
+          if (dateA && dateB) {
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
+          }
+
+          // Nếu chỉ một có createdAt, ưu tiên cái có createdAt
+          if (dateA && !dateB) return -1;
+          if (!dateA && dateB) return 1;
+
+          // Nếu không có createdAt, sort theo name (reverse alphabetical để mới hơn lên trước)
+          const nameA = a.name || a.id || "";
+          const nameB = b.name || b.id || "";
+          return nameB.localeCompare(nameA);
+        });
+
+        console.log(
+          "✅ NFTs sorted by date (newest first):",
+          sortedNfts.length
+        );
+
+        // Update state with sorted NFTs
         setState((prev) => ({
           ...prev,
-          walletNfts: processedNfts,
+          walletNfts: sortedNfts,
           isLoadingNfts: false,
         }));
 
-        return processedNfts;
+        return sortedNfts;
       } catch (err) {
         console.error("❌ Error loading wallet NFTs:", err);
         setState((prev) => ({
@@ -363,38 +384,6 @@ export function CandyMachineProvider({
     },
     [state.metaplex, collectionAddress]
   );
-
-  // Fetch Collection data
-  const fetchCollectionData = useCallback(async () => {
-    if (!state.umi) {
-      console.log("UMI not initialized, cannot fetch collection");
-      return;
-    }
-
-    console.log("Fetching Collection...");
-
-    try {
-      const collection = await fetchCollection(
-        state.umi,
-        umiPublicKey(collectionAddress || configData?.collectionAddress || "")
-      );
-
-      console.log("✅ Collection fetched:", {
-        address: collection.publicKey,
-        name: collection.name,
-        uri: collection.uri,
-      });
-
-      setState((prev) => ({
-        ...prev,
-        collection,
-      }));
-    } catch (error: any) {
-      console.log("❌ Failed to fetch Collection:", error);
-      // Don't set error state for collection fetch failure
-      // as it's not critical for minting
-    }
-  }, [state.umi, log]);
 
   // Initialize UMI and Candy Machine
   const initializeCandyMachine = useCallback(async () => {
@@ -561,11 +550,6 @@ export function CandyMachineProvider({
         itemsLoaded: Number(candyMachine.itemsLoaded),
         itemsRedeemed: Number(candyMachine.itemsRedeemed),
       }));
-
-      // Fetch Collection after Candy Machine is initialized
-      setTimeout(() => {
-        fetchCollectionData();
-      }, 100);
     } catch (error: any) {
       console.log("❌ Failed to initialize Candy Machine:", error);
       setState((prev) => ({
@@ -580,7 +564,6 @@ export function CandyMachineProvider({
     state.isLoading,
     configData,
     log,
-    fetchCollectionData,
     showError,
   ]);
 
@@ -911,7 +894,6 @@ export function CandyMachineProvider({
     clearError,
     resetState,
     initializeCandyMachine,
-    fetchCollection: fetchCollectionData,
     loadWalletNfts,
     candyMachineAddress: configData?.address || "",
     collectionAddress: collectionAddress || configData?.collectionAddress || "",
@@ -953,7 +935,6 @@ export function useCandyMachine() {
     clearLastResult,
     clearError,
     initializeCandyMachine,
-    fetchCollection: fetchCollectionData,
     loadWalletNfts,
     walletNfts,
     isLoadingNfts,
@@ -985,7 +966,6 @@ export function useCandyMachine() {
     clearResult: clearLastResult,
     clearError,
     initialize: initializeCandyMachine,
-    fetchCollection: fetchCollectionData,
     loadWalletNfts,
 
     // Computed

@@ -3,12 +3,12 @@ import Image from "next/image";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { Metaplex } from "@metaplex-foundation/js";
 import UserInfo from "@/modules/my-collection//UserInfo";
 import { useWallet } from "@/hooks/useWallet";
 import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
-import type { NFT } from "@/services/types";
+import NftGrid from "@/modules/my-collection//NftGrid";
+import { useCollectionAddress } from "@/stores/config";
+import { themeClasses } from "@/providers/ThemeProvider";
 
 interface SimpleNFT {
   id: string;
@@ -17,48 +17,6 @@ interface SimpleNFT {
   image: string;
   attributes: any[];
 }
-import NftGrid from "@/modules/my-collection//NftGrid";
-import { useLoading } from "@/providers/LoadingProvider";
-import { useCollectionAddress } from "@/stores/config";
-import { useConfig } from "@/stores";
-import { themeClasses } from "@/providers/ThemeProvider";
-
-// Function to fetch metadata from NFT URI
-const fetchNftMetadata = async (uri: string): Promise<any> => {
-  try {
-    console.log(`🔗 Fetching metadata from URI: ${uri}`);
-
-    // Format IPFS URIs properly
-    let formattedUri = uri;
-    if (uri.startsWith("ipfs://")) {
-      formattedUri = `https://ipfs.io/ipfs/${uri.replace("ipfs://", "")}`;
-    }
-
-    console.log(`🔄 Formatted URI: ${formattedUri}`);
-
-    const response = await fetch(formattedUri, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      mode: "cors",
-    });
-
-    if (response.ok) {
-      const responseText = await response.text();
-      if (responseText.trim()) {
-        const metadata = JSON.parse(responseText);
-        console.log(`✅ Metadata parsed successfully for URI`);
-        return metadata;
-      }
-    }
-    return null;
-  } catch (error) {
-    console.error(`❌ Error fetching metadata:`, error);
-    return null;
-  }
-};
 
 const MyCollectionPage = () => {
   const router = useRouter();
