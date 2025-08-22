@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useLoading } from "@/providers/LoadingProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
 const HistoryPage = () => {
   const { solAddress } = useWallet();
@@ -25,117 +26,79 @@ const HistoryPage = () => {
   } = useCandyMachineContext();
 
   const { showLoading, hideLoading } = useLoading();
+  const { isAuthenticated } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
   const [isLoadingMoreNfts, setIsLoadingMoreNfts] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
 
-  // Function to load transactions from API
+  // Load transactions from API
   const loadTransactions = async () => {
-    if (!solAddress) return;
+    if (!solAddress || !isAuthenticated) return;
 
     try {
       setIsLoadingTransactions(true);
-      console.log("🔍 Loading transactions from API for address:", solAddress);
-
       const response = await UserService.getTransactions();
-      if (response.success && response.data) {
-        setTransactions(response.data);
-        console.log("✅ API transactions loaded:", response.data.length);
-      } else {
-        console.warn("⚠️ No API transactions found or API error");
-        setTransactions([]);
-      }
+      setTransactions(response.success && response.data ? response.data : []);
     } catch (error) {
-      console.error("❌ Failed to load API transactions:", error);
+      console.error("❌ Failed to load transactions:", error);
       setTransactions([]);
     } finally {
       setIsLoadingTransactions(false);
     }
   };
 
-  // Function to map wallet NFTs with API transactions (to get transaction data and replace createdAt)
+  // Map wallet NFTs with transaction data
   const mapNftsWithTransactionData = () => {
-    if (!walletNfts || !transactions.length) {
-      return walletNfts || [];
-    }
+    if (!walletNfts?.length || !transactions.length) return walletNfts || [];
 
-    console.log("🔄 Mapping wallet NFTs with transaction data...", {
-      walletNftsCount: walletNfts.length,
-      transactionsCount: transactions.length,
-    });
-
-    // Filter transactions by current wallet address
     const walletTransactions = transactions.filter(
-      (transaction) =>
-        transaction.walletAddress?.toLowerCase() === solAddress?.toLowerCase()
+      (tx) => tx.walletAddress?.toLowerCase() === solAddress?.toLowerCase()
     );
 
-    console.log("💰 Wallet transactions found:", walletTransactions.length);
-
     return walletNfts.map((walletNft, index) => {
-      // Match NFT with transaction by index (assuming same order)
-      // Or could match by closest timestamp
       const matchingTransaction =
         walletTransactions[index] || walletTransactions[0];
 
-      if (matchingTransaction) {
-        console.log("✅ Found transaction data for NFT:", {
-          nftId: walletNft.id,
-          nftIndex: index,
-          transactionCreatedAt: matchingTransaction.createdAt,
-          transactionSignature: matchingTransaction.transactionSignature,
-          originalCreatedAt: walletNft.createdAt,
-        });
-
-        return {
-          ...walletNft,
-          createdAt: matchingTransaction.createdAt, // Replace with transaction createdAt
-          signature: matchingTransaction.transactionSignature, // Add transaction signature
-          transactionId: matchingTransaction._id,
-        };
-      }
-
-      return walletNft;
+      return matchingTransaction
+        ? {
+            ...walletNft,
+            createdAt: matchingTransaction.createdAt,
+            signature: matchingTransaction.transactionSignature,
+            transactionId: matchingTransaction._id,
+          }
+        : walletNft;
     });
   };
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
-
-    // Detect network (mainnet or devnet based on environment)
     const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
-
-    const url = `https://solscan.io/token/${tokenAddress}${
-      isMainnet ? "" : "?cluster=devnet"
-    }`;
+    const url = `https://solscan.io/token/${tokenAddress}${isMainnet ? "" : "?cluster=devnet"}`;
     window.open(url, "_blank");
   };
 
   useEffect(() => {
-    if (solAddress) {
-      // Load NFTs từ blockchain (chỉ khi metaplex đã sẵn sàng)
-      if (metaplex) {
-        console.log("🔍 Loading NFTs for history page, address:", solAddress);
-        showLoading();
-
-        // Load both blockchain NFTs and API transactions
-        Promise.all([loadWalletNfts(solAddress), loadTransactions()]).finally(
-          () => {
-            hideLoading();
-          }
-        );
-      } else {
-        console.log("⏳ Waiting for Metaplex to initialize...");
-      }
-    } else {
-      // Reset data khi không có wallet
+    if (!solAddress || !metaplex) {
       setError(null);
       setTransactions([]);
       hideLoading();
+      return;
     }
-  }, [solAddress, metaplex, showLoading, hideLoading]); // Thêm loading functions vào dependencies
+
+    showLoading();
+    loadWalletNfts(solAddress).finally(() => {
+      hideLoading();
+      if (isAuthenticated) loadTransactions();
+    });
+  }, [solAddress, metaplex, showLoading, hideLoading]);
+
+  useEffect(() => {
+    if (isAuthenticated && solAddress && metaplex && walletNfts?.length) {
+      loadTransactions();
+    }
+  }, [isAuthenticated]);
 
   const currentData = mapNftsWithTransactionData();
 
@@ -163,7 +126,7 @@ const HistoryPage = () => {
         </div>
 
         <div className="bg-[#E3CEF6] p-5 rounded-4xl">
-          {!metaplex ? (
+          {!metaplex || isLoadingTransactions ? (
             <motion.div
               className="text-center py-12"
               initial={{ opacity: 0, y: 20 }}
@@ -174,12 +137,16 @@ const HistoryPage = () => {
               <h3 className="text-lg font-semibold text-blue-800 mb-2">
                 {!metaplex
                   ? "Initializing Metaplex..."
-                  : "Loading NFT History..."}
+                  : isLoadingTransactions
+                    ? "Loading Transaction Data..."
+                    : "Loading NFT History..."}
               </h3>
               <p className="text-blue-600">
                 {!metaplex
                   ? "Please wait while we setup the blockchain connection."
-                  : "Fetching your NFT collection and transaction data..."}
+                  : isLoadingTransactions
+                    ? "Fetching transaction history from API..."
+                    : "Fetching your NFT collection and transaction data..."}
               </p>
             </motion.div>
           ) : currentData?.length === 0 && !isLoadingNfts ? (
@@ -372,15 +339,22 @@ const HistoryPage = () => {
                 );
               })}
 
-              {/* Initial Loading States - Only NFT loading needed */}
-              {isLoadingNfts && currentData?.length === 0 && (
-                <div className="flex justify-center py-6">
-                  <div className="flex items-center space-x-2 text-[#7A4BD6]">
-                    <div className="animate-spin w-5 h-5 border-2 border-[#7A4BD6] border-t-transparent rounded-full"></div>
-                    <span className="font-medium">Loading NFTs...</span>
+              {/* Initial Loading States - Both NFT and Transaction loading */}
+              {(isLoadingNfts || isLoadingTransactions) &&
+                currentData?.length === 0 && (
+                  <div className="flex justify-center py-6">
+                    <div className="flex items-center space-x-2 text-[#7A4BD6]">
+                      <div className="animate-spin w-5 h-5 border-2 border-[#7A4BD6] border-t-transparent rounded-full"></div>
+                      <span className="font-medium">
+                        {isLoadingNfts && isLoadingTransactions
+                          ? "Loading NFTs and Transactions..."
+                          : isLoadingNfts
+                            ? "Loading NFTs..."
+                            : "Loading Transactions..."}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* View More Button - Only NFT pagination needed */}
               {hasMoreNfts && currentData && currentData.length > 0 && (
@@ -388,7 +362,7 @@ const HistoryPage = () => {
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-[#7A4BD6] font-semibold shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-50"
-                    disabled={isLoadingMoreNfts}
+                    disabled={isLoadingMoreNfts || isLoadingTransactions}
                     onClick={async () => {
                       if (!solAddress || isLoadingMoreNfts) return;
                       setIsLoadingMoreNfts(true);
