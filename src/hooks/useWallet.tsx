@@ -2,12 +2,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBalance } from "@/providers/BalanceProvider";
 import { useClearConfig, useConfig } from "@/stores/config";
-import { useLoading } from "@/providers/LoadingProvider";
 
 import { AuthService } from "@/services";
 import { WalletStorage } from "@/constants/storage";
 
 // Import separated services
+import { WalletDebugService } from "./wallet/debugService";
 import { WalletType, LoadingKind, Connected } from "./wallet/types";
 import {
   generateWalletAvailabilityChecks,
@@ -108,7 +108,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const isLoadingTransactionsRef = useRef(false);
 
   const clearConfig = useClearConfig();
-  const { showLoading, hideLoading } = useLoading();
   const configData = useConfig();
 
   // Computed values
@@ -117,42 +116,61 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     [solLamports]
   );
 
+  // Check if wallet is ready for API calls (connected + authenticated)
+  const isWalletReady = useMemo(() => {
+    return !!(
+      solAddress &&
+      authToken &&
+      !isAuthenticating &&
+      AuthService.isTokenValid()
+    );
+  }, [solAddress, authToken, isAuthenticating]);
+
   // Memoize RPC URL to prevent unnecessary re-renders
   const rpcUrl = useMemo(() => {
     return configData?.rpcUrl || "https://api.devnet.solana.com";
   }, [configData?.rpcUrl]);
 
   // Helper function to get SOL balance using config RPC URL
-  const getSolBalance = useCallback(async (address: string): Promise<number> => {
-    return await getSolBalanceLamports(address, rpcUrl);
-  }, [rpcUrl]);
+  const getSolBalance = useCallback(
+    async (address: string): Promise<number> => {
+      return await getSolBalanceLamports(address, rpcUrl);
+    },
+    [rpcUrl]
+  );
 
   // Balance management
-  const refreshSolBalance = useCallback(async (forceRefresh = false) => {
-    if (!solAddress) {
-      console.warn("💰 No wallet address, cannot fetch balance");
-      setSolLamports(0);
-      return;
-    }
+  const refreshSolBalance = useCallback(
+    async (forceRefresh = false) => {
+      if (!solAddress) {
+        console.warn("💰 No wallet address, cannot fetch balance");
+        setSolLamports(0);
+        return;
+      }
 
-    try {
-      setLoading("sol-balance");
-      console.log("💰 Fetching balance for:", solAddress);
-      const lamports = await getSolBalance(solAddress);
-      setSolLamports(lamports);
-      console.log("✅ Balance loaded:", lamports);
-    } catch (error) {
-      console.error("❌ Failed to fetch balance:", error);
-      setSolLamports(0);
-    } finally {
-      setLoading(null);
-    }
-  }, [solAddress]);
+      try {
+        setLoading("sol-balance");
+        console.log("💰 Fetching balance for:", solAddress);
+        const lamports = await getSolBalance(solAddress);
+        setSolLamports(lamports);
+        console.log("✅ Balance loaded:", lamports);
+      } catch (error) {
+        console.error("❌ Failed to fetch balance:", error);
+        setSolLamports(0);
+      } finally {
+        setLoading(null);
+      }
+    },
+    [solAddress, getSolBalance, setSolLamports, setLoading, rpcUrl]
+  );
 
   // User data management
   const loadTransactions = useCallback(
     async (forceRefresh: boolean = false) => {
-      if (!forceRefresh && (isLoadingTransactions || isLoadingTransactionsRef.current)) {
+      if (
+        !forceRefresh &&
+        (isLoadingTransactions || isLoadingTransactionsRef.current)
+      ) {
         console.log("Transactions already loading, skipping duplicate call...");
         return;
       }
@@ -193,7 +211,13 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
   const loadUserData = useCallback(
     async (walletAddress: string, retryAuth: boolean = false) => {
-      if (!retryAuth && (isLoadingUserStats || isLoadingTransactions || isLoadingUserDataRef.current || isLoadingTransactionsRef.current)) {
+      if (
+        !retryAuth &&
+        (isLoadingUserStats ||
+          isLoadingTransactions ||
+          isLoadingUserDataRef.current ||
+          isLoadingTransactionsRef.current)
+      ) {
         console.log("User data already loading, skipping duplicate call...");
         return;
       }
@@ -258,10 +282,65 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setSolAddress,
         setConnectedWallet,
         setConnectedType,
-        setSolLamports
+        setSolLamports,
+        // Handle account changed callback
+        async (newAddress: string, changedWalletType: WalletType) => {
+          console.log(
+            `🔄 Account changed detected: ${newAddress} on ${changedWalletType}`
+          );
+
+          // Clear old authentication token
+          AuthService.removeToken();
+          setAuthToken(null);
+          setUserStatistics(null);
+          setTransactions([]);
+          setTransactionsLastLoaded(0);
+          setUserStatsLastLoaded(0);
+
+          // Reset global connection flag to allow re-processing
+          globalConnectionProcessed = false;
+          hasProcessedConnectionRef.current = false;
+
+          try {
+            // Re-authenticate with new address
+            console.log("🔐 Re-authenticating with new address...", newAddress);
+            const authSuccess = await authenticateWallet(newAddress, true);
+
+            if (authSuccess) {
+              // Load user data with new authenticated token
+              console.log(
+                "✅ Re-authentication successful, loading user data..."
+              );
+              await loadUserData(newAddress, true);
+
+              // Trigger connected callback with new address
+              onConnected?.({
+                kind: "sol",
+                address: newAddress,
+                walletType: changedWalletType,
+              });
+
+              console.log("🎉 Account switch completed successfully!");
+            } else {
+              console.warn("❌ Re-authentication failed for new address");
+            }
+          } catch (error) {
+            console.error("❌ Error handling account change:", error);
+          }
+        },
+        // Get current sol address function
+        () => solAddress
       );
     },
-    [setSolAddress, setConnectedWallet, setConnectedType]
+    [
+      setSolAddress,
+      setConnectedWallet,
+      setConnectedType,
+      authenticateWallet,
+      loadUserData,
+      onConnected,
+      solAddress,
+    ]
   );
 
   const cleanupWalletListeners = useCallback((walletType: WalletType) => {
@@ -324,14 +403,12 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       try {
         setLoading(walletType);
-        showLoading();
         window.localStorage.removeItem("wallet-disconnected");
 
         const provider = config.getProvider();
 
         // If provider not found, redirect to download/install
         if (!provider) {
-          hideLoading();
           console.log(
             `No ${config.displayName} provider detected, redirecting...`
           );
@@ -445,10 +522,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         }
       } finally {
         setLoading(null);
-        hideLoading();
       }
     },
-    [showLoading, hideLoading, authenticateWallet, refreshSolBalance]
+    [authenticateWallet, refreshSolBalance]
   );
 
   // Restore wallet state from localStorage on initial load
@@ -467,30 +543,66 @@ export function useWallet(onConnected?: (info: Connected) => void) {
             payload.walletAddress || payload.address || payload.wallet;
 
           if (walletAddress) {
+            // Get current connected wallet address to compare
+            const lastWalletType =
+              (window.localStorage.getItem("last-wallet-type") as WalletType) ||
+              "phantom";
+
+            // Check if we have a wallet provider with current address
+            const config = WALLET_CONFIGS[lastWalletType];
+            const provider = config.getProvider();
+            const currentWalletAddress = provider?.publicKey?.toString();
+
+            // If current wallet address differs from token address, clear old token
+            if (
+              currentWalletAddress &&
+              currentWalletAddress.toLowerCase() !== walletAddress.toLowerCase()
+            ) {
+              console.log(
+                "🔄 Wallet address changed, clearing old token and re-authenticating..."
+              );
+              AuthService.removeToken();
+              setAuthToken(null);
+
+              // Re-authenticate with current address
+              authenticateWallet(currentWalletAddress, true).then((success) => {
+                if (success) {
+                  setSolAddress(currentWalletAddress);
+                  setConnectedWallet(lastWalletType);
+                  setConnectedType("sol");
+                  refreshSolBalance();
+                  loadUserData(currentWalletAddress);
+                  onConnected?.({
+                    kind: "sol",
+                    address: currentWalletAddress,
+                    walletType: lastWalletType,
+                  });
+                }
+              });
+              return;
+            }
+
             console.log(
               "🔄 Restoring wallet address from token:",
               walletAddress
             );
             setSolAddress(walletAddress);
             setAuthToken(existingToken);
-
-            // Try to determine which wallet type was used (fallback to phantom)
-            const lastWalletType =
-              (window.localStorage.getItem("last-wallet-type") as WalletType) ||
-              "phantom";
             setConnectedWallet(lastWalletType);
             setConnectedType("sol");
 
-            // Load balance and user data
             refreshSolBalance();
-            
+
             // Only load user data if we don't have recent data
             // Use setTimeout to avoid hydration mismatch with Date.now()
             setTimeout(() => {
               const now = Date.now();
-              const hasRecentUserStats = userStatistics && (now - userStatsLastLoaded < 5 * 60 * 1000); // 5 minutes
-              const hasRecentTransactions = transactions.length > 0 && (now - transactionsLastLoaded < 5 * 60 * 1000); // 5 minutes
-              
+              const hasRecentUserStats =
+                userStatistics && now - userStatsLastLoaded < 5 * 60 * 1000; // 5 minutes
+              const hasRecentTransactions =
+                transactions.length > 0 &&
+                now - transactionsLastLoaded < 5 * 60 * 1000; // 5 minutes
+
               if (!hasRecentUserStats || !hasRecentTransactions) {
                 loadUserData(walletAddress);
               }
@@ -508,7 +620,97 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         AuthService.removeToken();
       }
     }
-  }, []);
+  }, [authenticateWallet, refreshSolBalance, loadUserData, onConnected]);
+
+  // Auto-refresh balance when wallet address or RPC URL changes
+  useEffect(() => {
+    if (solAddress && rpcUrl) {
+      console.log("🔄 Auto-refreshing balance due to address/RPC change:", {
+        solAddress,
+        rpcUrl,
+      });
+      refreshSolBalance();
+    }
+  }, [solAddress, rpcUrl, refreshSolBalance]);
+
+  // Periodic check for account changes (fallback if events don't work)
+  useEffect(() => {
+    if (!connectedWallet || !solAddress) return;
+
+    const checkForAccountChanges = async () => {
+      try {
+        const config = WALLET_CONFIGS[connectedWallet];
+        const provider = config.getProvider();
+
+        if (!provider?.publicKey) return;
+
+        const currentProviderAddress = provider.publicKey.toString();
+
+        // If provider address differs from our stored address, account was changed
+        if (currentProviderAddress !== solAddress) {
+          console.log("🔄 Detected account change via periodic check:", {
+            stored: solAddress,
+            current: currentProviderAddress,
+            wallet: connectedWallet,
+          });
+
+          // Clear old authentication token
+          AuthService.removeToken();
+          setAuthToken(null);
+          setUserStatistics(null);
+          setTransactions([]);
+          setTransactionsLastLoaded(0);
+          setUserStatsLastLoaded(0);
+
+          // Update to new address
+          setSolAddress(currentProviderAddress);
+          // Don't reset balance immediately, let refreshSolBalance handle it
+
+          try {
+            // Re-authenticate with new address
+            console.log(
+              "🔐 Re-authenticating with new address via periodic check...",
+              currentProviderAddress
+            );
+            const authSuccess = await authenticateWallet(
+              currentProviderAddress,
+              true
+            );
+
+            if (authSuccess) {
+              console.log("✅ Re-authentication successful via periodic check");
+              await loadUserData(currentProviderAddress, true);
+
+              onConnected?.({
+                kind: "sol",
+                address: currentProviderAddress,
+                walletType: connectedWallet,
+              });
+
+              console.log("🎉 Account switch completed via periodic check!");
+            }
+          } catch (error) {
+            console.error("❌ Error in periodic account check:", error);
+          }
+        }
+      } catch (error) {
+        // Ignore errors in periodic check to avoid spam
+      }
+    };
+
+    // Check every 2 seconds when connected
+    const interval = setInterval(checkForAccountChanges, 2000);
+
+    return () => clearInterval(interval);
+  }, [
+    connectedWallet,
+    solAddress,
+    authenticateWallet,
+    loadUserData,
+    onConnected,
+    setSolAddress,
+    setSolLamports,
+  ]);
 
   // Simplified auto-connect with debounce
   useEffect(() => {
@@ -761,6 +963,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     transactions,
     isLoadingTransactions,
     isLoadingUserStats,
+    isAuthenticating,
+    isWalletReady,
 
     // Generic actions
     connectWallet,
@@ -794,6 +998,35 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       AuthService.removeToken();
       setAuthToken(null);
       clearConfig();
+    },
+
+    // Debug helpers for development
+    debugWallet: (walletType: WalletType) =>
+      WalletDebugService.debugWalletEvents(walletType),
+    setupDebugListeners: () => WalletDebugService.setupDebugListeners(),
+    logAuthStatus: () => {
+      console.log("🔍 Wallet Auth Status:", {
+        solAddress,
+        hasAuthToken: !!authToken,
+        isAuthenticating,
+        isWalletReady,
+        hasValidToken: AuthService.isTokenValid(),
+        timestamp: new Date().toISOString(),
+      });
+    },
+    logBalanceStatus: () => {
+      console.log("🔍 Wallet Balance Status:", {
+        solAddress,
+        solLamports,
+        solBalanceText,
+        rpcUrl,
+        loading,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    forceRefreshBalance: () => {
+      console.log("🔄 Force refreshing balance...");
+      refreshSolBalance(true);
     },
   };
 }

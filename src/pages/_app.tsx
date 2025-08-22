@@ -40,6 +40,8 @@ export default function App({ Component, pageProps, router }: AppProps) {
           name="description"
           content="Belpy NFT - The first limited collection of unique NFT tokens"
         />
+
+        {/* Favicon + Icons */}
         <link rel="icon" href="/favicon.ico" />
         <link
           rel="icon"
@@ -53,15 +55,34 @@ export default function App({ Component, pageProps, router }: AppProps) {
           sizes="180x180"
           href="/apple-touch-icon.png"
         />
-        <link rel="manifest" href="/site.webmanifest" />
-        <meta name="apple-mobile-web-app-title" content="MyWebSite" />
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* Theme */}
+        <meta name="apple-mobile-web-app-title" content="Belpy" />
+        <meta name="theme-color" content="#000000" />
+
+        {/* OpenGraph cho Phantom Wallet lấy ảnh */}
+        <meta property="og:title" content="Belpy" />
+        <meta
+          property="og:description"
+          content="Belpy NFT - The first limited collection of unique NFT tokens"
+        />
+        <meta
+          property="og:image"
+          content="https://belpy.xyz/web-app-manifest-512x512.png"
+        />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://belpy.xyz/" />
       </Head>
 
       <div className={clsx("font-gmarket antialiased", oxanium.variable)}>
-        <BalanceProvider>
-          <ToastProvider>
-            <LoadingProvider>
-              <AuthProvider>
+        <ToastProvider>
+          <LoadingProvider>
+            <AuthProvider>
+              <BalanceProvider>
                 <SettingsProvider>
                   <ConfigProvider>
                     <ThemeProvider>
@@ -81,10 +102,10 @@ export default function App({ Component, pageProps, router }: AppProps) {
                     </ThemeProvider>
                   </ConfigProvider>
                 </SettingsProvider>
-              </AuthProvider>
-            </LoadingProvider>
-          </ToastProvider>
-        </BalanceProvider>
+              </BalanceProvider>
+            </AuthProvider>
+          </LoadingProvider>
+        </ToastProvider>
       </div>
     </>
   );

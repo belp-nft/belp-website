@@ -5,50 +5,37 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import UserInfo from "@/modules/my-collection//UserInfo";
 import { useWallet } from "@/hooks/useWallet";
-import { NftService } from "@/services/nftService";
-import type { NFT } from "@/services/types";
+import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import NftGrid from "@/modules/my-collection//NftGrid";
-import { useLoading } from "@/providers/LoadingProvider";
 import { useCollectionAddress } from "@/stores/config";
 import { themeClasses } from "@/providers/ThemeProvider";
 
+interface SimpleNFT {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  attributes: any[];
+}
+
 const MyCollectionPage = () => {
-  const [nfts, setNfts] = useState<NFT[]>([]);
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(20);
   const [isInitialized, setIsInitialized] = useState(false);
-  const router = useRouter();
 
-  const { solAddress, loading } = useWallet();
-  const { hideLoading } = useLoading();
+  const { solAddress, loading, isWalletReady } = useWallet();
+
+  const { loadWalletNfts, walletNfts, isLoadingNfts, metaplex } =
+    useCandyMachineContext();
 
   const collectionAddress = useCollectionAddress();
 
-  const items = nfts.slice(0, visible);
-  const totalCount = nfts.length;
+  const items = walletNfts.slice(0, visible);
+  const totalCount = walletNfts.length;
 
   const handleHistoryClick = () => {
     router.push("/my-collection/history");
-  };
-
-  const loadNfts = async (address: string) => {
-    try {
-      setError(null);
-
-      const response = await NftService.getUserNfts(address);
-
-      if (response.success) {
-        setNfts(response.nfts || []);
-      } else {
-        setError("Failed to load NFTs");
-        console.error("❌ Failed to load NFTs");
-      }
-    } catch (err) {
-      console.error("❌ Error loading NFTs:", err);
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      hideLoading();
-    }
   };
 
   useEffect(() => {
@@ -61,16 +48,31 @@ const MyCollectionPage = () => {
   }, []);
 
   useEffect(() => {
-    if (isInitialized && solAddress) {
-      console.log("🔍 Loading NFTs for address:", solAddress);
-      loadNfts(solAddress);
+    if (isInitialized && solAddress && isWalletReady && metaplex) {
+      console.log(
+        "🔍 Loading NFTs for address:",
+        solAddress,
+        "- Wallet is ready, Metaplex initialized"
+      );
+      console.log("📊 Current state:", {
+        isLoadingNfts,
+        walletNftsCount: walletNfts.length,
+        metaplexReady: !!metaplex,
+      });
+      loadWalletNfts(solAddress);
     } else if (isInitialized && !solAddress && !loading) {
       console.log("⚠️ No wallet connected, clearing NFTs");
-      setNfts([]);
       setError(null);
-      hideLoading();
+    } else {
+      console.log("⏳ Waiting for prerequisites:", {
+        isInitialized,
+        hasAddress: !!solAddress,
+        isWalletReady,
+        hasMetaplex: !!metaplex,
+        loading,
+      });
     }
-  }, [solAddress, isInitialized, loading]);
+  }, [solAddress, isInitialized, loading, isWalletReady, metaplex]);
 
   return (
     <main className={clsx("min-h-screen", themeClasses.bg.page)}>
@@ -94,7 +96,31 @@ const MyCollectionPage = () => {
       </section>
 
       <section className="main-container pt-5 md:pt-10 pb-20">
-        {error ? (
+        {!metaplex ? (
+          <div className="text-center flex flex-col items-center pb-12">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                Initializing Metaplex...
+              </h3>
+              <p className="text-blue-600">
+                Please wait while we setup the blockchain connection.
+              </p>
+            </div>
+          </div>
+        ) : isLoadingNfts ? (
+          <div className="text-center flex flex-col items-center pb-12">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 max-w-md mx-auto">
+              <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                Loading NFTs...
+              </h3>
+              <p className="text-purple-600">
+                Fetching your NFT collection from the blockchain.
+              </p>
+            </div>
+          </div>
+        ) : error ? (
           <div className="text-center flex flex-col items-center pb-12">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
               <h3 className="text-lg font-semibold text-red-800 mb-2">
@@ -103,10 +129,13 @@ const MyCollectionPage = () => {
               <p className="text-red-600 mb-4">{error}</p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                onClick={() => solAddress && loadNfts(solAddress)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() =>
+                  solAddress && isWalletReady && loadWalletNfts(solAddress)
+                }
+                disabled={!isWalletReady || isLoadingNfts}
               >
-                Retry
+                {isLoadingNfts ? "Loading..." : "Retry"}
               </motion.button>
             </div>
           </div>
@@ -143,7 +172,7 @@ const MyCollectionPage = () => {
               {totalCount} Items
             </div>
 
-            <NftGrid items={items} />
+            <NftGrid items={items as any} />
 
             {visible < totalCount && (
               <div className="flex justify-center py-8">

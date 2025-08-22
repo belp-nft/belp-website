@@ -58,11 +58,6 @@ export default function UserInfo({
 
   const displayWalletFull = walletAddress ?? "—";
 
-  const avatarUrl = useMemo(() => {
-    if (!walletAddress) return "/avatars/user-placeholder.svg";
-    return `https://cdn.stamp.fyi/avatar/${walletAddress}?s=128`;
-  }, [walletAddress]);
-
   const displayContractFull = contract ?? "—";
   const displayContractShort = useMemo(
     () => shortenMiddle(displayContractFull, 4, 4),
@@ -111,9 +106,9 @@ export default function UserInfo({
   return (
     <div className="w-full flex flex-row gap-4 sm:gap-6 justify-between pt-8 sm:pt-12 relative">
       <div className="flex gap-3 sm:gap-4 min-w-0 flex-1 overflow-hidden pr-2">
-        <div className="shrink-0 rounded-full overflow-hidden w-20 h-20 md:w-24 md:h-24 absolute -top-14 md:-top-16 left-1/2 transform md:translate-0 -translate-x-1/2 md:left-4">
+        <div className="shrink-0 rounded-full overflow-hidden w-20 h-20 md:w-24 md:h-24 absolute -top-14 md:-top-16 left-1/2 transform md:translate-0 -translate-x-1/2 md:left-0">
           <ImageLoader
-            src={avatarUrl}
+            src="/logo-belpy.svg"
             alt="User avatar"
             width={96}
             height={96}
@@ -135,7 +130,7 @@ export default function UserInfo({
           </div>
 
           <div className="mt-1 sm:mt-2 text-xs sm:text-sm font-bold flex flex-wrap items-center gap-1 sm:gap-2">
-            <span>Contract</span>
+            <span>Contract NFT</span>
             <code
               className={clsx(
                 "bg-white border border-[#e9defd] rounded-md px-1.5 sm:px-2 py-0.5",
@@ -168,17 +163,17 @@ export default function UserInfo({
         </div>
       </div>
 
-      <div className="flex items-start justify-end sm:justify-start gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={onHistoryClick}
           className={clsx(
             "sm:hidden p-2 rounded-lg bg-white border border-[#e9defd]",
-            "text-[#5b3e9e] hover:bg-[#f7f2ff] transition-colors"
+            "text-[#5b3e9e] hover:bg-[#f7f2ff] transition-colors cursor-pointer"
           )}
           aria-label="History"
           title="History"
         >
-          <MdHistory className="text-lg" />
+          <MdHistory className="md:text-lg text-3xl" />
         </button>
 
         <button
@@ -186,7 +181,7 @@ export default function UserInfo({
           className={clsx(
             "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg",
             "bg-white border border-[#e9defd] text-[#5b3e9e] whitespace-nowrap",
-            "hover:bg-[#f7f2ff] transition-colors"
+            "hover:bg-[#f7f2ff] transition-colors cursor-pointer"
           )}
         >
           <MdHistory className="text-base" />

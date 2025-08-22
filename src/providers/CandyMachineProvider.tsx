@@ -15,7 +15,8 @@ import {
   useConfigLoading,
   useConfigError,
 } from "@/stores/config";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Connection } from "@solana/web3.js";
+import { Metaplex } from "@metaplex-foundation/js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import {
@@ -24,20 +25,62 @@ import {
   mplCandyMachine,
   CandyMachine,
 } from "@metaplex-foundation/mpl-candy-machine";
-import {
-  fetchCollection,
-  CollectionV1,
-  mplCore,
-} from "@metaplex-foundation/mpl-core";
+import { CollectionV1, mplCore } from "@metaplex-foundation/mpl-core";
 import {
   generateSigner,
   transactionBuilder,
   publicKey as umiPublicKey,
-  sol,
   Umi,
 } from "@metaplex-foundation/umi";
 import bs58 from "bs58";
 import { useToast } from "@/components/ToastContainer";
+
+// Function to fetch metadata from NFT URI (copied from my-collection)
+const fetchNftMetadata = async (uri: string): Promise<any> => {
+  try {
+    console.log(`🔗 Fetching metadata from URI: ${uri}`);
+
+    // Format IPFS URIs properly
+    let formattedUri = uri;
+    if (uri.startsWith("ipfs://")) {
+      formattedUri = `https://ipfs.io/ipfs/${uri.replace("ipfs://", "")}`;
+    }
+
+    console.log(`🔄 Formatted URI: ${formattedUri}`);
+
+    const response = await fetch(formattedUri, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      mode: "cors",
+    });
+
+    if (response.ok) {
+      const responseText = await response.text();
+      if (responseText.trim()) {
+        const metadata = JSON.parse(responseText);
+        console.log(`✅ Metadata fetched:`, metadata);
+        return metadata;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(`❌ Error fetching metadata:`, error);
+    return null;
+  }
+};
+
+// Interface for simple NFT data
+interface SimpleNFT {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  attributes: any[];
+  createdAt?: string;
+}
 
 export interface MintResult {
   success: boolean;
@@ -56,6 +99,10 @@ interface CandyMachineState {
   candyMachine: CandyMachine | null;
   collection: CollectionV1 | null;
   umi: Umi | null;
+  metaplex: Metaplex | null;
+  // Wallet NFTs data
+  walletNfts: SimpleNFT[];
+  isLoadingNfts: boolean;
   isInitialized: boolean;
   isLoading: boolean;
   itemsLoaded: number;
@@ -72,7 +119,7 @@ interface CandyMachineContextType extends CandyMachineState {
   clearError: () => void;
   resetState: () => void;
   initializeCandyMachine: () => Promise<void>;
-  fetchCollection: () => Promise<void>;
+  loadWalletNfts: (address: string) => Promise<SimpleNFT[]>;
 
   // Config
   candyMachineAddress: string;
@@ -98,6 +145,9 @@ const initialState: CandyMachineState = {
   candyMachine: null,
   collection: null,
   umi: null,
+  metaplex: null,
+  walletNfts: [],
+  isLoadingNfts: false,
   isInitialized: false,
   isLoading: false,
   itemsLoaded: 0,
@@ -180,37 +230,160 @@ export function CandyMachineProvider({
     [enableDebug]
   );
 
-  // Fetch Collection data
-  const fetchCollectionData = useCallback(async () => {
-    if (!state.umi) {
-      console.log("UMI not initialized, cannot fetch collection");
-      return;
-    }
+  // Initialize Metaplex
+  useEffect(() => {
+    const initMetaplex = async () => {
+      try {
+        const connection = new Connection(
+          configData?.rpcUrl || "https://api.devnet.solana.com",
+          "confirmed"
+        );
 
-    console.log("Fetching Collection...");
+        const metaplexInstance = new Metaplex(connection);
 
-    try {
-      const collection = await fetchCollection(
-        state.umi,
-        umiPublicKey(collectionAddress || configData?.collectionAddress || "")
-      );
+        setState((prev) => ({
+          ...prev,
+          metaplex: metaplexInstance,
+        }));
 
-      console.log("✅ Collection fetched:", {
-        address: collection.publicKey,
-        name: collection.name,
-        uri: collection.uri,
-      });
+        console.log("✅ Metaplex initialized for CandyMachine provider");
+      } catch (err) {
+        console.error("❌ Failed to initialize Metaplex:", err);
+      }
+    };
 
-      setState((prev) => ({
-        ...prev,
-        collection,
-      }));
-    } catch (error: any) {
-      console.log("❌ Failed to fetch Collection:", error);
-      // Don't set error state for collection fetch failure
-      // as it's not critical for minting
-    }
-  }, [state.umi, log]);
+    initMetaplex();
+  }, [configData?.rpcUrl]);
+
+  // Load wallet NFTs function (replaces fetchCollectionData)
+  const loadWalletNfts = useCallback(
+    async (address: string): Promise<SimpleNFT[]> => {
+      if (!state.metaplex) {
+        console.log("Metaplex not initialized, cannot fetch wallet NFTs");
+        return [];
+      }
+
+      try {
+        setState((prev) => ({ ...prev, isLoadingNfts: true, error: null }));
+
+        console.log("🔍 Fetching NFTs for wallet:", address);
+
+        const walletKey = new PublicKey(address);
+
+        // Get all NFTs owned by wallet
+        const allNfts = await state.metaplex.nfts().findAllByOwner({
+          owner: walletKey,
+        });
+
+        const filteredNfts = allNfts.filter(
+          (nft: any) =>
+            nft.collection &&
+            nft.collection.verified &&
+            nft.collection.address.toString() === collectionAddress
+        );
+
+        const processedNfts: SimpleNFT[] = await Promise.all(
+          filteredNfts.map(async (nft: any, index: number) => {
+            try {
+              console.log(
+                `📄 Processing NFT ${index + 1}/${filteredNfts.length}: ${nft.name || "Unnamed"}`
+              );
+
+              let metadata = null;
+              if (nft.uri) {
+                metadata = await fetchNftMetadata(nft.uri);
+              }
+
+              let imageUrl =
+                "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+
+              if (metadata?.image) {
+                if (metadata.image.startsWith("ipfs://")) {
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
+                } else if (metadata.image.startsWith("http")) {
+                  imageUrl = metadata.image;
+                } else {
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image}`;
+                }
+              }
+
+              return {
+                id: nft.address.toString(),
+                name: metadata?.name || nft.name || `NFT #${index + 1}`,
+                description:
+                  metadata?.description || "No description available",
+                image: imageUrl,
+                attributes: metadata?.attributes || [],
+                createdAt: metadata?.date || new Date().toISOString(),
+              };
+            } catch (nftError) {
+              console.error(`❌ Error processing NFT ${index}:`, nftError);
+
+              // Use fallback image for error case
+              const fallbackImage =
+                "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+
+              return {
+                id: nft.address?.toString() || `error-${index}`,
+                name: `Error NFT #${index + 1}`,
+                description: "Failed to process this NFT",
+                image: fallbackImage,
+                attributes: [],
+                createdAt: new Date().toISOString(),
+              };
+            }
+          })
+        );
+
+        console.log("✅ Successfully processed NFTs:", processedNfts.length);
+
+        // Filter và sort NFTs từ mới nhất trước khi return
+        const sortedNfts = processedNfts.sort((a, b) => {
+          // Ưu tiên sử dụng createdAt nếu có
+          const dateA = a.createdAt;
+          const dateB = b.createdAt;
+
+          // Nếu có createdAt, sort theo ngày (mới nhất trước)
+          if (dateA && dateB) {
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
+          }
+
+          // Nếu chỉ một có createdAt, ưu tiên cái có createdAt
+          if (dateA && !dateB) return -1;
+          if (!dateA && dateB) return 1;
+
+          // Nếu không có createdAt, sort theo name (reverse alphabetical để mới hơn lên trước)
+          const nameA = a.name || a.id || "";
+          const nameB = b.name || b.id || "";
+          return nameB.localeCompare(nameA);
+        });
+
+        console.log(
+          "✅ NFTs sorted by date (newest first):",
+          sortedNfts.length
+        );
+
+        // Update state with sorted NFTs
+        setState((prev) => ({
+          ...prev,
+          walletNfts: sortedNfts,
+          isLoadingNfts: false,
+        }));
+
+        return sortedNfts;
+      } catch (err) {
+        console.error("❌ Error loading wallet NFTs:", err);
+        setState((prev) => ({
+          ...prev,
+          error: err instanceof Error ? err.message : String(err),
+          isLoadingNfts: false,
+          walletNfts: [],
+        }));
+        return [];
+      }
+    },
+    [state.metaplex, collectionAddress]
+  );
 
   // Initialize UMI and Candy Machine
   const initializeCandyMachine = useCallback(async () => {
@@ -360,6 +533,7 @@ export function CandyMachineProvider({
         umi,
         umiPublicKey(configData.address || "")
       );
+      console.log("🚀 ~ CandyMachineProvider ~ candyMachine:", candyMachine);
 
       console.log("✅ Candy Machine fetched:", {
         address: candyMachine.publicKey,
@@ -376,11 +550,6 @@ export function CandyMachineProvider({
         itemsLoaded: Number(candyMachine.itemsLoaded),
         itemsRedeemed: Number(candyMachine.itemsRedeemed),
       }));
-
-      // Fetch Collection after Candy Machine is initialized
-      setTimeout(() => {
-        fetchCollectionData();
-      }, 100);
     } catch (error: any) {
       console.log("❌ Failed to initialize Candy Machine:", error);
       setState((prev) => ({
@@ -395,7 +564,6 @@ export function CandyMachineProvider({
     state.isLoading,
     configData,
     log,
-    fetchCollectionData,
     showError,
   ]);
 
@@ -576,11 +744,8 @@ export function CandyMachineProvider({
 
       // Gửi và confirm transaction với error handling
       const result = await mintBuilder.sendAndConfirm(state.umi, {
-        confirm: { commitment: "confirmed" },
-        send: {
-          skipPreflight: true, // Skip preflight to avoid simulation issues
-          maxRetries: 3,
-        },
+        send: { commitment: "finalized" },
+        confirm: { commitment: "finalized" },
       });
 
       const base58Signature = bs58.encode(result.signature);
@@ -729,7 +894,7 @@ export function CandyMachineProvider({
     clearError,
     resetState,
     initializeCandyMachine,
-    fetchCollection: fetchCollectionData,
+    loadWalletNfts,
     candyMachineAddress: configData?.address || "",
     collectionAddress: collectionAddress || configData?.collectionAddress || "",
     updateAuthority: configData?.updateAuthority || "",
@@ -770,7 +935,9 @@ export function useCandyMachine() {
     clearLastResult,
     clearError,
     initializeCandyMachine,
-    fetchCollection: fetchCollectionData,
+    loadWalletNfts,
+    walletNfts,
+    isLoadingNfts,
   } = useCandyMachineContext();
 
   // Get config data for status computation
@@ -790,12 +957,16 @@ export function useCandyMachine() {
     configLoading,
     configError,
 
+    // Wallet NFTs state
+    walletNfts,
+    isLoadingNfts,
+
     // Actions
     mint: mintNft,
     clearResult: clearLastResult,
     clearError,
     initialize: initializeCandyMachine,
-    fetchCollection: fetchCollectionData,
+    loadWalletNfts,
 
     // Computed
     canMint: !isMinting && isInitialized && !configLoading,

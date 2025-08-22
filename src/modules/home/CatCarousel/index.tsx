@@ -40,7 +40,7 @@ const CatSlide = React.memo(
     return (
       <div
         className={clsx(
-          "overflow-hidden flex items-center justify-center cursor-pointer",
+          "overflow-hidden flex items-center justify-center cursor-pointer"
         )}
         style={{
           width: "100%",
