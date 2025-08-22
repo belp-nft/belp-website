@@ -7,6 +7,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
 import UserInfo from "@/modules/my-collection//UserInfo";
 import { useWallet } from "@/hooks/useWallet";
+import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import type { NFT } from "@/services/types";
 
 interface SimpleNFT {
@@ -60,131 +61,23 @@ const fetchNftMetadata = async (uri: string): Promise<any> => {
 };
 
 const MyCollectionPage = () => {
-  const [nfts, setNfts] = useState<SimpleNFT[]>([]);
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(20);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [metaplex, setMetaplex] = useState<Metaplex | null>(null);
-  const router = useRouter();
 
   const { solAddress, loading, isWalletReady } = useWallet();
-  const { hideLoading, showLoading } = useLoading();
-  const configData = useConfig();
+
+  const { loadWalletNfts, walletNfts, isLoadingNfts, metaplex } =
+    useCandyMachineContext();
 
   const collectionAddress = useCollectionAddress();
 
-  const items = nfts.slice(0, visible);
-  const totalCount = nfts.length;
+  const items = walletNfts.slice(0, visible);
+  const totalCount = walletNfts.length;
 
   const handleHistoryClick = () => {
     router.push("/my-collection/history");
-  };
-
-  // Initialize Metaplex
-  useEffect(() => {
-    const initMetaplex = async () => {
-      try {
-        const connection = new Connection(
-          configData?.rpcUrl || "https://api.devnet.solana.com",
-          "confirmed"
-        );
-
-        const metaplexInstance = new Metaplex(connection);
-        setMetaplex(metaplexInstance);
-        console.log("✅ Metaplex initialized successfully");
-      } catch (err) {
-        console.error("❌ Failed to initialize Metaplex:", err);
-        setError(`Failed to initialize Metaplex: ${err}`);
-      }
-    };
-
-    initMetaplex();
-  }, [configData?.rpcUrl]);
-
-  const loadWalletNfts = async (address: string) => {
-    if (!metaplex) {
-      setError("Metaplex not initialized");
-      return;
-    }
-
-    try {
-      setError(null);
-      showLoading();
-
-      console.log("� Fetching NFTs for wallet:", address);
-
-      const walletKey = new PublicKey(address);
-
-      // Get all NFTs owned by wallet
-      const allNfts = await metaplex.nfts().findAllByOwner({
-        owner: walletKey,
-      });
-
-      const filteredNfts = allNfts.filter(
-        (nft: any) =>
-          nft.collection &&
-          nft.collection.verified &&
-          nft.collection.address.toString() === collectionAddress
-      );
-
-      const processedNfts: SimpleNFT[] = await Promise.all(
-        filteredNfts.map(async (nft: any, index: number) => {
-          try {
-            console.log(
-              `📄 Processing NFT ${index + 1}/${filteredNfts.length}: ${nft.name || "Unnamed"}`
-            );
-
-            let metadata = null;
-            if (nft.uri) {
-              metadata = await fetchNftMetadata(nft.uri);
-            }
-
-            let imageUrl =
-              "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
-
-            if (metadata?.image) {
-              if (metadata.image.startsWith("ipfs://")) {
-                imageUrl = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
-              } else if (metadata.image.startsWith("http")) {
-                imageUrl = metadata.image;
-              } else {
-                imageUrl = `https://ipfs.io/ipfs/${metadata.image}`;
-              }
-            }
-
-            return {
-              id: nft.address.toString(),
-              name: metadata?.name || nft.name || `NFT #${index + 1}`,
-              description: metadata?.description || "No description available",
-              image: imageUrl,
-              attributes: metadata?.attributes || [],
-            };
-          } catch (nftError) {
-            console.error(`❌ Error processing NFT ${index}:`, nftError);
-
-            // Use fallback image for error case
-            const fallbackImage =
-              "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
-
-            return {
-              id: nft.address?.toString() || `error-${index}`,
-              name: `Error NFT #${index + 1}`,
-              description: "Failed to process this NFT",
-              image: fallbackImage,
-              attributes: [],
-            };
-          }
-        })
-      );
-
-      setNfts(processedNfts);
-      console.log("✅ Successfully processed NFTs:", processedNfts.length);
-    } catch (err) {
-      console.error("❌ Error loading wallet NFTs:", err);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      hideLoading();
-    }
   };
 
   useEffect(() => {
@@ -203,44 +96,25 @@ const MyCollectionPage = () => {
         solAddress,
         "- Wallet is ready, Metaplex initialized"
       );
+      console.log("📊 Current state:", {
+        isLoadingNfts,
+        walletNftsCount: walletNfts.length,
+        metaplexReady: !!metaplex,
+      });
       loadWalletNfts(solAddress);
     } else if (isInitialized && !solAddress && !loading) {
       console.log("⚠️ No wallet connected, clearing NFTs");
-      setNfts([]);
       setError(null);
+    } else {
+      console.log("⏳ Waiting for prerequisites:", {
+        isInitialized,
+        hasAddress: !!solAddress,
+        isWalletReady,
+        hasMetaplex: !!metaplex,
+        loading,
+      });
     }
   }, [solAddress, isInitialized, loading, isWalletReady, metaplex]);
-
-  // Force reload NFTs when navigating back to this page
-  useEffect(() => {
-    const handleFocus = () => {
-      if (solAddress && isWalletReady && metaplex && isInitialized) {
-        console.log("🔄 Page focused, reloading NFTs...");
-        loadWalletNfts(solAddress);
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (
-        !document.hidden &&
-        solAddress &&
-        isWalletReady &&
-        metaplex &&
-        isInitialized
-      ) {
-        console.log("🔄 Page visible again, reloading NFTs...");
-        loadWalletNfts(solAddress);
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [solAddress, isWalletReady, metaplex, isInitialized]);
 
   return (
     <main className={clsx("min-h-screen", themeClasses.bg.page)}>
@@ -276,6 +150,18 @@ const MyCollectionPage = () => {
               </p>
             </div>
           </div>
+        ) : isLoadingNfts ? (
+          <div className="text-center flex flex-col items-center pb-12">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 max-w-md mx-auto">
+              <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                Loading NFTs...
+              </h3>
+              <p className="text-purple-600">
+                Fetching your NFT collection from the blockchain.
+              </p>
+            </div>
+          </div>
         ) : error ? (
           <div className="text-center flex flex-col items-center pb-12">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
@@ -289,9 +175,9 @@ const MyCollectionPage = () => {
                 onClick={() =>
                   solAddress && isWalletReady && loadWalletNfts(solAddress)
                 }
-                disabled={!isWalletReady}
+                disabled={!isWalletReady || isLoadingNfts}
               >
-                Retry
+                {isLoadingNfts ? "Loading..." : "Retry"}
               </motion.button>
             </div>
           </div>

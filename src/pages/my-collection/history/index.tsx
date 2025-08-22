@@ -3,10 +3,10 @@
 import BreadCrumbs from "@/components/Breadcrumb";
 import { useWallet } from "@/hooks/useWallet";
 import { useLoading } from "@/providers/LoadingProvider";
+import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import { UserService } from "@/services/userService";
-import { NftService } from "@/services/nftService";
 import { BLOCKCHAIN_CONFIG } from "@/services";
-import type { NFT, Transaction } from "@/services/types";
+import type { Transaction } from "@/services/types";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -16,7 +16,8 @@ import { useState, useEffect } from "react";
 const HistoryPage = () => {
   const { solAddress, userStatistics } = useWallet();
   const { showLoading, hideLoading } = useLoading();
-  const [backendNfts, setBackendNfts] = useState<NFT[]>([]);
+  const { loadWalletNfts, walletNfts, metaplex, isLoadingNfts } =
+    useCandyMachineContext();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(10);
@@ -32,30 +33,6 @@ const HistoryPage = () => {
       isMainnet ? "" : "?cluster=devnet"
     }`;
     window.open(url, "_blank");
-  };
-
-  // Load NFTs từ backend
-  const loadBackendNfts = async () => {
-    if (!solAddress) return;
-
-    try {
-      showLoading();
-      setError(null);
-
-      const response = await NftService.getUserNfts(solAddress);
-
-      if (response.success && response.nfts) {
-        setBackendNfts(response.nfts);
-      } else {
-        console.warn("⚠️ Failed to load backend NFTs");
-        setError("Failed to load NFTs");
-      }
-    } catch (err) {
-      console.error("❌ Error loading backend NFTs:", err);
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      hideLoading();
-    }
   };
 
   // Load transactions từ backend
@@ -82,20 +59,35 @@ const HistoryPage = () => {
     }
   };
 
-  // Auto-refresh backend data khi có wallet address
   useEffect(() => {
     if (solAddress) {
-      Promise.all([loadBackendNfts(), loadTransactions()]);
+      // Load transactions from backend
+      loadTransactions();
+
+      // Load NFTs từ blockchain (chỉ khi metaplex đã sẵn sàng)
+      if (metaplex) {
+        console.log("🔍 Loading NFTs for history page, address:", solAddress);
+        loadWalletNfts(solAddress);
+      } else {
+        console.log("⏳ Waiting for Metaplex to initialize...");
+      }
     } else {
       // Reset data khi không có wallet
-      setBackendNfts([]);
       setTransactions([]);
       setError(null);
     }
-  }, [solAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [solAddress, metaplex]); // Thêm metaplex vào dependencies
 
   // Chọn data source để hiển thị
   let dataSource, sortedData;
+
+  console.log("🔍 History page debug:", {
+    showTransactions,
+    walletNfts: walletNfts?.length || 0,
+    transactions: transactions?.length || 0,
+    metaplex: !!metaplex,
+    isLoadingNfts,
+  });
 
   if (showTransactions) {
     // Hiển thị transaction history
@@ -108,11 +100,12 @@ const HistoryPage = () => {
       return new Date(dateB).getTime() - new Date(dateA).getTime();
     });
   } else {
-    // Hiển thị NFTs từ backend
-    dataSource = backendNfts || [];
+    // Hiển thị NFTs từ context (blockchain)
+    dataSource = walletNfts || [];
     sortedData = [...dataSource].sort((a, b) => {
-      const dateA = a.createdAt;
-      const dateB = b.createdAt;
+      // Sử dụng ID làm fallback sorting vì walletNfts có thể không có createdAt
+      const dateA = (a as any).createdAt;
+      const dateB = (b as any).createdAt;
 
       if (!dateA || !dateB) return 0;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
@@ -156,7 +149,7 @@ const HistoryPage = () => {
                       : "text-[#7A4BD6] hover:bg-[#f8f4ff]"
                   )}
                 >
-                  NFTs ({backendNfts.length})
+                  NFTs ({walletNfts?.length || 0})
                 </button>
                 <button
                   onClick={() => setShowTransactions(true)}
@@ -175,7 +168,37 @@ const HistoryPage = () => {
         </div>
 
         <div className="bg-[#E3CEF6] p-5 rounded-4xl">
-          {dataSource.length === 0 ? (
+          {!showTransactions && !metaplex ? (
+            <motion.div
+              className="text-center py-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                Initializing Metaplex...
+              </h3>
+              <p className="text-blue-600">
+                Please wait while we setup the blockchain connection.
+              </p>
+            </motion.div>
+          ) : !showTransactions && isLoadingNfts ? (
+            <motion.div
+              className="text-center py-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                Loading NFTs...
+              </h3>
+              <p className="text-purple-600">
+                Fetching your NFTs from the blockchain.
+              </p>
+            </motion.div>
+          ) : dataSource.length === 0 ? (
             <motion.div
               className="text-center py-12"
               initial={{ opacity: 0, y: 20 }}
@@ -184,18 +207,22 @@ const HistoryPage = () => {
             >
               <div className="text-6xl mb-4">📋</div>
               <h3 className="text-xl font-semibold mb-2">
-                No transaction history
+                No {showTransactions ? "transactions" : "NFTs"} found
               </h3>
               <p className="mb-6">
-                Collect your first BELPY and watch your gallery grow.
+                {showTransactions
+                  ? "No transaction history available."
+                  : "Collect your first BELPY and watch your gallery grow."}
               </p>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl"
-                onClick={() => (window.location.href = "/mint")}
-              >
-                Start Minting
-              </motion.button>
+              {!showTransactions && (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl"
+                  onClick={() => (window.location.href = "/mint")}
+                >
+                  Start Minting
+                </motion.button>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -293,12 +320,12 @@ const HistoryPage = () => {
                     </motion.div>
                   );
                 } else {
-                  // Hiển thị NFT item từ backend
-                  const nft = item as NFT;
+                  // Hiển thị NFT item từ context (SimpleNFT type)
+                  const nft = item as any; // SimpleNFT from context
 
                   return (
                     <motion.div
-                      key={nft._id}
+                      key={nft.id}
                       className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -311,7 +338,7 @@ const HistoryPage = () => {
                           <div className="flex justify-center sm:justify-start">
                             <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
                               <Image
-                                src={nft.imageUrl}
+                                src={nft.image}
                                 alt={nft.name}
                                 fill
                                 className="object-cover"
@@ -323,13 +350,13 @@ const HistoryPage = () => {
                         {/* NFT Details */}
                         <div className="col-span-12 sm:col-span-3 text-center sm:text-left">
                           <Link
-                            href={`/my-collection/${nft.nftAddress}`}
+                            href={`/my-collection/${nft.id}`}
                             className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
                           >
                             {nft.name}
                           </Link>
                           <div className="text-xs text-[#6c5a99] mt-1">
-                            #{nft.nftAddress.slice(-8).toUpperCase()}
+                            #{nft.id.slice(-8).toUpperCase()}
                           </div>
                         </div>
 
@@ -337,18 +364,18 @@ const HistoryPage = () => {
                         <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <div
                             className="text-sm text-[#6c5a99] font-mono cursor-pointer hover:text-[#7A4BD6] transition-colors"
-                            onClick={() => openTokenOnSolscan(nft.nftAddress)}
+                            onClick={() => openTokenOnSolscan(nft.id)}
                             title="View token on Solscan"
                           >
-                            {nft.nftAddress.slice(0, 4)}...
-                            {nft.nftAddress.slice(-4)}
+                            {nft.id.slice(0, 4)}...
+                            {nft.id.slice(-4)}
                           </div>
                         </div>
 
                         {/* Solscan Link */}
                         <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
                           <button
-                            onClick={() => openTokenOnSolscan(nft.nftAddress)}
+                            onClick={() => openTokenOnSolscan(nft.id)}
                             className="text-[#7a4bd6] hover:underline text-sm cursor-pointer"
                           >
                             View →

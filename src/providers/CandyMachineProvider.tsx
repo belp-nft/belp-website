@@ -15,7 +15,8 @@ import {
   useConfigLoading,
   useConfigError,
 } from "@/stores/config";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Connection } from "@solana/web3.js";
+import { Metaplex } from "@metaplex-foundation/js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import {
@@ -39,6 +40,52 @@ import {
 import bs58 from "bs58";
 import { useToast } from "@/components/ToastContainer";
 
+// Function to fetch metadata from NFT URI (copied from my-collection)
+const fetchNftMetadata = async (uri: string): Promise<any> => {
+  try {
+    console.log(`🔗 Fetching metadata from URI: ${uri}`);
+
+    // Format IPFS URIs properly
+    let formattedUri = uri;
+    if (uri.startsWith("ipfs://")) {
+      formattedUri = `https://ipfs.io/ipfs/${uri.replace("ipfs://", "")}`;
+    }
+
+    console.log(`🔄 Formatted URI: ${formattedUri}`);
+
+    const response = await fetch(formattedUri, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      mode: "cors",
+    });
+
+    if (response.ok) {
+      const responseText = await response.text();
+      if (responseText.trim()) {
+        const metadata = JSON.parse(responseText);
+        console.log(`✅ Metadata fetched:`, metadata);
+        return metadata;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(`❌ Error fetching metadata:`, error);
+    return null;
+  }
+};
+
+// Interface for simple NFT data
+interface SimpleNFT {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  attributes: any[];
+}
+
 export interface MintResult {
   success: boolean;
   signature?: string;
@@ -56,6 +103,10 @@ interface CandyMachineState {
   candyMachine: CandyMachine | null;
   collection: CollectionV1 | null;
   umi: Umi | null;
+  metaplex: Metaplex | null;
+  // Wallet NFTs data
+  walletNfts: SimpleNFT[];
+  isLoadingNfts: boolean;
   isInitialized: boolean;
   isLoading: boolean;
   itemsLoaded: number;
@@ -73,6 +124,7 @@ interface CandyMachineContextType extends CandyMachineState {
   resetState: () => void;
   initializeCandyMachine: () => Promise<void>;
   fetchCollection: () => Promise<void>;
+  loadWalletNfts: (address: string) => Promise<SimpleNFT[]>;
 
   // Config
   candyMachineAddress: string;
@@ -98,6 +150,9 @@ const initialState: CandyMachineState = {
   candyMachine: null,
   collection: null,
   umi: null,
+  metaplex: null,
+  walletNfts: [],
+  isLoadingNfts: false,
   isInitialized: false,
   isLoading: false,
   itemsLoaded: 0,
@@ -178,6 +233,135 @@ export function CandyMachineProvider({
       }
     },
     [enableDebug]
+  );
+
+  // Initialize Metaplex
+  useEffect(() => {
+    const initMetaplex = async () => {
+      try {
+        const connection = new Connection(
+          configData?.rpcUrl || "https://api.devnet.solana.com",
+          "confirmed"
+        );
+
+        const metaplexInstance = new Metaplex(connection);
+
+        setState((prev) => ({
+          ...prev,
+          metaplex: metaplexInstance,
+        }));
+
+        console.log("✅ Metaplex initialized for CandyMachine provider");
+      } catch (err) {
+        console.error("❌ Failed to initialize Metaplex:", err);
+      }
+    };
+
+    initMetaplex();
+  }, [configData?.rpcUrl]);
+
+  // Load wallet NFTs function (replaces fetchCollectionData)
+  const loadWalletNfts = useCallback(
+    async (address: string): Promise<SimpleNFT[]> => {
+      if (!state.metaplex) {
+        console.log("Metaplex not initialized, cannot fetch wallet NFTs");
+        return [];
+      }
+
+      try {
+        setState((prev) => ({ ...prev, isLoadingNfts: true, error: null }));
+
+        console.log("🔍 Fetching NFTs for wallet:", address);
+
+        const walletKey = new PublicKey(address);
+
+        // Get all NFTs owned by wallet
+        const allNfts = await state.metaplex.nfts().findAllByOwner({
+          owner: walletKey,
+        });
+
+        const filteredNfts = allNfts.filter(
+          (nft: any) =>
+            nft.collection &&
+            nft.collection.verified &&
+            nft.collection.address.toString() === collectionAddress
+        );
+
+        const processedNfts: SimpleNFT[] = await Promise.all(
+          filteredNfts.map(async (nft: any, index: number) => {
+            try {
+              console.log(
+                `📄 Processing NFT ${index + 1}/${filteredNfts.length}: ${nft.name || "Unnamed"}`
+              );
+
+              let metadata = null;
+              if (nft.uri) {
+                metadata = await fetchNftMetadata(nft.uri);
+              }
+
+              let imageUrl =
+                "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+
+              if (metadata?.image) {
+                if (metadata.image.startsWith("ipfs://")) {
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
+                } else if (metadata.image.startsWith("http")) {
+                  imageUrl = metadata.image;
+                } else {
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image}`;
+                }
+              }
+
+              return {
+                id: nft.address.toString(),
+                name: metadata?.name || nft.name || `NFT #${index + 1}`,
+                description:
+                  metadata?.description || "No description available",
+                image: imageUrl,
+                attributes: metadata?.attributes || [],
+                createdAt: metadata?.date || new Date().toISOString(),
+              };
+            } catch (nftError) {
+              console.error(`❌ Error processing NFT ${index}:`, nftError);
+
+              // Use fallback image for error case
+              const fallbackImage =
+                "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+
+              return {
+                id: nft.address?.toString() || `error-${index}`,
+                name: `Error NFT #${index + 1}`,
+                description: "Failed to process this NFT",
+                image: fallbackImage,
+                attributes: [],
+                createdAt: new Date().toISOString(),
+              };
+            }
+          })
+        );
+
+        console.log("✅ Successfully processed NFTs:", processedNfts.length);
+
+        // Update state with loaded NFTs
+        setState((prev) => ({
+          ...prev,
+          walletNfts: processedNfts,
+          isLoadingNfts: false,
+        }));
+
+        return processedNfts;
+      } catch (err) {
+        console.error("❌ Error loading wallet NFTs:", err);
+        setState((prev) => ({
+          ...prev,
+          error: err instanceof Error ? err.message : String(err),
+          isLoadingNfts: false,
+          walletNfts: [],
+        }));
+        return [];
+      }
+    },
+    [state.metaplex, collectionAddress]
   );
 
   // Fetch Collection data
@@ -577,7 +761,7 @@ export function CandyMachineProvider({
 
       // Gửi và confirm transaction với error handling
       const result = await mintBuilder.sendAndConfirm(state.umi, {
-        send: { commitment: 'finalized' },
+        send: { commitment: "finalized" },
         confirm: { commitment: "finalized" },
       });
 
@@ -728,6 +912,7 @@ export function CandyMachineProvider({
     resetState,
     initializeCandyMachine,
     fetchCollection: fetchCollectionData,
+    loadWalletNfts,
     candyMachineAddress: configData?.address || "",
     collectionAddress: collectionAddress || configData?.collectionAddress || "",
     updateAuthority: configData?.updateAuthority || "",
@@ -769,6 +954,9 @@ export function useCandyMachine() {
     clearError,
     initializeCandyMachine,
     fetchCollection: fetchCollectionData,
+    loadWalletNfts,
+    walletNfts,
+    isLoadingNfts,
   } = useCandyMachineContext();
 
   // Get config data for status computation
@@ -788,12 +976,17 @@ export function useCandyMachine() {
     configLoading,
     configError,
 
+    // Wallet NFTs state
+    walletNfts,
+    isLoadingNfts,
+
     // Actions
     mint: mintNft,
     clearResult: clearLastResult,
     clearError,
     initialize: initializeCandyMachine,
     fetchCollection: fetchCollectionData,
+    loadWalletNfts,
 
     // Computed
     canMint: !isMinting && isInitialized && !configLoading,

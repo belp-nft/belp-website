@@ -6,11 +6,7 @@ import { useWalletContext } from "@/providers/WalletProvider";
 import { useCandyMachine } from "@/providers/CandyMachineProvider";
 import { useToast } from "@/components/ToastContainer";
 
-import {
-  useConfig,
-  useRefreshStats,
-  useMintStats,
-} from "@/stores/config";
+import { useConfig, useRefreshStats, useMintStats } from "@/stores/config";
 import MintHeader from "@/modules/mint/MintHeader";
 import MintSection from "@/modules/mint/MintSection";
 import MintConfirmModal from "@/modules/mint/MintConfirmModal";
@@ -122,7 +118,8 @@ const BelpyMintPage = () => {
       if (!mintResult?.success) {
         setIsProcessing(false);
         // Handle specific error types via message matching (fallback)
-        const message = mintResult?.message || "Failed to mint NFT. Please try again.";
+        const message =
+          mintResult?.message || "Failed to mint NFT. Please try again.";
         if (message.includes("User rejected") || message.includes("rejected")) {
           showWarning(
             "Transaction Cancelled",
@@ -182,7 +179,7 @@ const BelpyMintPage = () => {
 
             const da = await fetchDigitalAsset(umi, mintPk);
             const name = da.metadata.name || "";
-            const uri = da.metadata.uri || "";   
+            const uri = da.metadata.uri || "";
 
             // Format IPFS URIs like test-collection
             let formattedUri = uri;
@@ -319,7 +316,7 @@ const BelpyMintPage = () => {
     }
   }, []);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 pt-10 pb-20">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
