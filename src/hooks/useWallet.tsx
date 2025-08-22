@@ -161,7 +161,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setLoading(null);
       }
     },
-    [solAddress]
+    [solAddress, getSolBalance, setSolLamports, setLoading, rpcUrl]
   );
 
   // User data management
@@ -591,7 +591,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
             setConnectedWallet(lastWalletType);
             setConnectedType("sol");
 
-            // Load balance and user data
             refreshSolBalance();
 
             // Only load user data if we don't have recent data
@@ -622,6 +621,17 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       }
     }
   }, [authenticateWallet, refreshSolBalance, loadUserData, onConnected]);
+
+  // Auto-refresh balance when wallet address or RPC URL changes
+  useEffect(() => {
+    if (solAddress && rpcUrl) {
+      console.log("🔄 Auto-refreshing balance due to address/RPC change:", {
+        solAddress,
+        rpcUrl,
+      });
+      refreshSolBalance();
+    }
+  }, [solAddress, rpcUrl, refreshSolBalance]);
 
   // Periodic check for account changes (fallback if events don't work)
   useEffect(() => {
@@ -654,7 +664,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
           // Update to new address
           setSolAddress(currentProviderAddress);
-          setSolLamports(0);
+          // Don't reset balance immediately, let refreshSolBalance handle it
 
           try {
             // Re-authenticate with new address
@@ -1003,6 +1013,20 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         hasValidToken: AuthService.isTokenValid(),
         timestamp: new Date().toISOString(),
       });
+    },
+    logBalanceStatus: () => {
+      console.log("🔍 Wallet Balance Status:", {
+        solAddress,
+        solLamports,
+        solBalanceText,
+        rpcUrl,
+        loading,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    forceRefreshBalance: () => {
+      console.log("🔄 Force refreshing balance...");
+      refreshSolBalance(true);
     },
   };
 }

@@ -15,6 +15,7 @@ export const BalanceProvider: React.FC<{ children: React.ReactNode }> = ({
   const [solLamports, setSolLamports] = useState(0);
 
   const setBalance = useCallback((val: number) => {
+    console.log("🏦 BalanceProvider: Setting balance to:", val);
     setSolLamports(val);
   }, []);
 
