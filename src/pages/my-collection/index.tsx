@@ -9,6 +9,7 @@ import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import NftGrid from "@/modules/my-collection//NftGrid";
 import { useCollectionAddress } from "@/stores/config";
 import { themeClasses } from "@/providers/ThemeProvider";
+import { useLoading } from "@/providers/LoadingProvider";
 
 interface SimpleNFT {
   id: string;
@@ -21,17 +22,23 @@ interface SimpleNFT {
 const MyCollectionPage = () => {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [visible, setVisible] = useState(20);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoadingMoreNfts, setIsLoadingMoreNfts] = useState(false);
 
   const { solAddress, loading, isWalletReady } = useWallet();
+  const { showLoading, hideLoading } = useLoading();
 
-  const { loadWalletNfts, walletNfts, isLoadingNfts, metaplex } =
-    useCandyMachineContext();
+  const {
+    loadWalletNfts,
+    loadMoreNfts,
+    walletNfts,
+    metaplex,
+    hasMoreNfts,
+    totalNfts,
+  } = useCandyMachineContext();
 
   const collectionAddress = useCollectionAddress();
 
-  const items = walletNfts.slice(0, visible);
   const totalCount = walletNfts.length;
 
   const handleHistoryClick = () => {
@@ -48,21 +55,19 @@ const MyCollectionPage = () => {
   }, []);
 
   useEffect(() => {
+    let isMounted = true; // Track if component is still mounted
+
     if (isInitialized && solAddress && isWalletReady && metaplex) {
-      console.log(
-        "🔍 Loading NFTs for address:",
-        solAddress,
-        "- Wallet is ready, Metaplex initialized"
-      );
-      console.log("📊 Current state:", {
-        isLoadingNfts,
-        walletNftsCount: walletNfts.length,
-        metaplexReady: !!metaplex,
+      showLoading();
+      loadWalletNfts(solAddress).finally(() => {
+        if (isMounted) {
+          hideLoading();
+        }
       });
-      loadWalletNfts(solAddress);
     } else if (isInitialized && !solAddress && !loading) {
       console.log("⚠️ No wallet connected, clearing NFTs");
       setError(null);
+      hideLoading();
     } else {
       console.log("⏳ Waiting for prerequisites:", {
         isInitialized,
@@ -72,7 +77,19 @@ const MyCollectionPage = () => {
         loading,
       });
     }
-  }, [solAddress, isInitialized, loading, isWalletReady, metaplex]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    solAddress,
+    isInitialized,
+    loading,
+    isWalletReady,
+    metaplex,
+    showLoading,
+    hideLoading,
+  ]);
 
   return (
     <main className={clsx("min-h-screen", themeClasses.bg.page)}>
@@ -108,18 +125,6 @@ const MyCollectionPage = () => {
               </p>
             </div>
           </div>
-        ) : isLoadingNfts ? (
-          <div className="text-center flex flex-col items-center pb-12">
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 max-w-md mx-auto">
-              <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-purple-800 mb-2">
-                Loading NFTs...
-              </h3>
-              <p className="text-purple-600">
-                Fetching your NFT collection from the blockchain.
-              </p>
-            </div>
-          </div>
         ) : error ? (
           <div className="text-center flex flex-col items-center pb-12">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
@@ -133,9 +138,9 @@ const MyCollectionPage = () => {
                 onClick={() =>
                   solAddress && isWalletReady && loadWalletNfts(solAddress)
                 }
-                disabled={!isWalletReady || isLoadingNfts}
+                disabled={!isWalletReady}
               >
-                {isLoadingNfts ? "Loading..." : "Retry"}
+                Retry
               </motion.button>
             </div>
           </div>
@@ -169,24 +174,37 @@ const MyCollectionPage = () => {
         ) : (
           <>
             <div className="text-right text-xs text-primary-muted mb-2">
-              {totalCount} Items
+              {totalNfts} Items
             </div>
 
-            <NftGrid items={items as any} />
+            <NftGrid
+              items={walletNfts as any}
+              isLoadingMore={isLoadingMoreNfts}
+            />
 
-            {visible < totalCount && (
+            {hasMoreNfts && walletNfts && walletNfts.length > 0 && (
               <div className="flex justify-center py-8">
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   className={clsx(
-                    "px-8 py-3 rounded-2xl font-semibold shadow-md hover:shadow-lg transition cursor-pointer",
+                    "px-8 py-3 rounded-2xl font-semibold shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-50",
                     themeClasses.button.accent
                   )}
-                  onClick={() =>
-                    setVisible((v) => Math.min(v + 20, totalCount))
-                  }
+                  disabled={isLoadingMoreNfts}
+                  onClick={async () => {
+                    if (!solAddress || isLoadingMoreNfts) return;
+                    setIsLoadingMoreNfts(true);
+                    try {
+                      await loadMoreNfts(solAddress);
+                    } catch (error) {
+                      console.error("❌ Failed to load more NFTs:", error);
+                      setError("Failed to load more NFTs");
+                    } finally {
+                      setIsLoadingMoreNfts(false);
+                    }
+                  }}
                 >
-                  See more
+                  {isLoadingMoreNfts ? "⏳ Loading..." : "View More"}
                 </motion.button>
               </div>
             )}
