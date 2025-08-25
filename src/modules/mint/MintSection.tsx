@@ -127,9 +127,7 @@ const MintSection: React.FC<MintSectionProps> = ({
               transformOrigin: "center lg:left center",
             }}
           >
-            {process.env.NEXT_PUBLIC_NODE_ENV === "development"
-              ? mintText
-              : "--"}
+            {process.env.NODE_ENV === "development" ? mintText : "--"}
           </div>
         </motion.div>
 
