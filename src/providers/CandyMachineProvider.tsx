@@ -49,7 +49,11 @@ const isNftInVerifiedCollection = (
 };
 
 // Function to fetch metadata from NFT URI with enhanced error handling and retry logic
-const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
+const fetchNftMetadata = async (
+  uri: string,
+  retries = 2,
+  externalSignal?: AbortSignal
+): Promise<any> => {
   if (!uri || typeof uri !== "string") {
     console.warn(`⚠️ Invalid URI provided: ${uri}`);
     return null;
@@ -63,13 +67,18 @@ const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
     if (uri.startsWith("ipfs://")) {
       const ipfsHash = uri.replace("ipfs://", "");
       // Try dweb.link first, fallback to ipfs.io if needed
-      formattedUri = `https://dweb.link/ipfs/${ipfsHash}`;
+      formattedUri = `https://ipfs.io/ipfs/${ipfsHash}`;
     }
 
     console.log(`🔄 Formatted URI: ${formattedUri}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    // If external signal is provided, listen for it
+    if (externalSignal) {
+      externalSignal.addEventListener("abort", () => controller.abort());
+    }
 
     try {
       const response = await fetch(formattedUri, {
@@ -106,7 +115,7 @@ const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
           const ipfsHash = uri.replace("ipfs://", "");
           const altUri = `https://ipfs.io/ipfs/${ipfsHash}`;
           console.log(`🔄 Trying alternative gateway: ${altUri}`);
-          return await fetchNftMetadata(altUri, retries - 1);
+          return await fetchNftMetadata(altUri, retries - 1, externalSignal);
         }
       }
     } catch (fetchError: any) {
@@ -126,7 +135,7 @@ const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
         const ipfsHash = uri.replace("ipfs://", "");
         const altUri = `https://ipfs.io/ipfs/${ipfsHash}`;
         console.log(`🔄 Trying alternative gateway after error: ${altUri}`);
-        return await fetchNftMetadata(altUri, retries - 1);
+        return await fetchNftMetadata(altUri, retries - 1, externalSignal);
       }
 
       throw fetchError;
@@ -320,6 +329,12 @@ export function CandyMachineProvider({
   const isLoadingTransactionsRef = useRef(false);
   const loadingPromiseRef = useRef<Promise<TransactionHistory[]> | null>(null);
 
+  // AbortController refs for cancellation
+  const nftLoadingAbortControllerRef = useRef<AbortController | null>(null);
+  const transactionLoadingAbortControllerRef = useRef<AbortController | null>(
+    null
+  );
+
   // Get config from store
   const configData = useConfig();
   const collectionAddress = useCollectionAddress();
@@ -366,7 +381,7 @@ export function CandyMachineProvider({
     initMetaplex();
   }, [configData?.rpcUrl]);
 
-  // Load wallet NFTs function with pagination support
+  // Load wallet NFTs function with pagination support and cancellation
   const loadWalletNfts = useCallback(
     async (address: string, page: number = 1): Promise<SimpleNFT[]> => {
       if (!state.metaplex) {
@@ -374,10 +389,24 @@ export function CandyMachineProvider({
         return [];
       }
 
+      // Cancel any existing request
+      if (nftLoadingAbortControllerRef.current) {
+        nftLoadingAbortControllerRef.current.abort();
+      }
+
+      // Create new AbortController for this request
+      const abortController = new AbortController();
+      nftLoadingAbortControllerRef.current = abortController;
+
       try {
         setState((prev) => ({ ...prev, isLoadingNfts: true, error: null }));
 
         console.log(`🔍 Fetching NFTs for wallet: ${address}, page: ${page}`);
+
+        // Check if request was cancelled before proceeding
+        if (abortController.signal.aborted) {
+          throw new Error("Request was cancelled");
+        }
 
         const walletKey = new PublicKey(address);
 
@@ -388,11 +417,17 @@ export function CandyMachineProvider({
           owner: walletKey,
         });
 
+        // Check if request was cancelled after Metaplex call
+        if (abortController.signal.aborted) {
+          throw new Error("Request was cancelled");
+        }
+
         const allNfts = allNftsRaw.filter(
           (nft: any) =>
             collectionAddress &&
             isNftInVerifiedCollection(nft, collectionAddress)
         );
+        console.log(999, allNfts);
 
         console.log(`📄 Found ${allNfts.length} total filtered NFTs`);
 
@@ -402,46 +437,60 @@ export function CandyMachineProvider({
         const allProcessedNfts: SimpleNFT[] = await Promise.all(
           allNfts.map(async (nft: any, index: number) => {
             try {
+              // Check if request was cancelled before processing each NFT
+              if (abortController.signal.aborted) {
+                throw new Error("Request was cancelled");
+              }
+
               console.log(
                 `📄 Processing NFT ${index + 1}/${allNfts.length}: ${nft.name || "Unnamed"}`
               );
 
               let metadata = null;
               if (nft.uri) {
-                metadata = await fetchNftMetadata(nft.uri);
+                metadata = await fetchNftMetadata(
+                  nft.uri,
+                  2,
+                  abortController.signal
+                );
+
+                // Check again after metadata fetch
+                if (abortController.signal.aborted) {
+                  throw new Error("Request was cancelled");
+                }
               }
 
               let imageUrl =
-                "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+                "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
 
               if (metadata?.image) {
                 if (metadata.image.startsWith("ipfs://")) {
-                  imageUrl = `https://dweb.link/ipfs/${metadata.image.replace("ipfs://", "")}`;
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
                 } else if (metadata.image.startsWith("http")) {
                   imageUrl = metadata.image;
                 } else {
-                  imageUrl = `https://dweb.link/ipfs/${metadata.image}`;
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image}`;
                 }
               }
 
               let createdAt = new Date().toISOString();
               let signature: string | undefined = undefined;
-              try {
-                const signatures =
-                  await state.metaplex!.connection.getSignaturesForAddress(
-                    new PublicKey(nft.address),
-                    { limit: 1 }
-                  );
+              // try {
+              //   const signatures =
+              //     await state.metaplex!.connection.getSignaturesForAddress(
+              //       new PublicKey(nft.address),
+              //       { limit: 1 }
+              //     );
 
-                if (signatures[0]?.blockTime) {
-                  createdAt = new Date(
-                    signatures[0].blockTime * 1000
-                  ).toISOString();
-                  signature = signatures[0].signature; // Store signature for transaction view
-                }
-              } catch {
-                // Keep metadata or fallback time
-              }
+              //   if (signatures[0]?.blockTime) {
+              //     createdAt = new Date(
+              //       signatures[0].blockTime * 1000
+              //     ).toISOString();
+              //     signature = signatures[0].signature; // Store signature for transaction view
+              //   }
+              // } catch {
+              //   // Keep metadata or fallback time
+              // }
 
               return {
                 id: nft.address.toString(),
@@ -458,7 +507,7 @@ export function CandyMachineProvider({
 
               // Use fallback image for error case
               const fallbackImage =
-                "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+                "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
 
               return {
                 id: nft.address?.toString() || `error-${index}`,
@@ -530,15 +579,29 @@ export function CandyMachineProvider({
         }
 
         return pageNfts;
-      } catch (err) {
+      } catch (err: any) {
+        // Handle cancellation gracefully
+        if (
+          err.message === "Request was cancelled" ||
+          err.name === "AbortError"
+        ) {
+          console.log("🚫 NFT loading was cancelled");
+          return [];
+        }
+
         console.error("❌ Error loading wallet NFTs:", err);
         setState((prev) => ({
           ...prev,
           error: err instanceof Error ? err.message : String(err),
           isLoadingNfts: false,
-          walletNfts: [],
+          walletNfts: page === 1 ? [] : prev.walletNfts, // Don't clear existing NFTs if it's pagination
         }));
         return [];
+      } finally {
+        // Clear the abort controller reference if this is the current request
+        if (nftLoadingAbortControllerRef.current === abortController) {
+          nftLoadingAbortControllerRef.current = null;
+        }
       }
     },
     [state.metaplex, collectionAddress]
@@ -657,7 +720,7 @@ export function CandyMachineProvider({
             let nftAddress = "";
             let nftName = "Unknown NFT";
             let nftImage =
-              "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+              "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
 
             // Check postTokenBalances cho new NFTs
             if (
@@ -719,11 +782,11 @@ export function CandyMachineProvider({
 
                   if (metadata?.image) {
                     if (metadata.image.startsWith("ipfs://")) {
-                      nftImage = `https://dweb.link/ipfs/${metadata.image.replace("ipfs://", "")}`;
+                      nftImage = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
                     } else if (metadata.image.startsWith("http")) {
                       nftImage = metadata.image;
                     } else {
-                      nftImage = `https://dweb.link/ipfs/${metadata.image}`;
+                      nftImage = `https://ipfs.io/ipfs/${metadata.image}`;
                     }
                   }
                 } catch (metadataError) {
@@ -1081,6 +1144,27 @@ export function CandyMachineProvider({
     initializeCandyMachine,
   ]);
 
+  // Cleanup effect - cancel any pending requests when component unmounts
+  useEffect(() => {
+    return () => {
+      // Cancel NFT loading requests
+      if (nftLoadingAbortControllerRef.current) {
+        nftLoadingAbortControllerRef.current.abort();
+        nftLoadingAbortControllerRef.current = null;
+      }
+
+      // Cancel transaction loading requests
+      if (transactionLoadingAbortControllerRef.current) {
+        transactionLoadingAbortControllerRef.current.abort();
+        transactionLoadingAbortControllerRef.current = null;
+      }
+
+      console.log(
+        "🧹 CandyMachineProvider cleanup: All pending requests cancelled"
+      );
+    };
+  }, []);
+
   const clearLastResult = useCallback(() => {
     setState((prev) => ({ ...prev, lastMintResult: null }));
   }, []);
@@ -1240,7 +1324,7 @@ export function CandyMachineProvider({
         nftAddress: mintResult.nftAddress || "",
         nftName: `BELP #${Date.now()}`, // Temporary name, sẽ update sau
         nftImage:
-          "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF", // Default image
+          "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF", // Default image
         timestamp: new Date().toISOString(),
         status: "finalized",
       };

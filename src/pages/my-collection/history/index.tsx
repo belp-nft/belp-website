@@ -13,6 +13,56 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useLoading } from "@/providers/LoadingProvider";
 import { useAuth } from "@/providers/AuthProvider";
+import moment from "moment";
+
+// Custom hook for real-time relative time
+const useRealTimeAgo = (timestamp: string) => {
+  const [timeAgo, setTimeAgo] = useState<string>("");
+
+  useEffect(() => {
+    const updateTimeAgo = () => {
+      const now = new Date();
+      const past = new Date(timestamp);
+      const diffMs = now.getTime() - past.getTime();
+      const diffSeconds = Math.floor(diffMs / 1000);
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      let newTimeAgo = "";
+      if (diffDays > 0) {
+        newTimeAgo = `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+      } else if (diffHours > 0) {
+        newTimeAgo = `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+      } else if (diffMinutes > 0) {
+        newTimeAgo = `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+      } else if (diffSeconds > 0) {
+        newTimeAgo = `${diffSeconds} second${diffSeconds > 1 ? "s" : ""} ago`;
+      } else {
+        newTimeAgo = "Just now";
+      }
+
+      setTimeAgo(newTimeAgo);
+    };
+
+    // Update immediately
+    updateTimeAgo();
+
+    // Update every second
+    const interval = setInterval(updateTimeAgo, 1000);
+
+    return () => clearInterval(interval);
+  }, [timestamp]);
+
+  return timeAgo;
+};
+
+// Component for displaying real-time relative time
+const TimeAgo = ({ timestamp }: { timestamp: string }) => {
+  const timeAgo = useRealTimeAgo(timestamp);
+
+  return <div className="text-xs text-gray-400">{timeAgo}</div>;
+};
 
 const HistoryPage = () => {
   const { solAddress } = useWallet();
@@ -28,7 +78,6 @@ const HistoryPage = () => {
   const { showLoading, hideLoading } = useLoading();
   const { isAuthenticated } = useAuth();
 
-  const [error, setError] = useState<string | null>(null);
   const [isLoadingMoreNfts, setIsLoadingMoreNfts] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
@@ -86,7 +135,6 @@ const HistoryPage = () => {
     let isMounted = true; // Track if component is still mounted
 
     if (!solAddress || !metaplex || !isAuthenticated) {
-      setError(null);
       setTransactions([]);
       hideLoading();
       return;
@@ -291,60 +339,14 @@ const HistoryPage = () => {
                             return <span className="text-gray-400">-</span>;
                           }
 
-                          const date = new Date(timestamp);
-                          const now = new Date();
-
-                          // Fix timezone issues by using UTC timestamps
-                          const diffMs = Math.abs(
-                            now.getTime() - date.getTime()
-                          );
-                          const diffDays = Math.floor(
-                            diffMs / (1000 * 60 * 60 * 24)
-                          );
-                          const diffHours = Math.floor(
-                            diffMs / (1000 * 60 * 60)
-                          );
-                          const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-                          let timeAgo = "";
-                          if (diffDays > 0) {
-                            timeAgo = `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-                          } else if (diffHours > 0) {
-                            timeAgo = `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-                          } else if (diffMinutes > 0) {
-                            timeAgo = `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
-                          } else {
-                            timeAgo = "Just now";
-                          }
-
                           return (
                             <div className="space-y-1">
                               <div className="text-sm font-medium text-[#2DD4BF]">
                                 {nft.signature ? "Minted" : "Created"}
                               </div>
+                              <TimeAgo timestamp={timestamp} />
                               <div className="text-xs text-gray-400">
-                                {timeAgo}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {new Date(timestamp).toLocaleDateString(
-                                  "vi-VN",
-                                  {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                    timeZone: "Asia/Ho_Chi_Minh",
-                                  }
-                                )}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                {new Date(timestamp).toLocaleTimeString(
-                                  "vi-VN",
-                                  {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    timeZone: "Asia/Ho_Chi_Minh",
-                                  }
-                                )}
+                                {moment(timestamp).format("MMM DD, YYYY HH:mm")}
                               </div>
                             </div>
                           );
@@ -386,7 +388,6 @@ const HistoryPage = () => {
                         await loadMoreNfts(solAddress);
                       } catch (error) {
                         console.error("❌ Failed to load more NFTs:", error);
-                        setError("Failed to load more NFTs");
                       } finally {
                         setIsLoadingMoreNfts(false);
                       }
