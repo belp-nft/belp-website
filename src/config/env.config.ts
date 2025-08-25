@@ -30,13 +30,12 @@ export const API_CONFIG = {
 export const BLOCKCHAIN_CONFIG = {
   // Solana RPC endpoint
   SOLANA_RPC:
-    process.env.NEXT_PUBLIC_NODE_ENV === "development"
+    process.env.NODE_ENV === "development"
       ? "https://api.devnet.solana.com"
       : "https://api.mainnet-beta.solana.com",
 
   // Network type
-  NETWORK:
-    process.env.NEXT_PUBLIC_NODE_ENV === "development" ? "devnet" : "mainnet",
+  NETWORK: process.env.NODE_ENV === "development" ? "devnet" : "mainnet",
 } as const;
 
 /**
@@ -44,7 +43,7 @@ export const BLOCKCHAIN_CONFIG = {
  */
 export const APP_CONFIG = {
   // Environment
-  NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV || "development",
+  NODE_ENV: process.env.NODE_ENV || "development",
 
   // Local Storage Keys
   STORAGE_KEYS: {

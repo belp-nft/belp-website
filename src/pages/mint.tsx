@@ -292,7 +292,7 @@ const BelpyMintPage = () => {
   };
 
   const handleMintClick = () => {
-    if (process.env.NEXT_PUBLIC_NODE_ENV === "development") {
+    if (process.env.NODE_ENV === "development") {
       setShowMintModal(true);
       return;
     }
