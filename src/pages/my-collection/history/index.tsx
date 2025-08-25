@@ -10,7 +10,7 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLoading } from "@/providers/LoadingProvider";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -34,8 +34,11 @@ const HistoryPage = () => {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
 
   // Load transactions from API
-  const loadTransactions = async () => {
-    if (!solAddress || !isAuthenticated) return;
+  const loadTransactions = useCallback(async () => {
+    if (!solAddress || !isAuthenticated) {
+      console.warn("⚠️ Skipping transaction loading - not authenticated");
+      return;
+    }
 
     try {
       setIsLoadingTransactions(true);
@@ -47,7 +50,7 @@ const HistoryPage = () => {
     } finally {
       setIsLoadingTransactions(false);
     }
-  };
+  }, [solAddress, isAuthenticated]);
 
   // Map wallet NFTs with transaction data
   const mapNftsWithTransactionData = () => {
@@ -80,7 +83,9 @@ const HistoryPage = () => {
   };
 
   useEffect(() => {
-    if (!solAddress || !metaplex) {
+    let isMounted = true; // Track if component is still mounted
+
+    if (!solAddress || !metaplex || !isAuthenticated) {
       setError(null);
       setTransactions([]);
       hideLoading();
@@ -88,17 +93,28 @@ const HistoryPage = () => {
     }
 
     showLoading();
-    loadWalletNfts(solAddress).finally(() => {
-      hideLoading();
-      if (isAuthenticated) loadTransactions();
+    loadTransactions().finally(async () => {
+      // Double-check authentication before loading transactions
+      if (isMounted && solAddress && isAuthenticated) {
+        await loadWalletNfts(solAddress);
+      }
+      if (isMounted) {
+        hideLoading();
+      }
     });
-  }, [solAddress, metaplex, showLoading, hideLoading]);
 
-  useEffect(() => {
-    if (isAuthenticated && solAddress && metaplex && walletNfts?.length) {
-      loadTransactions();
-    }
-  }, [isAuthenticated]);
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    solAddress,
+    metaplex,
+    showLoading,
+    hideLoading,
+    isAuthenticated,
+    loadTransactions,
+  ]);
 
   const currentData = mapNftsWithTransactionData();
 

@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import { useBalance } from "@/providers/BalanceProvider";
 import { useClearConfig, useConfig } from "@/stores/config";
 
@@ -26,6 +27,8 @@ let globalConnectionProcessed = false;
 export type { WalletType, Connected };
 
 export function useWallet(onConnected?: (info: Connected) => void) {
+  const router = useRouter();
+
   // State management với localStorage initialization
   const [solAddress, setSolAddressState] = useState<string | null>(null);
   const [connectedType, setConnectedTypeState] = useState<"sol" | null>(null);
@@ -35,25 +38,22 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
   // Wrapper functions for localStorage sync
   const setSolAddress = useCallback((address: string | null) => {
-    console.log("💾 Setting solAddress:", address);
     setSolAddressState(address);
+    currentSolAddressRef.current = address; // Keep ref in sync
     WalletStorage.setAddress(address);
   }, []);
 
   const setConnectedType = useCallback((type: "sol" | null) => {
-    console.log("💾 Setting connectedType:", type);
     setConnectedTypeState(type);
     WalletStorage.setType(type);
   }, []);
 
   const setConnectedWallet = useCallback((wallet: WalletType | null) => {
-    console.log("💾 Setting connectedWallet:", wallet);
     setConnectedWalletState(wallet);
     WalletStorage.setWallet(wallet);
   }, []);
 
   const clearWalletState = useCallback(() => {
-    console.log("🧹 Clearing wallet state");
     setSolAddressState(null);
     setConnectedTypeState(null);
     setConnectedWalletState(null);
@@ -68,14 +68,10 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         const storedAddress = WalletStorage.getAddress();
         const storedType = WalletStorage.getType();
         const storedWallet = WalletStorage.getWallet();
-
-        console.log("🔄 Hydrating wallet state:", {
-          storedAddress,
-          storedType,
-          storedWallet,
-        });
-
-        if (storedAddress) setSolAddressState(storedAddress);
+        if (storedAddress) {
+          setSolAddressState(storedAddress);
+          currentSolAddressRef.current = storedAddress; // Sync ref during hydration
+        }
         if (storedType) setConnectedTypeState(storedType as "sol");
         if (storedWallet) setConnectedWalletState(storedWallet as WalletType);
       } else {
@@ -106,6 +102,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const listenersRef = useRef<Map<WalletType, any>>(new Map());
   const isLoadingUserDataRef = useRef(false);
   const isLoadingTransactionsRef = useRef(false);
+  const currentSolAddressRef = useRef<string | null>(null);
 
   const clearConfig = useClearConfig();
   const configData = useConfig();
@@ -167,11 +164,15 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   // User data management
   const loadTransactions = useCallback(
     async (forceRefresh: boolean = false) => {
+      // Check authentication before proceeding
+      if (!solAddress || !authToken || !AuthService.isTokenValid()) {
+        return;
+      }
+
       if (
         !forceRefresh &&
         (isLoadingTransactions || isLoadingTransactionsRef.current)
       ) {
-        console.log("Transactions already loading, skipping duplicate call...");
         return;
       }
 
@@ -191,11 +192,23 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         isLoadingTransactionsRef.current = false;
       }
     },
-    [isLoadingTransactions, transactions, transactionsLastLoaded]
+    [
+      isLoadingTransactions,
+      transactions,
+      transactionsLastLoaded,
+      solAddress,
+      authToken,
+    ]
   );
 
   const loadUserStatistics = useCallback(
     async (forceRefresh: boolean = false) => {
+      // Check authentication before proceeding
+      if (!solAddress || !authToken || !AuthService.isTokenValid()) {
+        console.warn("⚠️ Skipping user statistics loading - not authenticated");
+        return;
+      }
+
       await UserDataService.loadUserStatistics(
         isLoadingUserStats,
         userStatistics,
@@ -206,11 +219,25 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         forceRefresh
       );
     },
-    [isLoadingUserStats, userStatistics, userStatsLastLoaded]
+    [
+      isLoadingUserStats,
+      userStatistics,
+      userStatsLastLoaded,
+      solAddress,
+      authToken,
+    ]
   );
 
   const loadUserData = useCallback(
     async (walletAddress: string, retryAuth: boolean = false) => {
+      // Check authentication before proceeding (unless it's a retry)
+      if (
+        !retryAuth &&
+        (!walletAddress || !authToken || !AuthService.isTokenValid())
+      ) {
+        return;
+      }
+
       if (
         !retryAuth &&
         (isLoadingUserStats ||
@@ -218,14 +245,12 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           isLoadingUserDataRef.current ||
           isLoadingTransactionsRef.current)
       ) {
-        console.log("User data already loading, skipping duplicate call...");
         return;
       }
 
       isLoadingUserDataRef.current = true;
 
       try {
-        console.log("Loading user data...", { walletAddress, retryAuth });
         await loadUserStatistics(retryAuth);
         await loadTransactions(retryAuth);
       } catch (error: any) {
@@ -235,13 +260,8 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           error.response?.status === 401 ||
           error.message?.includes("Unauthorized")
         ) {
-          console.warn("Authentication error detected, clearing invalid token");
           AuthService.removeToken();
           setAuthToken(null);
-
-          if (!retryAuth) {
-            console.log("Will retry authentication on next connect");
-          }
         }
       } finally {
         isLoadingUserDataRef.current = false;
@@ -252,6 +272,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       loadTransactions,
       isLoadingUserStats,
       isLoadingTransactions,
+      authToken,
     ]
   );
 
@@ -285,11 +306,17 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setSolLamports,
         // Handle account changed callback
         async (newAddress: string, changedWalletType: WalletType) => {
-          console.log(
-            `🔄 Account changed detected: ${newAddress} on ${changedWalletType}`
-          );
+          const currentAddress = currentSolAddressRef.current;
 
-          // Clear old authentication token
+          if (!currentAddress) {
+            return;
+          }
+
+          if (currentAddress === newAddress) {
+            return;
+          }
+
+          // Clear tokens and user data
           AuthService.removeToken();
           setAuthToken(null);
           setUserStatistics(null);
@@ -297,35 +324,31 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setTransactionsLastLoaded(0);
           setUserStatsLastLoaded(0);
 
-          // Reset global connection flag to allow re-processing
-          globalConnectionProcessed = false;
-          hasProcessedConnectionRef.current = false;
+          // Reset wallet connection state
+          setSolAddress(null);
+          setConnectedWallet(null);
+          setConnectedType(null);
+          setSolLamports(0);
 
-          try {
-            // Re-authenticate with new address
-            console.log("🔐 Re-authenticating with new address...", newAddress);
-            const authSuccess = await authenticateWallet(newAddress, true);
+          // Reset global connection flags to prevent auto-reconnect
+          globalConnectionProcessed = true; // Keep as true to prevent auto-connect
+          hasProcessedConnectionRef.current = true;
 
-            if (authSuccess) {
-              // Load user data with new authenticated token
-              console.log(
-                "✅ Re-authentication successful, loading user data..."
-              );
-              await loadUserData(newAddress, true);
+          // Clean up wallet listeners to prevent immediate reconnection
+          if (connectedWallet) {
+            WalletListenerService.cleanupWalletListeners(
+              connectedWallet,
+              listenersRef
+            );
+          }
 
-              // Trigger connected callback with new address
-              onConnected?.({
-                kind: "sol",
-                address: newAddress,
-                walletType: changedWalletType,
-              });
+          WalletStorage.clear();
+          clearConfig();
+          window.localStorage.removeItem("last-wallet-type");
 
-              console.log("🎉 Account switch completed successfully!");
-            } else {
-              console.warn("❌ Re-authentication failed for new address");
-            }
-          } catch (error) {
-            console.error("❌ Error handling account change:", error);
+          // Redirect to home page instead of re-authenticating
+          if (router.pathname.startsWith("/my-collection")) {
+            router.push("/");
           }
         },
         // Get current sol address function
@@ -340,6 +363,11 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       loadUserData,
       onConnected,
       solAddress,
+      router,
+      clearWalletState,
+      clearConfig,
+      connectedWallet,
+      listenersRef,
     ]
   );
 
@@ -559,26 +587,16 @@ export function useWallet(onConnected?: (info: Connected) => void) {
               currentWalletAddress.toLowerCase() !== walletAddress.toLowerCase()
             ) {
               console.log(
-                "🔄 Wallet address changed, clearing old token and re-authenticating..."
+                "🔄 Wallet address changed, clearing old token and disconnecting..."
               );
+
+              // Don't auto-reconnect - just clear everything and stay disconnected
               AuthService.removeToken();
               setAuthToken(null);
+              WalletStorage.clear();
+              clearConfig();
+              window.localStorage.removeItem("last-wallet-type");
 
-              // Re-authenticate with current address
-              authenticateWallet(currentWalletAddress, true).then((success) => {
-                if (success) {
-                  setSolAddress(currentWalletAddress);
-                  setConnectedWallet(lastWalletType);
-                  setConnectedType("sol");
-                  refreshSolBalance();
-                  loadUserData(currentWalletAddress);
-                  onConnected?.({
-                    kind: "sol",
-                    address: currentWalletAddress,
-                    walletType: lastWalletType,
-                  });
-                }
-              });
               return;
             }
 
@@ -654,7 +672,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
             wallet: connectedWallet,
           });
 
-          // Clear old authentication token
+          // Clear authentication and wallet state
           AuthService.removeToken();
           setAuthToken(null);
           setUserStatistics(null);
@@ -662,35 +680,26 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setTransactionsLastLoaded(0);
           setUserStatsLastLoaded(0);
 
-          // Update to new address
-          setSolAddress(currentProviderAddress);
-          // Don't reset balance immediately, let refreshSolBalance handle it
+          // Reset wallet connection state
+          setSolAddress(null);
+          setConnectedWallet(null);
+          setConnectedType(null);
+          setSolLamports(0);
 
-          try {
-            // Re-authenticate with new address
-            console.log(
-              "🔐 Re-authenticating with new address via periodic check...",
-              currentProviderAddress
-            );
-            const authSuccess = await authenticateWallet(
-              currentProviderAddress,
-              true
-            );
+          // Clear storage and set disconnected flag
+          WalletStorage.clear();
+          clearConfig();
+          window.localStorage.removeItem("last-wallet-type");
 
-            if (authSuccess) {
-              console.log("✅ Re-authentication successful via periodic check");
-              await loadUserData(currentProviderAddress, true);
+          // Clean up listeners
+          WalletListenerService.cleanupWalletListeners(
+            connectedWallet,
+            listenersRef
+          );
 
-              onConnected?.({
-                kind: "sol",
-                address: currentProviderAddress,
-                walletType: connectedWallet,
-              });
-
-              console.log("🎉 Account switch completed via periodic check!");
-            }
-          } catch (error) {
-            console.error("❌ Error in periodic account check:", error);
+          // Redirect to home
+          if (router.pathname.startsWith("/my-collection")) {
+            router.push("/");
           }
         }
       } catch (error) {
@@ -705,10 +714,9 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   }, [
     connectedWallet,
     solAddress,
-    authenticateWallet,
-    loadUserData,
-    onConnected,
-    setSolAddress,
+    router,
+    clearConfig,
+    listenersRef,
     setSolLamports,
   ]);
 
@@ -965,6 +973,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     isLoadingUserStats,
     isAuthenticating,
     isWalletReady,
+    isHydrated, // Expose hydration state to prevent flickering in components
 
     // Generic actions
     connectWallet,
@@ -1025,7 +1034,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
       });
     },
     forceRefreshBalance: () => {
-      console.log("🔄 Force refreshing balance...");
       refreshSolBalance(true);
     },
   };
