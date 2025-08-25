@@ -15,6 +15,7 @@ import FeatureAnnouncementModal from "@/modules/mint/FeatureAnnouncementModalPro
 import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
 import { fetchDigitalAsset } from "@metaplex-foundation/mpl-token-metadata";
+import { NftService } from "@/services";
 
 const cats = [
   "tokens/1.png",
@@ -159,6 +160,12 @@ const BelpyMintPage = () => {
 
       if (mintResult.nftAddress) {
         setNftAddress(mintResult.nftAddress);
+
+        NftService.sendSignedTransaction(
+          mintResult?.signature,
+          solAddress,
+          candyMachineConfig?.address
+        );
       }
 
       setMintSuccess(true);
