@@ -2,120 +2,124 @@
 
 import BreadCrumbs from "@/components/Breadcrumb";
 import { useWallet } from "@/hooks/useWallet";
-import { useLoading } from "@/providers/LoadingProvider";
 import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import { UserService } from "@/services/userService";
+import { Transaction } from "@/services/types";
 import { BLOCKCHAIN_CONFIG } from "@/services";
-import type { Transaction } from "@/services/types";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useLoading } from "@/providers/LoadingProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
 const HistoryPage = () => {
-  const { solAddress, userStatistics } = useWallet();
+  const { solAddress } = useWallet();
+  const {
+    loadWalletNfts,
+    loadMoreNfts,
+    walletNfts,
+    metaplex,
+    isLoadingNfts,
+    hasMoreNfts,
+  } = useCandyMachineContext();
+
   const { showLoading, hideLoading } = useLoading();
-  const { loadWalletNfts, walletNfts, metaplex, isLoadingNfts } =
-    useCandyMachineContext();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { isAuthenticated } = useAuth();
+
   const [error, setError] = useState<string | null>(null);
-  const [visible, setVisible] = useState(10);
-  const [showTransactions, setShowTransactions] = useState(false);
+  const [isLoadingMoreNfts, setIsLoadingMoreNfts] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+
+  // Load transactions from API
+  const loadTransactions = useCallback(async () => {
+    if (!solAddress || !isAuthenticated) {
+      console.warn("⚠️ Skipping transaction loading - not authenticated");
+      return;
+    }
+
+    try {
+      setIsLoadingTransactions(true);
+      const response = await UserService.getTransactions();
+      setTransactions(response.success && response.data ? response.data : []);
+    } catch (error) {
+      console.error("❌ Failed to load transactions:", error);
+      setTransactions([]);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, [solAddress, isAuthenticated]);
+
+  // Map wallet NFTs with transaction data
+  const mapNftsWithTransactionData = () => {
+    if (!walletNfts?.length || !transactions.length) return walletNfts || [];
+
+    const walletTransactions = transactions.filter(
+      (tx) => tx.walletAddress?.toLowerCase() === solAddress?.toLowerCase()
+    );
+
+    return walletNfts.map((walletNft, index) => {
+      const matchingTransaction =
+        walletTransactions[index] || walletTransactions[0];
+
+      return matchingTransaction
+        ? {
+            ...walletNft,
+            createdAt: matchingTransaction.createdAt,
+            signature: matchingTransaction.transactionSignature,
+            transactionId: matchingTransaction._id,
+          }
+        : walletNft;
+    });
+  };
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
-
-    // Detect network (mainnet or devnet based on environment)
     const isMainnet = BLOCKCHAIN_CONFIG.NETWORK === "mainnet";
-
-    const url = `https://solscan.io/token/${tokenAddress}${
-      isMainnet ? "" : "?cluster=devnet"
-    }`;
+    const url = `https://solscan.io/token/${tokenAddress}${isMainnet ? "" : "?cluster=devnet"}`;
     window.open(url, "_blank");
   };
 
-  // Load transactions từ backend
-  const loadTransactions = async () => {
-    if (!solAddress) return;
-
-    try {
-      showLoading();
-      setError(null);
-
-      const response = await UserService.getTransactions();
-
-      if (response.success && response.data) {
-        setTransactions(response.data);
-      } else {
-        console.warn("⚠️ Failed to load transactions:", response.message);
-        setError(response.message || "Failed to load transactions");
-      }
-    } catch (err) {
-      console.error("❌ Error loading transactions:", err);
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      hideLoading();
-    }
-  };
-
   useEffect(() => {
-    if (solAddress) {
-      // Load transactions from backend
-      loadTransactions();
+    let isMounted = true; // Track if component is still mounted
 
-      // Load NFTs từ blockchain (chỉ khi metaplex đã sẵn sàng)
-      if (metaplex) {
-        console.log("🔍 Loading NFTs for history page, address:", solAddress);
-        loadWalletNfts(solAddress);
-      } else {
-        console.log("⏳ Waiting for Metaplex to initialize...");
-      }
-    } else {
-      // Reset data khi không có wallet
-      setTransactions([]);
+    if (!solAddress || !metaplex || !isAuthenticated) {
       setError(null);
+      setTransactions([]);
+      hideLoading();
+      return;
     }
-  }, [solAddress, metaplex]); // Thêm metaplex vào dependencies
 
-  // Chọn data source để hiển thị
-  let dataSource, sortedData;
-
-  console.log("🔍 History page debug:", {
-    showTransactions,
-    walletNfts: walletNfts?.length || 0,
-    transactions: transactions?.length || 0,
-    metaplex: !!metaplex,
-    isLoadingNfts,
-  });
-
-  if (showTransactions) {
-    // Hiển thị transaction history
-    dataSource = transactions || [];
-    sortedData = [...dataSource].sort((a, b) => {
-      const dateA = a.createdAt || a.timestamp;
-      const dateB = b.createdAt || b.timestamp;
-
-      if (!dateA || !dateB) return 0;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    showLoading();
+    loadTransactions().finally(async () => {
+      // Double-check authentication before loading transactions
+      if (isMounted && solAddress && isAuthenticated) {
+        await loadWalletNfts(solAddress);
+      }
+      if (isMounted) {
+        hideLoading();
+      }
     });
-  } else {
-    // Hiển thị NFTs từ context (blockchain)
-    dataSource = walletNfts || [];
-    sortedData = [...dataSource].sort((a, b) => {
-      // Sử dụng ID làm fallback sorting vì walletNfts có thể không có createdAt
-      const dateA = (a as any).createdAt;
-      const dateB = (b as any).createdAt;
 
-      if (!dateA || !dateB) return 0;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
-  }
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    solAddress,
+    metaplex,
+    showLoading,
+    hideLoading,
+    isAuthenticated,
+    loadTransactions,
+  ]);
 
-  const visibleData = sortedData.slice(0, visible);
+  const currentData = mapNftsWithTransactionData();
 
   return (
-    <div className="min-h-screen bg-[#ede9f6] py-8">
+    <div className="min-h-screen bg-[#ede9f6] pt-10 pb-20">
       <div className="main-container">
         <BreadCrumbs
           breadcrumbs={[
@@ -123,7 +127,7 @@ const HistoryPage = () => {
             { label: "History" },
           ]}
         />
-        <div className="flex md:flex-row flex-col items-center justify-between mt-5 mb-10 gap-5">
+        <div className="flex md:flex-row flex-col items-center justify-between my-5 gap-5">
           <motion.h1
             className={clsx(
               "font-bold title-text",
@@ -135,40 +139,10 @@ const HistoryPage = () => {
           >
             History
           </motion.h1>
-
-          {/* Data Source Toggle */}
-          {solAddress && (
-            <div className="flex items-center gap-4">
-              <div className="flex bg-white rounded-lg p-1 shadow-sm border border-[#e9defd]">
-                <button
-                  onClick={() => setShowTransactions(false)}
-                  className={clsx(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-all cursor-pointer",
-                    !showTransactions
-                      ? "bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] text-white shadow-sm"
-                      : "text-[#7A4BD6] hover:bg-[#f8f4ff]"
-                  )}
-                >
-                  NFTs ({walletNfts?.length || 0})
-                </button>
-                <button
-                  onClick={() => setShowTransactions(true)}
-                  className={clsx(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-all cursor-pointer",
-                    showTransactions
-                      ? "bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] text-white shadow-sm"
-                      : "text-[#7A4BD6] hover:bg-[#f8f4ff]"
-                  )}
-                >
-                  Transactions ({transactions?.length || 0})
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="bg-[#E3CEF6] p-5 rounded-4xl">
-          {!showTransactions && !metaplex ? (
+          {!metaplex || isLoadingTransactions ? (
             <motion.div
               className="text-center py-12"
               initial={{ opacity: 0, y: 20 }}
@@ -177,28 +151,21 @@ const HistoryPage = () => {
             >
               <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
               <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                Initializing Metaplex...
+                {!metaplex
+                  ? "Initializing Metaplex..."
+                  : isLoadingTransactions
+                    ? "Loading Transaction Data..."
+                    : "Loading NFT History..."}
               </h3>
               <p className="text-blue-600">
-                Please wait while we setup the blockchain connection.
+                {!metaplex
+                  ? "Please wait while we setup the blockchain connection."
+                  : isLoadingTransactions
+                    ? "Fetching transaction history from API..."
+                    : "Fetching your NFT collection and transaction data..."}
               </p>
             </motion.div>
-          ) : !showTransactions && isLoadingNfts ? (
-            <motion.div
-              className="text-center py-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-purple-800 mb-2">
-                Loading NFTs...
-              </h3>
-              <p className="text-purple-600">
-                Fetching your NFTs from the blockchain.
-              </p>
-            </motion.div>
-          ) : dataSource.length === 0 ? (
+          ) : currentData?.length === 0 && !isLoadingNfts ? (
             <motion.div
               className="text-center py-12"
               initial={{ opacity: 0, y: 20 }}
@@ -206,23 +173,17 @@ const HistoryPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-xl font-semibold mb-2">
-                No {showTransactions ? "transactions" : "NFTs"} found
-              </h3>
+              <h3 className="text-xl font-semibold mb-2">No NFTs found</h3>
               <p className="mb-6">
-                {showTransactions
-                  ? "No transaction history available."
-                  : "Collect your first BELPY and watch your gallery grow."}
+                Collect your first BELPY and watch your gallery grow.
               </p>
-              {!showTransactions && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl"
-                  onClick={() => (window.location.href = "/mint")}
-                >
-                  Start Minting
-                </motion.button>
-              )}
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-3 bg-gradient-to-b from-[#F356FF] to-[#AE4DCE] text-white font-semibold rounded-2xl"
+                onClick={() => (window.location.href = "/mint")}
+              >
+                Start Minting
+              </motion.button>
             </motion.div>
           ) : (
             <motion.div
@@ -231,233 +192,210 @@ const HistoryPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              {/* History Items */}
-              {visibleData.map((item, index) => {
-                if (showTransactions) {
-                  // Hiển thị transaction item - item là Transaction type
-                  const transaction = item as Transaction;
-                  return (
-                    <motion.div
-                      key={transaction._id}
-                      className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.1 }}
-                      whileHover={{ y: -2 }}
-                    >
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Transaction Icon */}
-                        <div className="col-span-12 sm:col-span-1">
-                          <div className="flex justify-center sm:justify-start">
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6] bg-gradient-to-r from-[#F356FF] to-[#AE4DCE] flex items-center justify-center">
-                              <span className="text-white text-lg">📄</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Transaction Details */}
-                        <div className="col-span-12 sm:col-span-3 text-center sm:text-left">
-                          <div className="text-[#2b1a5e] font-semibold">
-                            Transaction
-                          </div>
-                          <div className="text-xs text-[#6c5a99] mt-1 font-mono break-all">
-                            {transaction.transactionSignature?.slice(0, 8)}...
-                            {transaction.transactionSignature?.slice(-8)}
-                          </div>
-                        </div>
-
-                        {/* Candy Machine */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <div className="text-sm text-[#6c5a99] font-mono">
-                            {transaction.candyMachineAddress?.slice(0, 4)}...
-                            {transaction.candyMachineAddress?.slice(-4)}
-                          </div>
-                        </div>
-
-                        {/* Tx Hash Link */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <a
-                            href={`https://solscan.io/tx/${transaction.transactionSignature}?cluster=devnet`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#7a4bd6] hover:underline text-sm font-mono cursor-pointer"
-                          >
-                            View →
-                          </a>
-                        </div>
-
-                        {/* Type */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Transaction
-                          </span>
-                        </div>
-
-                        {/* Time */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <div className="text-sm text-[#6c5a99]">
-                            {transaction.createdAt || transaction.timestamp ? (
-                              <>
-                                <div>
-                                  {new Date(
-                                    transaction.createdAt ||
-                                      transaction.timestamp
-                                  ).toLocaleDateString()}
-                                </div>
-                                <div className="text-xs opacity-70">
-                                  {new Date(
-                                    transaction.createdAt ||
-                                      transaction.timestamp
-                                  ).toLocaleTimeString()}
-                                </div>
-                              </>
-                            ) : (
-                              "Unknown"
-                            )}
+              {/* History Items - Unified View with Transaction Column */}
+              {currentData?.map((nft: any, index: number) => {
+                return (
+                  <motion.div
+                    key={nft.id}
+                    className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    whileHover={{ y: -2 }}
+                  >
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Image */}
+                      <div className="col-span-12 sm:col-span-1">
+                        <div className="flex justify-center sm:justify-start">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
+                            <Image
+                              src={nft.image}
+                              alt={nft.name}
+                              fill
+                              className="object-cover"
+                            />
                           </div>
                         </div>
                       </div>
-                    </motion.div>
-                  );
-                } else {
-                  // Hiển thị NFT item từ context (SimpleNFT type)
-                  const nft = item as any; // SimpleNFT from context
 
-                  return (
-                    <motion.div
-                      key={nft.id}
-                      className="bg-white rounded-xl p-4 border border-[#e9defd] hover:border-[#d8c7ff] transition-colors"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.1 }}
-                      whileHover={{ y: -2 }}
-                    >
-                      <div className="grid grid-cols-12 gap-4 items-center">
-                        {/* Image */}
-                        <div className="col-span-12 sm:col-span-1">
-                          <div className="flex justify-center sm:justify-start">
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-[#7a4bd6]">
-                              <Image
-                                src={nft.image}
-                                alt={nft.name}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* NFT Details */}
-                        <div className="col-span-12 sm:col-span-3 text-center sm:text-left">
-                          <Link
-                            href={`/my-collection/${nft.id}`}
-                            className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
-                          >
-                            {nft.name}
-                          </Link>
-                          <div className="text-xs text-[#6c5a99] mt-1">
-                            #{nft.id.slice(-8).toUpperCase()}
-                          </div>
-                        </div>
-
-                        {/* NFT Address */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <div
-                            className="text-sm text-[#6c5a99] font-mono cursor-pointer hover:text-[#7A4BD6] transition-colors"
-                            onClick={() => openTokenOnSolscan(nft.id)}
-                            title="View token on Solscan"
-                          >
-                            {nft.id.slice(0, 4)}...
-                            {nft.id.slice(-4)}
-                          </div>
-                        </div>
-
-                        {/* Solscan Link */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <button
-                            onClick={() => openTokenOnSolscan(nft.id)}
-                            className="text-[#7a4bd6] hover:underline text-sm cursor-pointer"
-                          >
-                            View →
-                          </button>
-                        </div>
-
-                        {/* Type */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            NFT
-                          </span>
-                        </div>
-
-                        {/* Time */}
-                        <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
-                          <div className="text-sm text-[#6c5a99]">
-                            <div>
-                              {new Date(nft.createdAt).toLocaleDateString()}
-                            </div>
-                            <div className="text-xs opacity-70">
-                              {new Date(nft.createdAt).toLocaleTimeString()}
-                            </div>
-                          </div>
+                      {/* NFT Details */}
+                      <div className="col-span-12 sm:col-span-3 text-center sm:text-left">
+                        <Link
+                          href={`/my-collection/${nft.id}`}
+                          className="text-[#2b1a5e] font-semibold hover:text-[#7a4bd6] transition-colors"
+                        >
+                          {nft.name}
+                        </Link>
+                        <div className="text-xs text-[#6c5a99] mt-1">
+                          #{nft.id.slice(-8).toUpperCase()}
                         </div>
                       </div>
-                    </motion.div>
-                  );
-                }
+
+                      {/* NFT Address */}
+                      <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
+                        <div
+                          className="text-sm text-[#6c5a99] font-mono cursor-pointer hover:text-[#7A4BD6] transition-colors"
+                          onClick={() => openTokenOnSolscan(nft.id)}
+                          title="View token on Solscan"
+                        >
+                          {nft.id.slice(0, 4)}...
+                          {nft.id.slice(-4)}
+                        </div>
+
+                        <button
+                          onClick={() => openTokenOnSolscan(nft.id)}
+                          className="text-[#7a4bd6] hover:underline text-sm cursor-pointer"
+                        >
+                          View Token →
+                        </button>
+                      </div>
+
+                      {/* Transaction Column - New Addition */}
+                      <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
+                        {nft.signature ? (
+                          <div className="space-y-1">
+                            <div className="text-xs text-[#6c5a99] font-mono">
+                              {nft.signature.slice(0, 6)}...
+                              {nft.signature.slice(-6)}
+                            </div>
+                            <a
+                              href={`https://solscan.io/tx/${nft.signature}?cluster=devnet`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#7a4bd6] hover:underline text-xs cursor-pointer inline-flex items-center gap-1"
+                            >
+                              View Tx →
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400">
+                            No signature
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Type */}
+                      <div className="col-span-12 sm:col-span-1 text-center sm:text-left">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          NFT
+                        </span>
+                      </div>
+
+                      {/* Transaction Info */}
+                      <div className="col-span-12 sm:col-span-2 text-center sm:text-left">
+                        {(() => {
+                          // Sử dụng timestamp đã được mapped (ưu tiên transaction createdAt)
+                          const timestamp = nft.createdAt;
+
+                          if (!timestamp) {
+                            return <span className="text-gray-400">-</span>;
+                          }
+
+                          const date = new Date(timestamp);
+                          const now = new Date();
+
+                          // Fix timezone issues by using UTC timestamps
+                          const diffMs = Math.abs(
+                            now.getTime() - date.getTime()
+                          );
+                          const diffDays = Math.floor(
+                            diffMs / (1000 * 60 * 60 * 24)
+                          );
+                          const diffHours = Math.floor(
+                            diffMs / (1000 * 60 * 60)
+                          );
+                          const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+                          let timeAgo = "";
+                          if (diffDays > 0) {
+                            timeAgo = `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+                          } else if (diffHours > 0) {
+                            timeAgo = `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+                          } else if (diffMinutes > 0) {
+                            timeAgo = `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+                          } else {
+                            timeAgo = "Just now";
+                          }
+
+                          return (
+                            <div className="space-y-1">
+                              <div className="text-sm font-medium text-[#2DD4BF]">
+                                {nft.signature ? "Minted" : "Created"}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {timeAgo}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(timestamp).toLocaleDateString(
+                                  "vi-VN",
+                                  {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    timeZone: "Asia/Ho_Chi_Minh",
+                                  }
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {new Date(timestamp).toLocaleTimeString(
+                                  "vi-VN",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    timeZone: "Asia/Ho_Chi_Minh",
+                                  }
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
               })}
 
-              {/* Load More Button */}
-              {visible < sortedData.length && (
+              {/* Initial Loading States - Both NFT and Transaction loading */}
+              {(isLoadingNfts || isLoadingTransactions) &&
+                currentData?.length === 0 && (
+                  <div className="flex justify-center py-6">
+                    <div className="flex items-center space-x-2 text-[#7A4BD6]">
+                      <div className="animate-spin w-5 h-5 border-2 border-[#7A4BD6] border-t-transparent rounded-full"></div>
+                      <span className="font-medium">
+                        {isLoadingNfts && isLoadingTransactions
+                          ? "Loading NFTs and Transactions..."
+                          : isLoadingNfts
+                            ? "Loading NFTs..."
+                            : "Loading Transactions..."}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+              {/* View More Button - Only NFT pagination needed */}
+              {hasMoreNfts && currentData && currentData.length > 0 && (
                 <div className="flex justify-center py-6">
                   <motion.button
                     whileTap={{ scale: 0.98 }}
-                    className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-[#7A4BD6] font-semibold shadow-md hover:shadow-lg transition cursor-pointer"
-                    onClick={() =>
-                      setVisible((v) => Math.min(v + 10, sortedData.length))
-                    }
+                    className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-[#7A4BD6] font-semibold shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-50"
+                    disabled={isLoadingMoreNfts || isLoadingTransactions}
+                    onClick={async () => {
+                      if (!solAddress || isLoadingMoreNfts) return;
+                      setIsLoadingMoreNfts(true);
+                      try {
+                        await loadMoreNfts(solAddress);
+                      } catch (error) {
+                        console.error("❌ Failed to load more NFTs:", error);
+                        setError("Failed to load more NFTs");
+                      } finally {
+                        setIsLoadingMoreNfts(false);
+                      }
+                    }}
                   >
-                    See more
+                    {isLoadingMoreNfts ? "⏳ Loading..." : "View More"}
                   </motion.button>
                 </div>
               )}
-
-              {/* Stats Footer */}
-              <motion.div
-                className="mt-8 p-4 bg-white rounded-xl border border-[#e9defd] text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                <div className="text-sm text-[#6c5a99]">
-                  Total {showTransactions ? "transactions" : "NFTs"}:{" "}
-                  <span className="font-semibold text-[#7a4bd6]">
-                    {dataSource.length}
-                  </span>
-                  {solAddress && (
-                    <>
-                      <span className="mx-2">•</span>
-                      Wallet:{" "}
-                      <span className="font-mono text-xs">
-                        {solAddress.slice(0, 4)}...{solAddress.slice(-4)}
-                      </span>
-                    </>
-                  )}
-                  {userStatistics && (
-                    <>
-                      <span className="mx-2">•</span>
-                      Total NFTs:{" "}
-                      <span className="font-semibold text-[#7a4bd6]">
-                        {userStatistics.totalNfts || 0}
-                      </span>
-                      <span className="mx-2">•</span>
-                      Total Transactions:{" "}
-                      <span className="font-semibold text-[#7a4bd6]">
-                        {userStatistics.totalTransactions || 0}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </motion.div>
             </motion.div>
           )}
         </div>

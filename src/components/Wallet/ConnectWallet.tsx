@@ -25,7 +25,7 @@ export default function ConnectWallet({
 
   const [open, setOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const {
     solAddress,
@@ -39,6 +39,7 @@ export default function ConnectWallet({
     shorten,
     disconnect,
     solBalanceText,
+    isHydrated, // Use wallet's hydration state to prevent flickering
   } = useWallet(onConnected);
 
   const isConnecting = !!loading && !solAddress;
@@ -54,18 +55,10 @@ export default function ConnectWallet({
     [solAddress, shorten]
   );
 
+  // Client-side mounting check for proper hydration
   useEffect(() => {
-    const initializeWallet = async () => {
-      // WalletStateProvider sẽ handle auto-reconnect, chỉ cần set initialized
-      setIsInitialized(true);
-    };
-
-    if (!isInitialized) {
-      initializeWallet();
-    }
-  }, [isInitialized]);
-
-  // Remove duplicate localStorage management - WalletStateProvider handles this
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (hasCollapse) return;
@@ -103,7 +96,8 @@ export default function ConnectWallet({
     [connectWallet]
   );
 
-  if (!isInitialized) {
+  // Prevent flickering during SSR hydration - use wallet's hydration state
+  if (!isHydrated || !isMounted) {
     return (
       <WalletButton
         isOpen={false}

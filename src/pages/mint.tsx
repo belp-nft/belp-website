@@ -15,6 +15,7 @@ import FeatureAnnouncementModal from "@/modules/mint/FeatureAnnouncementModalPro
 import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
 import { fetchDigitalAsset } from "@metaplex-foundation/mpl-token-metadata";
+import { NftService } from "@/services";
 
 const cats = [
   "tokens/1.png",
@@ -73,16 +74,16 @@ const BelpyMintPage = () => {
   const [isHiddenRemindMe, setIsHiddenRemindMe] = useState(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  // Auto-connect wallet if authToken exists but no solAddress
-  useEffect(() => {
-    if (!solAddress && authToken) {
-      console.log("🔄 Auto-connecting wallet with existing authToken...");
-      // Try to get last used wallet type or default to phantom
-      const lastWalletType =
-        (window.localStorage.getItem("last-wallet-type") as any) || "phantom";
-      connectWallet(lastWalletType);
-    }
-  }, [solAddress, authToken, connectWallet]);
+  // Don't auto-connect wallet - let users manually connect
+  // useEffect(() => {
+  //   if (!solAddress && authToken) {
+  //     console.log("🔄 Auto-connecting wallet with existing authToken...");
+  //     // Try to get last used wallet type or default to phantom
+  //     const lastWalletType =
+  //       (window.localStorage.getItem("last-wallet-type") as any) || "phantom";
+  //     connectWallet(lastWalletType);
+  //   }
+  // }, [solAddress, authToken, connectWallet]);
 
   // Auto-refresh stats every 30s
   useEffect(() => {
@@ -159,6 +160,12 @@ const BelpyMintPage = () => {
 
       if (mintResult.nftAddress) {
         setNftAddress(mintResult.nftAddress);
+
+        NftService.sendSignedTransaction(
+          mintResult?.signature || "",
+          solAddress,
+          candyMachineConfig?.address
+        );
       }
 
       setMintSuccess(true);
