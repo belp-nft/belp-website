@@ -49,7 +49,17 @@ const MyCollectionPage = () => {
   useEffect(() => {
     let isMounted = true; // Track if component is still mounted
 
+    console.log("🔄 MyCollection useEffect triggered with:", {
+      isInitialized,
+      hasAddress: !!solAddress,
+      isWalletReady,
+      hasMetaplex: !!metaplex,
+      loading,
+      walletNftsCount: walletNfts.length,
+    });
+
     if (isInitialized && solAddress && isWalletReady && metaplex) {
+      console.log("📥 Loading wallet NFTs from MyCollection component");
       showLoading();
       loadWalletNfts(solAddress).finally(() => {
         if (isMounted) {
