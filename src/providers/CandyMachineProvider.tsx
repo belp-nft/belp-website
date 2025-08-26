@@ -35,6 +35,7 @@ import {
 } from "@metaplex-foundation/umi";
 import bs58 from "bs58";
 import { useToast } from "@/components/ToastContainer";
+import { UserService } from "@/services/userService";
 
 // Helper function to check if NFT belongs to verified collection (same logic as in loadWalletNfts)
 const isNftInVerifiedCollection = (
@@ -49,7 +50,11 @@ const isNftInVerifiedCollection = (
 };
 
 // Function to fetch metadata from NFT URI with enhanced error handling and retry logic
-const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
+const fetchNftMetadata = async (
+  uri: string,
+  retries = 2,
+  externalSignal?: AbortSignal
+): Promise<any> => {
   if (!uri || typeof uri !== "string") {
     console.warn(`⚠️ Invalid URI provided: ${uri}`);
     return null;
@@ -63,13 +68,18 @@ const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
     if (uri.startsWith("ipfs://")) {
       const ipfsHash = uri.replace("ipfs://", "");
       // Try dweb.link first, fallback to ipfs.io if needed
-      formattedUri = `https://dweb.link/ipfs/${ipfsHash}`;
+      formattedUri = `https://ipfs.io/ipfs/${ipfsHash}`;
     }
 
     console.log(`🔄 Formatted URI: ${formattedUri}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    // If external signal is provided, listen for it
+    if (externalSignal) {
+      externalSignal.addEventListener("abort", () => controller.abort());
+    }
 
     try {
       const response = await fetch(formattedUri, {
@@ -106,7 +116,7 @@ const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
           const ipfsHash = uri.replace("ipfs://", "");
           const altUri = `https://ipfs.io/ipfs/${ipfsHash}`;
           console.log(`🔄 Trying alternative gateway: ${altUri}`);
-          return await fetchNftMetadata(altUri, retries - 1);
+          return await fetchNftMetadata(altUri, retries - 1, externalSignal);
         }
       }
     } catch (fetchError: any) {
@@ -126,7 +136,7 @@ const fetchNftMetadata = async (uri: string, retries = 2): Promise<any> => {
         const ipfsHash = uri.replace("ipfs://", "");
         const altUri = `https://ipfs.io/ipfs/${ipfsHash}`;
         console.log(`🔄 Trying alternative gateway after error: ${altUri}`);
-        return await fetchNftMetadata(altUri, retries - 1);
+        return await fetchNftMetadata(altUri, retries - 1, externalSignal);
       }
 
       throw fetchError;
@@ -213,11 +223,7 @@ interface CandyMachineContextType extends CandyMachineState {
   initializeCandyMachine: () => Promise<void>;
   loadWalletNfts: (address: string, page?: number) => Promise<SimpleNFT[]>;
   loadMoreNfts: (address: string) => Promise<SimpleNFT[]>;
-  loadTransactionHistory: (
-    address: string,
-    page?: number
-  ) => Promise<TransactionHistory[]>;
-  loadMoreTransactions: (address: string) => Promise<TransactionHistory[]>;
+  clearPersistedNewlyMintedNfts: () => void;
 
   // Config
   candyMachineAddress: string;
@@ -263,7 +269,40 @@ const initialState: CandyMachineState = {
   configError: null,
 };
 
-// Helper function để lấy transaction details từ Solana RPC
+// Helper function to get newly minted NFTs from localStorage
+const getNewlyMintedNftsFromStorage = (walletAddress: string): SimpleNFT[] => {
+  try {
+    const key = `newly_minted_nfts_${walletAddress}`;
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.warn("Failed to get newly minted NFTs from storage:", error);
+    return [];
+  }
+};
+
+// Helper function to save newly minted NFTs to localStorage
+const saveNewlyMintedNftsToStorage = (
+  walletAddress: string,
+  nfts: SimpleNFT[]
+) => {
+  try {
+    const key = `newly_minted_nfts_${walletAddress}`;
+    localStorage.setItem(key, JSON.stringify(nfts));
+  } catch (error) {
+    console.warn("Failed to save newly minted NFTs to storage:", error);
+  }
+};
+
+// Helper function to clear newly minted NFTs from localStorage
+const clearNewlyMintedNftsFromStorage = (walletAddress: string) => {
+  try {
+    const key = `newly_minted_nfts_${walletAddress}`;
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn("Failed to clear newly minted NFTs from storage:", error);
+  }
+};
 async function getTransactionFromRPC(
   signature: string,
   rpcEndpoint: string = "https://api.devnet.solana.com"
@@ -320,6 +359,18 @@ export function CandyMachineProvider({
   const isLoadingTransactionsRef = useRef(false);
   const loadingPromiseRef = useRef<Promise<TransactionHistory[]> | null>(null);
 
+  // AbortController refs for cancellation
+  const nftLoadingAbortControllerRef = useRef<AbortController | null>(null);
+  const transactionLoadingAbortControllerRef = useRef<AbortController | null>(
+    null
+  );
+
+  // Ref to track newly minted NFTs that haven't been fetched from blockchain yet
+  const newlyMintedNftsRef = useRef<SimpleNFT[]>([]);
+
+  // Ref to track if we just minted an NFT to avoid immediate reload
+  const justMintedRef = useRef<boolean>(false);
+
   // Get config from store
   const configData = useConfig();
   const collectionAddress = useCollectionAddress();
@@ -340,6 +391,35 @@ export function CandyMachineProvider({
     },
     [enableDebug]
   );
+
+  // Initialize newly minted NFTs from localStorage when wallet connects
+  useEffect(() => {
+    if (solAddress) {
+      const storedNfts = getNewlyMintedNftsFromStorage(solAddress);
+      newlyMintedNftsRef.current = storedNfts;
+
+      if (storedNfts.length > 0) {
+        console.log(
+          `🔄 Loaded ${storedNfts.length} newly minted NFTs from storage for wallet ${solAddress}`
+        );
+
+        // Update state with stored NFTs
+        setState((prev) => ({
+          ...prev,
+          walletNfts: [
+            ...storedNfts,
+            ...prev.walletNfts.filter(
+              (nft) => !storedNfts.find((stored) => stored.id === nft.id)
+            ),
+          ],
+          totalNfts: prev.totalNfts + storedNfts.length,
+        }));
+      }
+    } else {
+      // Clear when wallet disconnects
+      newlyMintedNftsRef.current = [];
+    }
+  }, [solAddress]);
 
   // Initialize Metaplex
   useEffect(() => {
@@ -366,7 +446,7 @@ export function CandyMachineProvider({
     initMetaplex();
   }, [configData?.rpcUrl]);
 
-  // Load wallet NFTs function with pagination support
+  // Load wallet NFTs function with pagination support and cancellation
   const loadWalletNfts = useCallback(
     async (address: string, page: number = 1): Promise<SimpleNFT[]> => {
       if (!state.metaplex) {
@@ -374,25 +454,65 @@ export function CandyMachineProvider({
         return [];
       }
 
+      // Skip loading if we just minted and it's page 1 (let the mint result show first)
+      if (page === 1 && justMintedRef.current) {
+        console.log("⏭️ Skipping loadWalletNfts because we just minted an NFT");
+        justMintedRef.current = false; // Reset flag for next time
+        return [];
+      }
+
+      // Cancel any existing request
+      if (nftLoadingAbortControllerRef.current) {
+        nftLoadingAbortControllerRef.current.abort();
+      }
+
+      // Create new AbortController for this request
+      const abortController = new AbortController();
+      nftLoadingAbortControllerRef.current = abortController;
+
       try {
         setState((prev) => ({ ...prev, isLoadingNfts: true, error: null }));
 
         console.log(`🔍 Fetching NFTs for wallet: ${address}, page: ${page}`);
 
+        // Check if request was cancelled before proceeding
+        if (abortController.signal.aborted) {
+          throw new Error("Request was cancelled");
+        }
+
         const walletKey = new PublicKey(address);
 
-        // Use findAllByOwner and implement client-side pagination
-        console.log("📥 Fetching all NFTs from Metaplex...");
+        let apiTransactions: any[] = [];
+        try {
+          const transactionResponse = await UserService.getTransactions();
+
+          if (transactionResponse.success) {
+            apiTransactions = transactionResponse.data || [];
+          } else {
+            console.warn("⚠️ Failed to fetch transactions from API");
+          }
+        } catch (transactionError) {
+          console.warn(
+            "⚠️ Could not fetch transactions from API:",
+            transactionError
+          );
+        }
 
         const allNftsRaw = await state.metaplex.nfts().findAllByOwner({
           owner: walletKey,
         });
+
+        // Check if request was cancelled after Metaplex call
+        if (abortController.signal.aborted) {
+          throw new Error("Request was cancelled");
+        }
 
         const allNfts = allNftsRaw.filter(
           (nft: any) =>
             collectionAddress &&
             isNftInVerifiedCollection(nft, collectionAddress)
         );
+        console.log(999, allNfts);
 
         console.log(`📄 Found ${allNfts.length} total filtered NFTs`);
 
@@ -402,63 +522,81 @@ export function CandyMachineProvider({
         const allProcessedNfts: SimpleNFT[] = await Promise.all(
           allNfts.map(async (nft: any, index: number) => {
             try {
+              // Check if request was cancelled before processing each NFT
+              if (abortController.signal.aborted) {
+                throw new Error("Request was cancelled");
+              }
+
               console.log(
                 `📄 Processing NFT ${index + 1}/${allNfts.length}: ${nft.name || "Unnamed"}`
               );
 
               let metadata = null;
               if (nft.uri) {
-                metadata = await fetchNftMetadata(nft.uri);
+                metadata = await fetchNftMetadata(
+                  nft.uri,
+                  2,
+                  abortController.signal
+                );
+
+                // Check again after metadata fetch
+                if (abortController.signal.aborted) {
+                  throw new Error("Request was cancelled");
+                }
               }
 
-              let imageUrl =
-                "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+              let imageUrl = "";
 
               if (metadata?.image) {
                 if (metadata.image.startsWith("ipfs://")) {
-                  imageUrl = `https://dweb.link/ipfs/${metadata.image.replace("ipfs://", "")}`;
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`;
                 } else if (metadata.image.startsWith("http")) {
                   imageUrl = metadata.image;
                 } else {
-                  imageUrl = `https://dweb.link/ipfs/${metadata.image}`;
+                  imageUrl = `https://ipfs.io/ipfs/${metadata.image}`;
                 }
               }
 
-              let createdAt = new Date().toISOString();
-              let signature: string | undefined = undefined;
-              try {
-                const signatures =
-                  await state.metaplex!.connection.getSignaturesForAddress(
-                    new PublicKey(nft.address),
-                    { limit: 1 }
-                  );
+              // Check if this NFT has a matching transaction in the API data
+              const matchingTransaction = await apiTransactions.find(
+                (tx) =>
+                  tx.nftAddress && nft.mintAddress.toString() === tx.nftAddress
+              );
 
-                if (signatures[0]?.blockTime) {
-                  createdAt = new Date(
-                    signatures[0].blockTime * 1000
-                  ).toISOString();
-                  signature = signatures[0].signature; // Store signature for transaction view
+              // Process image URL from API or metadata
+              let finalImageUrl = imageUrl; // fallback image
+
+              if (matchingTransaction?.nftImageUrl) {
+                const apiImageUrl = matchingTransaction.nftImageUrl;
+
+                if (apiImageUrl.startsWith("ipfs://")) {
+                  // Convert ipfs:// to HTTP gateway
+                  finalImageUrl = `https://ipfs.io/ipfs/${apiImageUrl.replace("ipfs://", "")}`;
+                } else if (apiImageUrl.startsWith("http")) {
+                  // Already a full HTTP URL
+                  finalImageUrl = apiImageUrl;
+                } else if (apiImageUrl.length > 10) {
+                  // Assume it's an IPFS hash without prefix
+                  finalImageUrl = `https://ipfs.io/ipfs/${apiImageUrl}`;
                 }
-              } catch {
-                // Keep metadata or fallback time
               }
 
               return {
-                id: nft.address.toString(),
+                id: nft.mintAddress.toString(),
                 name: metadata?.name || nft.name || `NFT #${index + 1}`,
                 description:
                   metadata?.description || "No description available",
-                image: imageUrl,
+                image: finalImageUrl,
                 attributes: metadata?.attributes || [],
-                createdAt,
-                signature, // Add signature to NFT data
+                createdAt: matchingTransaction?.createdAt,
+                signature: matchingTransaction?.transactionSignature,
               };
             } catch (nftError) {
               console.error(`❌ Error processing NFT ${index}:`, nftError);
 
               // Use fallback image for error case
               const fallbackImage =
-                "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
+                "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
 
               return {
                 id: nft.address?.toString() || `error-${index}`,
@@ -466,20 +604,14 @@ export function CandyMachineProvider({
                 description: "Failed to process this NFT",
                 image: fallbackImage,
                 attributes: [],
-                createdAt: new Date().toISOString(),
-                signature: undefined, // No signature available for error case
+                createdAt: undefined,
+                signature: undefined,
               };
             }
           })
         );
 
-        console.log(
-          "✅ Successfully processed all NFTs:",
-          allProcessedNfts.length
-        );
-
-        // Sort ALL NFTs by creation date (newest first) BEFORE pagination
-        const sortedAllNfts = allProcessedNfts.sort((a, b) => {
+        allProcessedNfts.sort((a, b) => {
           const dateA = a.createdAt;
           const dateB = b.createdAt;
 
@@ -495,28 +627,31 @@ export function CandyMachineProvider({
           return nameB.localeCompare(nameA);
         });
 
-        console.log(`✅ All NFTs sorted by creation date`);
-
-        // NOW implement pagination on the sorted data
-        const itemsPerPage = 10;
+        const itemsPerPage = 12;
         const startIndex = (page - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        const pageNfts = sortedAllNfts.slice(startIndex, endIndex);
-        const hasMore = endIndex < sortedAllNfts.length;
-
-        console.log(
-          `📄 Returning ${pageNfts.length} NFTs for page ${page}, hasMore: ${hasMore}`
-        );
+        const pageNfts = allProcessedNfts.slice(startIndex, endIndex);
+        const hasMore = endIndex < allProcessedNfts.length;
 
         // Update state based on whether this is first page or additional pages
         if (page === 1) {
+          // When loading first page, get newly minted NFTs from storage and filter out duplicates
+          const storedNewlyMintedNfts = getNewlyMintedNftsFromStorage(address);
+          const existingNewlyMintedNfts = storedNewlyMintedNfts.filter(
+            (nft) => !pageNfts.find((pageNft) => pageNft.id === nft.id)
+          );
+
+          // Update ref and storage with filtered list
+          newlyMintedNftsRef.current = existingNewlyMintedNfts;
+          saveNewlyMintedNftsToStorage(address, existingNewlyMintedNfts);
+
           setState((prev) => ({
             ...prev,
-            walletNfts: pageNfts,
+            walletNfts: [...existingNewlyMintedNfts, ...pageNfts],
             isLoadingNfts: false,
             nftPage: 1,
             hasMoreNfts: hasMore,
-            totalNfts: sortedAllNfts.length,
+            totalNfts: allProcessedNfts.length + existingNewlyMintedNfts.length,
           }));
         } else {
           setState((prev) => ({
@@ -525,20 +660,38 @@ export function CandyMachineProvider({
             isLoadingNfts: false,
             nftPage: page,
             hasMoreNfts: hasMore,
-            totalNfts: sortedAllNfts.length,
+            totalNfts: allProcessedNfts.length,
           }));
         }
 
         return pageNfts;
-      } catch (err) {
+      } catch (err: any) {
+        // Handle cancellation gracefully
+        if (
+          err.message === "Request was cancelled" ||
+          err.name === "AbortError"
+        ) {
+          console.log("🚫 NFT loading was cancelled");
+          return [];
+        }
+
         console.error("❌ Error loading wallet NFTs:", err);
         setState((prev) => ({
           ...prev,
           error: err instanceof Error ? err.message : String(err),
           isLoadingNfts: false,
-          walletNfts: [],
+          // Keep newly minted NFTs from storage even on error for page 1
+          walletNfts:
+            page === 1
+              ? getNewlyMintedNftsFromStorage(address)
+              : prev.walletNfts,
         }));
         return [];
+      } finally {
+        // Clear the abort controller reference if this is the current request
+        if (nftLoadingAbortControllerRef.current === abortController) {
+          nftLoadingAbortControllerRef.current = null;
+        }
       }
     },
     [state.metaplex, collectionAddress]
@@ -553,294 +706,6 @@ export function CandyMachineProvider({
       return loadWalletNfts(address, state.nftPage + 1);
     },
     [loadWalletNfts, state.isLoadingNfts, state.hasMoreNfts, state.nftPage]
-  );
-
-  // Load transaction history from blockchain with pagination
-  const loadTransactionHistory = useCallback(
-    async (
-      address: string,
-      page: number = 1
-    ): Promise<TransactionHistory[]> => {
-      console.log("🚀 loadTransactionHistory called with:", {
-        address,
-        hasMetaplex: !!state.metaplex,
-        collectionAddress,
-        configAddress: configData?.address,
-      });
-
-      if (!state.metaplex) {
-        console.log(
-          "❌ Metaplex not initialized, cannot fetch transaction history"
-        );
-        return [];
-      }
-
-      if (!collectionAddress) {
-        console.log(
-          "❌ Collection address not available, cannot filter transactions"
-        );
-        return [];
-      }
-
-      console.log(
-        `✅ Using collection address for filtering: ${collectionAddress}`
-      );
-
-      try {
-        setState((prev) => ({ ...prev, error: null }));
-
-        console.log(
-          `🔍 Fetching transaction history for wallet: ${address}, page: ${page}`
-        );
-
-        const walletKey = new PublicKey(address);
-        const connection = state.metaplex.connection;
-
-        // Get confirmed signatures với timeout, use fixed limit to check for more data
-        const itemsPerPage = 10; // Match NFT pagination
-
-        // For hasMore detection, we fetch one extra signature beyond what we need for this page
-        const fetchLimit = page * itemsPerPage + 1;
-
-        const signatures = await Promise.race([
-          connection.getSignaturesForAddress(walletKey, { limit: fetchLimit }),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Signatures timeout")), 3000)
-          ),
-        ]);
-
-        console.log(`📄 Found ${signatures.length} signatures for wallet`);
-
-        // Implement pagination for transactions
-        const startIndex = (page - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageSignatures = signatures.slice(startIndex, endIndex);
-
-        // hasMore: if we got the extra signature (meaning there are more than current page needs)
-        const hasMore = signatures.length === fetchLimit;
-
-        console.log(
-          `📋 Processing ${pageSignatures.length} transactions for page ${page}`,
-          `fetched: ${signatures.length}/${fetchLimit}, hasMore: ${hasMore}`
-        );
-
-        // Process transactions với simplified logic
-        const transactions: TransactionHistory[] = [];
-
-        for (let i = 0; i < pageSignatures.length; i++) {
-          const sigInfo = pageSignatures[i];
-          console.log(
-            `📋 Processing transaction ${i + 1}/${Math.min(signatures.length, 3)}: ${sigInfo.signature}`
-          );
-
-          try {
-            // Get transaction với timeout
-            const transaction = await Promise.race([
-              connection.getTransaction(sigInfo.signature, {
-                commitment: "confirmed",
-                maxSupportedTransactionVersion: 0,
-              }),
-              new Promise<null>((_, reject) =>
-                setTimeout(() => reject(new Error("Transaction timeout")), 2000)
-              ),
-            ]);
-
-            if (!transaction || !transaction.meta) {
-              console.log(`⚠️ No transaction data for ${sigInfo.signature}`);
-              continue;
-            }
-
-            console.log(`✅ Got transaction data for ${sigInfo.signature}`);
-
-            // Simplified check cho NFT mint
-            let isRelevantTransaction = false;
-            let nftAddress = "";
-            let nftName = "Unknown NFT";
-            let nftImage =
-              "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF";
-
-            // Check postTokenBalances cho new NFTs
-            if (
-              transaction.meta.postTokenBalances &&
-              transaction.meta.preTokenBalances
-            ) {
-              const newTokens = transaction.meta.postTokenBalances.filter(
-                (postBalance: any) => {
-                  const existedBefore =
-                    transaction.meta!.preTokenBalances!.some(
-                      (preBalance: any) =>
-                        preBalance.mint === postBalance.mint &&
-                        preBalance.owner === postBalance.owner
-                    );
-                  return (
-                    !existedBefore &&
-                    postBalance.owner === address &&
-                    postBalance.uiTokenAmount.uiAmount === 1
-                  );
-                }
-              );
-
-              if (newTokens.length > 0) {
-                isRelevantTransaction = true;
-                nftAddress = newTokens[0].mint;
-                console.log(`🎯 Found new NFT token: ${nftAddress}`);
-              }
-            }
-
-            // Nếu tìm được NFT, verify collection (simplified)
-            if (isRelevantTransaction && nftAddress) {
-              try {
-                const nftMintKey = new PublicKey(nftAddress);
-                const nftInfo = await state.metaplex.nfts().findByMint({
-                  mintAddress: nftMintKey,
-                });
-
-                const belongsToCollection = isNftInVerifiedCollection(
-                  nftInfo,
-                  collectionAddress
-                );
-
-                if (!belongsToCollection) {
-                  console.log(
-                    `⚠️ NFT ${nftAddress} not in verified collection, skipping`
-                  );
-                  continue;
-                }
-
-                // Get NFT info and metadata
-                nftName = nftInfo.name || `NFT ${nftAddress.slice(0, 8)}...`;
-
-                let metadata = null;
-                // Fetch metadata to get actual image
-                try {
-                  if (nftInfo.uri) {
-                    metadata = await fetchNftMetadata(nftInfo.uri);
-                  }
-
-                  if (metadata?.image) {
-                    if (metadata.image.startsWith("ipfs://")) {
-                      nftImage = `https://dweb.link/ipfs/${metadata.image.replace("ipfs://", "")}`;
-                    } else if (metadata.image.startsWith("http")) {
-                      nftImage = metadata.image;
-                    } else {
-                      nftImage = `https://dweb.link/ipfs/${metadata.image}`;
-                    }
-                  }
-                } catch (metadataError) {
-                  console.warn(
-                    `⚠️ Error fetching NFT metadata for ${nftAddress}:`,
-                    metadataError
-                  );
-                  // Keep default image if metadata fetch fails
-                }
-
-                // Add transaction to results
-                transactions.push({
-                  signature: sigInfo.signature,
-                  nftAddress,
-                  nftName: metadata?.name || nftName,
-                  nftImage,
-                  timestamp: sigInfo.blockTime
-                    ? new Date(sigInfo.blockTime * 1000).toISOString()
-                    : new Date().toISOString(),
-                  status: "confirmed",
-                });
-              } catch (nftError) {
-                console.warn(
-                  `⚠️ Error processing NFT ${nftAddress}:`,
-                  nftError
-                );
-                // Still add transaction with basic info
-                transactions.push({
-                  signature: sigInfo.signature,
-                  nftAddress,
-                  nftName: `NFT ${nftAddress.slice(0, 8)}...`,
-                  nftImage,
-                  timestamp: sigInfo.blockTime
-                    ? new Date(sigInfo.blockTime * 1000).toISOString()
-                    : new Date().toISOString(),
-                  status: "confirmed",
-                });
-              }
-            }
-          } catch (txError) {
-            console.warn(
-              `⚠️ Error processing transaction ${sigInfo.signature}:`,
-              txError
-            );
-            continue;
-          }
-        }
-
-        console.log(
-          `✅ Found ${transactions.length} relevant transactions for page ${page}`
-        );
-
-        // Sort by timestamp
-        const sortedTransactions = transactions.sort(
-          (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-
-        // Update state based on whether this is first page or additional pages
-        if (page === 1) {
-          setState((prev) => ({
-            ...prev,
-            transactionHistory: sortedTransactions,
-            isLoadingTransactions: false,
-            transactionPage: 1,
-            hasMoreTransactions: hasMore && sortedTransactions.length > 0, // Only hasMore if we found relevant transactions
-            totalTransactions: signatures.length,
-          }));
-        } else {
-          // For subsequent pages, check if we got new transactions
-          const hasNewTransactions = sortedTransactions.length > 0;
-          const actualHasMore = hasMore && hasNewTransactions;
-
-          console.log(
-            `📋 Page ${page} results: ${sortedTransactions.length} new transactions, hasMore: ${hasMore} → ${actualHasMore}`
-          );
-
-          setState((prev) => ({
-            ...prev,
-            transactionHistory: [
-              ...prev.transactionHistory,
-              ...sortedTransactions,
-            ],
-            isLoadingTransactions: false,
-            transactionPage: page,
-            hasMoreTransactions: actualHasMore, // Only hasMore if we found new relevant transactions
-            totalTransactions: signatures.length,
-          }));
-        }
-
-        return sortedTransactions;
-      } catch (err) {
-        console.error("❌ Error loading transaction history:", err);
-        setState((prev) => ({
-          ...prev,
-          error: err instanceof Error ? err.message : String(err),
-        }));
-        return [];
-      }
-    },
-    [state.metaplex, configData?.address, collectionAddress]
-  );
-
-  // Load more transactions (for pagination)
-  const loadMoreTransactions = useCallback(
-    async (address: string): Promise<TransactionHistory[]> => {
-      if (state.isLoadingTransactions || !state.hasMoreTransactions) {
-        return [];
-      }
-      return loadTransactionHistory(address, state.transactionPage + 1);
-    },
-    [
-      loadTransactionHistory,
-      state.isLoadingTransactions,
-      state.hasMoreTransactions,
-      state.transactionPage,
-    ]
   );
 
   // Initialize UMI and Candy Machine
@@ -1081,6 +946,31 @@ export function CandyMachineProvider({
     initializeCandyMachine,
   ]);
 
+  // Cleanup effect - cancel any pending requests when component unmounts
+  useEffect(() => {
+    return () => {
+      // Cancel NFT loading requests
+      if (nftLoadingAbortControllerRef.current) {
+        nftLoadingAbortControllerRef.current.abort();
+        nftLoadingAbortControllerRef.current = null;
+      }
+
+      // Cancel transaction loading requests
+      if (transactionLoadingAbortControllerRef.current) {
+        transactionLoadingAbortControllerRef.current.abort();
+        transactionLoadingAbortControllerRef.current = null;
+      }
+
+      // Clear newly minted NFTs ref
+      newlyMintedNftsRef.current = [];
+      justMintedRef.current = false;
+
+      console.log(
+        "🧹 CandyMachineProvider cleanup: All pending requests cancelled"
+      );
+    };
+  }, []);
+
   const clearLastResult = useCallback(() => {
     setState((prev) => ({ ...prev, lastMintResult: null }));
   }, []);
@@ -1089,9 +979,24 @@ export function CandyMachineProvider({
     setState((prev) => ({ ...prev, error: null }));
   }, []);
 
+  // Function to clear persisted newly minted NFTs (useful when they appear on blockchain)
+  const clearPersistedNewlyMintedNfts = useCallback(() => {
+    if (solAddress) {
+      clearNewlyMintedNftsFromStorage(solAddress);
+      newlyMintedNftsRef.current = [];
+    }
+  }, [solAddress]);
+
   const resetState = useCallback(() => {
     setState(initialState);
-  }, []);
+    newlyMintedNftsRef.current = [];
+    justMintedRef.current = false;
+
+    // Clear localStorage as well
+    if (solAddress) {
+      clearNewlyMintedNftsFromStorage(solAddress);
+    }
+  }, [solAddress]);
 
   const mintNft = useCallback(async (): Promise<MintResult> => {
     if (!solAddress || !connectedWallet) {
@@ -1229,21 +1134,40 @@ export function CandyMachineProvider({
 
       const mintResult: MintResult = {
         success: true,
-        signature: transactionDetails.transaction.signatures[0] || "",
+        signature:
+          transactionDetails?.transaction?.signatures?.[0] || base58Signature,
         nftAddress: nftMint.publicKey.toString(),
         message: "Belp NFT minted successfully! 🐱",
       };
 
-      // Tạo transaction history record
+      // Tạo transaction history record từ mintResult
       const newTransaction: TransactionHistory = {
         signature: mintResult.signature || base58Signature,
         nftAddress: mintResult.nftAddress || "",
         nftName: `BELP #${Date.now()}`, // Temporary name, sẽ update sau
         nftImage:
-          "https://dweb.link/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF", // Default image
+          "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF", // Default image
         timestamp: new Date().toISOString(),
         status: "finalized",
       };
+
+      // Tạo NFT object mới từ mintResult để thêm vào walletNfts
+      const newNftItem: SimpleNFT = {
+        id: mintResult.nftAddress || "",
+        name: `BELP #${Date.now()}`, // Temporary name, sẽ update sau khi fetch metadata
+        description: "Freshly minted BELP NFT",
+        image:
+          "https://ipfs.io/ipfs/QmVHjy69p8zAthFFizBEi2rBFQPZZvEZ4BePLK1hdws2QF", // Default image
+        attributes: [],
+        createdAt: new Date().toISOString(),
+        signature: mintResult.signature || base58Signature,
+      };
+
+      console.log("📊 State before adding NFT:", {
+        currentWalletNftsCount: state.walletNfts.length,
+        currentTotalNfts: state.totalNfts,
+        newlyMintedInRef: newlyMintedNftsRef.current.length,
+      });
 
       setState((prev) => ({
         ...prev,
@@ -1255,7 +1179,108 @@ export function CandyMachineProvider({
         itemsRedeemed: prev.itemsRedeemed + 1,
         // Add transaction to history
         transactionHistory: [newTransaction, ...prev.transactionHistory],
+        // Add new NFT to wallet NFTs at the beginning of the array
+        walletNfts: [newNftItem, ...prev.walletNfts],
+        totalNfts: prev.totalNfts + 1,
       }));
+
+      // Also add to newly minted NFTs ref so it persists through blockchain refreshes
+      newlyMintedNftsRef.current = [newNftItem, ...newlyMintedNftsRef.current];
+
+      // Save to localStorage so it persists across page navigation
+      if (solAddress) {
+        saveNewlyMintedNftsToStorage(solAddress, newlyMintedNftsRef.current);
+        console.log(
+          "💾 Saved newly minted NFT to localStorage for wallet:",
+          solAddress
+        );
+      }
+
+      // Set flag to prevent immediate reload
+      justMintedRef.current = true;
+
+      // Reset flag after a short delay to allow normal loading later
+      setTimeout(() => {
+        justMintedRef.current = false;
+      }, 3000); // 3 seconds
+
+      console.log("🎉 NFT added to walletNfts:", {
+        nftId: newNftItem.id,
+        nftName: newNftItem.name,
+        totalWalletNfts: state.walletNfts.length + 1,
+        newlyMintedCount: newlyMintedNftsRef.current.length,
+      });
+
+      // Log final state after setState (this will show in next render)
+      setTimeout(() => {
+        console.log("📊 State after adding NFT (async check):", {
+          currentWalletNftsCount: state.walletNfts.length,
+          currentTotalNfts: state.totalNfts,
+          newlyMintedInRef: newlyMintedNftsRef.current.length,
+        });
+      }, 100);
+
+      // Fetch metadata asynchronously sau khi mint để update thông tin NFT
+      try {
+        if (state.metaplex && mintResult.nftAddress) {
+          const mintAddress = new PublicKey(mintResult.nftAddress);
+          const nftData = await state.metaplex.nfts().findByMint({
+            mintAddress,
+          });
+
+          if (nftData && nftData.uri) {
+            const metadata = await fetchNftMetadata(nftData.uri, 2);
+            if (metadata) {
+              // Update NFT với metadata thực
+              const updatedNft: SimpleNFT = {
+                ...newNftItem,
+                name: metadata.name || newNftItem.name,
+                description: metadata.description || newNftItem.description,
+                image: metadata.image?.startsWith("ipfs://")
+                  ? `https://ipfs.io/ipfs/${metadata.image.replace("ipfs://", "")}`
+                  : metadata.image || newNftItem.image,
+                attributes: metadata.attributes || [],
+              };
+
+              // Update state với metadata thực
+              setState((prev) => ({
+                ...prev,
+                walletNfts: prev.walletNfts.map((nft) =>
+                  nft.id === mintResult.nftAddress ? updatedNft : nft
+                ),
+                transactionHistory: prev.transactionHistory.map((tx) =>
+                  tx.nftAddress === mintResult.nftAddress
+                    ? {
+                        ...tx,
+                        nftName: updatedNft.name,
+                        nftImage: updatedNft.image,
+                      }
+                    : tx
+                ),
+              }));
+
+              // Also update in newly minted NFTs ref
+              newlyMintedNftsRef.current = newlyMintedNftsRef.current.map(
+                (nft) => (nft.id === mintResult.nftAddress ? updatedNft : nft)
+              );
+
+              // Update localStorage as well
+              if (solAddress) {
+                saveNewlyMintedNftsToStorage(
+                  solAddress,
+                  newlyMintedNftsRef.current
+                );
+              }
+            }
+          }
+        }
+      } catch (metadataError) {
+        console.warn(
+          "⚠️ Failed to fetch metadata for newly minted NFT:",
+          metadataError
+        );
+        // Không throw error vì NFT đã được mint thành công
+      }
 
       // Auto clear result after specified time
       if (autoResetAfter > 0) {
@@ -1350,6 +1375,7 @@ export function CandyMachineProvider({
     state.candyMachine,
     state.isInitialized,
     state.isMinting,
+    state.metaplex,
     log,
     autoResetAfter,
     showError,
@@ -1367,8 +1393,7 @@ export function CandyMachineProvider({
     initializeCandyMachine,
     loadWalletNfts,
     loadMoreNfts,
-    loadTransactionHistory,
-    loadMoreTransactions,
+    clearPersistedNewlyMintedNfts,
     candyMachineAddress: configData?.address || "",
     collectionAddress: collectionAddress || configData?.collectionAddress || "",
     updateAuthority: configData?.updateAuthority || "",

@@ -3,7 +3,6 @@
 import BreadCrumbs from "@/components/Breadcrumb";
 import { useWallet } from "@/hooks/useWallet";
 import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
-import { UserService } from "@/services/userService";
 import { Transaction } from "@/services/types";
 import { BLOCKCHAIN_CONFIG } from "@/services";
 import clsx from "clsx";
@@ -13,6 +12,56 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useLoading } from "@/providers/LoadingProvider";
 import { useAuth } from "@/providers/AuthProvider";
+import moment from "moment";
+
+// Custom hook for real-time relative time
+const useRealTimeAgo = (timestamp: string) => {
+  const [timeAgo, setTimeAgo] = useState<string>("");
+
+  useEffect(() => {
+    const updateTimeAgo = () => {
+      const now = new Date();
+      const past = new Date(timestamp);
+      const diffMs = now.getTime() - past.getTime();
+      const diffSeconds = Math.floor(diffMs / 1000);
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      let newTimeAgo = "";
+      if (diffDays > 0) {
+        newTimeAgo = `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+      } else if (diffHours > 0) {
+        newTimeAgo = `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+      } else if (diffMinutes > 0) {
+        newTimeAgo = `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
+      } else if (diffSeconds > 0) {
+        newTimeAgo = `${diffSeconds} second${diffSeconds > 1 ? "s" : ""} ago`;
+      } else {
+        newTimeAgo = "Just now";
+      }
+
+      setTimeAgo(newTimeAgo);
+    };
+
+    // Update immediately
+    updateTimeAgo();
+
+    // Update every second
+    const interval = setInterval(updateTimeAgo, 1000);
+
+    return () => clearInterval(interval);
+  }, [timestamp]);
+
+  return timeAgo;
+};
+
+// Component for displaying real-time relative time
+const TimeAgo = ({ timestamp }: { timestamp: string }) => {
+  const timeAgo = useRealTimeAgo(timestamp);
+
+  return <div className="text-xs text-gray-400">{timeAgo}</div>;
+};
 
 const HistoryPage = () => {
   const { solAddress } = useWallet();
@@ -28,52 +77,7 @@ const HistoryPage = () => {
   const { showLoading, hideLoading } = useLoading();
   const { isAuthenticated } = useAuth();
 
-  const [error, setError] = useState<string | null>(null);
   const [isLoadingMoreNfts, setIsLoadingMoreNfts] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
-
-  // Load transactions from API
-  const loadTransactions = useCallback(async () => {
-    if (!solAddress || !isAuthenticated) {
-      console.warn("⚠️ Skipping transaction loading - not authenticated");
-      return;
-    }
-
-    try {
-      setIsLoadingTransactions(true);
-      const response = await UserService.getTransactions();
-      setTransactions(response.success && response.data ? response.data : []);
-    } catch (error) {
-      console.error("❌ Failed to load transactions:", error);
-      setTransactions([]);
-    } finally {
-      setIsLoadingTransactions(false);
-    }
-  }, [solAddress, isAuthenticated]);
-
-  // Map wallet NFTs with transaction data
-  const mapNftsWithTransactionData = () => {
-    if (!walletNfts?.length || !transactions.length) return walletNfts || [];
-
-    const walletTransactions = transactions.filter(
-      (tx) => tx.walletAddress?.toLowerCase() === solAddress?.toLowerCase()
-    );
-
-    return walletNfts.map((walletNft, index) => {
-      const matchingTransaction =
-        walletTransactions[index] || walletTransactions[0];
-
-      return matchingTransaction
-        ? {
-            ...walletNft,
-            createdAt: matchingTransaction.createdAt,
-            signature: matchingTransaction.transactionSignature,
-            transactionId: matchingTransaction._id,
-          }
-        : walletNft;
-    });
-  };
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
@@ -86,37 +90,23 @@ const HistoryPage = () => {
     let isMounted = true; // Track if component is still mounted
 
     if (!solAddress || !metaplex || !isAuthenticated) {
-      setError(null);
-      setTransactions([]);
       hideLoading();
       return;
     }
 
     showLoading();
-    loadTransactions().finally(async () => {
-      // Double-check authentication before loading transactions
-      if (isMounted && solAddress && isAuthenticated) {
-        await loadWalletNfts(solAddress);
-      }
-      if (isMounted) {
-        hideLoading();
-      }
-    });
+    if (isMounted && solAddress && isAuthenticated) {
+      loadWalletNfts(solAddress);
+    }
+    if (isMounted) {
+      hideLoading();
+    }
 
     // Cleanup function
     return () => {
       isMounted = false;
     };
-  }, [
-    solAddress,
-    metaplex,
-    showLoading,
-    hideLoading,
-    isAuthenticated,
-    loadTransactions,
-  ]);
-
-  const currentData = mapNftsWithTransactionData();
+  }, [solAddress, metaplex, showLoading, hideLoading, isAuthenticated]);
 
   return (
     <div className="min-h-screen bg-[#ede9f6] pt-10 pb-20">
@@ -142,7 +132,7 @@ const HistoryPage = () => {
         </div>
 
         <div className="bg-[#E3CEF6] p-5 rounded-4xl">
-          {!metaplex || isLoadingTransactions ? (
+          {!metaplex ? (
             <motion.div
               className="text-center py-12"
               initial={{ opacity: 0, y: 20 }}
@@ -151,21 +141,17 @@ const HistoryPage = () => {
             >
               <div className="animate-spin w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
               <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                {!metaplex
-                  ? "Initializing Metaplex..."
-                  : isLoadingTransactions
-                    ? "Loading Transaction Data..."
-                    : "Loading NFT History..."}
+                {isLoadingNfts ? "Loading NFT Data..." : "NFT Data Loaded"}
               </h3>
               <p className="text-blue-600">
                 {!metaplex
                   ? "Please wait while we setup the blockchain connection."
-                  : isLoadingTransactions
+                  : isLoadingNfts
                     ? "Fetching transaction history from API..."
                     : "Fetching your NFT collection and transaction data..."}
               </p>
             </motion.div>
-          ) : currentData?.length === 0 && !isLoadingNfts ? (
+          ) : walletNfts?.length === 0 && !isLoadingNfts ? (
             <motion.div
               className="text-center py-12"
               initial={{ opacity: 0, y: 20 }}
@@ -193,7 +179,7 @@ const HistoryPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               {/* History Items - Unified View with Transaction Column */}
-              {currentData?.map((nft: any, index: number) => {
+              {walletNfts?.map((nft: any, index: number) => {
                 return (
                   <motion.div
                     key={nft.id}
@@ -291,60 +277,14 @@ const HistoryPage = () => {
                             return <span className="text-gray-400">-</span>;
                           }
 
-                          const date = new Date(timestamp);
-                          const now = new Date();
-
-                          // Fix timezone issues by using UTC timestamps
-                          const diffMs = Math.abs(
-                            now.getTime() - date.getTime()
-                          );
-                          const diffDays = Math.floor(
-                            diffMs / (1000 * 60 * 60 * 24)
-                          );
-                          const diffHours = Math.floor(
-                            diffMs / (1000 * 60 * 60)
-                          );
-                          const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-                          let timeAgo = "";
-                          if (diffDays > 0) {
-                            timeAgo = `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-                          } else if (diffHours > 0) {
-                            timeAgo = `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-                          } else if (diffMinutes > 0) {
-                            timeAgo = `${diffMinutes} minute${diffMinutes > 1 ? "s" : ""} ago`;
-                          } else {
-                            timeAgo = "Just now";
-                          }
-
                           return (
                             <div className="space-y-1">
                               <div className="text-sm font-medium text-[#2DD4BF]">
                                 {nft.signature ? "Minted" : "Created"}
                               </div>
+                              <TimeAgo timestamp={timestamp} />
                               <div className="text-xs text-gray-400">
-                                {timeAgo}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {new Date(timestamp).toLocaleDateString(
-                                  "vi-VN",
-                                  {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                    timeZone: "Asia/Ho_Chi_Minh",
-                                  }
-                                )}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                {new Date(timestamp).toLocaleTimeString(
-                                  "vi-VN",
-                                  {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    timeZone: "Asia/Ho_Chi_Minh",
-                                  }
-                                )}
+                                {moment(timestamp).format("MM/DD/YYYY HH:mm")}
                               </div>
                             </div>
                           );
@@ -356,29 +296,26 @@ const HistoryPage = () => {
               })}
 
               {/* Initial Loading States - Both NFT and Transaction loading */}
-              {(isLoadingNfts || isLoadingTransactions) &&
-                currentData?.length === 0 && (
-                  <div className="flex justify-center py-6">
-                    <div className="flex items-center space-x-2 text-[#7A4BD6]">
-                      <div className="animate-spin w-5 h-5 border-2 border-[#7A4BD6] border-t-transparent rounded-full"></div>
-                      <span className="font-medium">
-                        {isLoadingNfts && isLoadingTransactions
-                          ? "Loading NFTs and Transactions..."
-                          : isLoadingNfts
-                            ? "Loading NFTs..."
-                            : "Loading Transactions..."}
-                      </span>
-                    </div>
+              {isLoadingNfts && walletNfts?.length === 0 && (
+                <div className="flex justify-center py-6">
+                  <div className="flex items-center space-x-2 text-[#7A4BD6]">
+                    <div className="animate-spin w-5 h-5 border-2 border-[#7A4BD6] border-t-transparent rounded-full"></div>
+                    <span className="font-medium">
+                      {isLoadingNfts
+                        ? "Loading NFTs..."
+                        : "Loading Transactions..."}
+                    </span>
                   </div>
-                )}
+                </div>
+              )}
 
               {/* View More Button - Only NFT pagination needed */}
-              {hasMoreNfts && currentData && currentData.length > 0 && (
+              {hasMoreNfts && walletNfts && walletNfts.length > 0 && (
                 <div className="flex justify-center py-6">
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     className="px-8 py-3 rounded-2xl bg-[#E9D9FF] text-[#7A4BD6] font-semibold shadow-md hover:shadow-lg transition cursor-pointer disabled:opacity-50"
-                    disabled={isLoadingMoreNfts || isLoadingTransactions}
+                    disabled={isLoadingMoreNfts}
                     onClick={async () => {
                       if (!solAddress || isLoadingMoreNfts) return;
                       setIsLoadingMoreNfts(true);
@@ -386,7 +323,6 @@ const HistoryPage = () => {
                         await loadMoreNfts(solAddress);
                       } catch (error) {
                         console.error("❌ Failed to load more NFTs:", error);
-                        setError("Failed to load more NFTs");
                       } finally {
                         setIsLoadingMoreNfts(false);
                       }
