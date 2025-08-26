@@ -28,18 +28,10 @@ const MyCollectionPage = () => {
   const { solAddress, loading, isWalletReady } = useWallet();
   const { showLoading, hideLoading } = useLoading();
 
-  const {
-    loadWalletNfts,
-    loadMoreNfts,
-    walletNfts,
-    metaplex,
-    hasMoreNfts,
-    totalNfts,
-  } = useCandyMachineContext();
+  const { loadWalletNfts, loadMoreNfts, walletNfts, metaplex, hasMoreNfts } =
+    useCandyMachineContext();
 
   const collectionAddress = useCollectionAddress();
-
-  const totalCount = walletNfts.length;
 
   const handleHistoryClick = () => {
     router.push("/my-collection/history");
@@ -144,7 +136,7 @@ const MyCollectionPage = () => {
               </motion.button>
             </div>
           </div>
-        ) : totalCount === 0 ? (
+        ) : walletNfts.length === 0 ? (
           <div className="text-center flex flex-col items-center pb-12">
             <Image
               src="/images/mint/random-cat.svg"
@@ -174,7 +166,7 @@ const MyCollectionPage = () => {
         ) : (
           <>
             <div className="text-right text-xs text-primary-muted mb-2">
-              {totalNfts} Items
+              {walletNfts.length} Items
             </div>
 
             <NftGrid

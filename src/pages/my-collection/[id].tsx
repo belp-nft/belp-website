@@ -324,13 +324,8 @@ const NftDetailPage = () => {
                       onClick={() => openTokenOnSolscan(nft.nftAddress)}
                       title="View token on Solscan"
                     >
-                      <span className="sm:hidden">
-                        {nft.nftAddress.slice(0, 4)}...
-                        {nft.nftAddress.slice(-4)}
-                      </span>
-                      <span className="hidden sm:inline">
-                        {nft.nftAddress.slice(0, 8)}...
-                        {nft.nftAddress.slice(-8)}
+                      <span className="truncate max-w-[90px] xs:max-w-[120px] inline-block align-middle text-right">
+                        {nft.nftAddress}
                       </span>
                     </span>
                   </div>
