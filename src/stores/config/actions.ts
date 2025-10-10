@@ -1,7 +1,10 @@
 import { ConfigService } from "@/services";
 import type { CandyMachineConfig, CandyMachineState } from "./types";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { mplCandyMachine, fetchCandyMachine } from "@metaplex-foundation/mpl-candy-machine";
+import {
+  mplCandyMachine,
+  fetchCandyMachine,
+} from "@metaplex-foundation/mpl-candy-machine";
 import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
 
 export const createConfigActions = (
@@ -27,7 +30,10 @@ export const createConfigActions = (
           totalMinted = Number(cm.itemsRedeemed || 0);
           totalSupply = Number(cm.itemsLoaded || 0);
         } catch (onChainErr) {
-          console.warn("⚠️ Fallback to API stats due to Metaplex fetch error:", onChainErr);
+          console.warn(
+            "⚠️ Fallback to API stats due to Metaplex fetch error:",
+            onChainErr
+          );
           totalMinted = config.totalProcessed || 0;
           totalSupply = config.itemsAvailable || 0;
         }
@@ -42,8 +48,9 @@ export const createConfigActions = (
           totalSupply,
         });
       } else {
-        throw new Error(
-          result.message || "Failed to fetch candy machine config"
+        console.error(
+          "❌ Failed to fetch candy machine config:",
+          result.message
         );
       }
     } catch (error: any) {
@@ -71,7 +78,8 @@ export const createConfigActions = (
     }
 
     try {
-      const rpcEndpoint = state.config?.rpcUrl || "https://api.devnet.solana.com";
+      const rpcEndpoint =
+        state.config?.rpcUrl || "https://api.devnet.solana.com";
       const umi = createUmi(rpcEndpoint).use(mplCandyMachine());
       const cm = await fetchCandyMachine(umi, umiPublicKey(targetAddress));
 
@@ -97,8 +105,6 @@ export const createConfigActions = (
       error: null,
     });
   },
-
-
 
   updateMintedCount: (newCount: number) => {
     set({ totalMinted: newCount });
