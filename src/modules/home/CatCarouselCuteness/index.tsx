@@ -9,11 +9,11 @@ import "swiper/css";
 import "swiper/css/navigation";
 
 const baseCats = [
-  "tokens/1.png",
-  "tokens/2.png",
-  "tokens/3.png",
-  "tokens/4.png",
-  "tokens/5.png",
+  "tokens/1.webp",
+  "tokens/2.webp",
+  "tokens/3.webp",
+  "tokens/4.webp",
+  "tokens/5.webp",
 ];
 
 // Tạo loop bằng cách duplicate slides để transition mượt hơn

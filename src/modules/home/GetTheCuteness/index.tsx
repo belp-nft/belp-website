@@ -136,7 +136,7 @@ function DesktopCarousel() {
                   }}
                 >
                   <Image
-                    src={`/icons/tokens/${i + 1}.png`}
+                    src={`/icons/tokens/${i + 1}.webp`}
                     alt="token NFT"
                     width={visual.size}
                     height={visual.size}

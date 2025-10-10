@@ -10,11 +10,11 @@ import { useSettings } from "@/providers/SettingsProvider";
 import { useWalletContext } from "@/providers/WalletProvider";
 
 const cats = [
-  "tokens/1.png",
-  "tokens/2.png",
-  "tokens/3.png",
-  "tokens/4.png",
-  "tokens/5.png",
+  "tokens/1.webp",
+  "tokens/2.webp",
+  "tokens/3.webp",
+  "tokens/4.webp",
+  "tokens/5.webp",
 ];
 
 interface MintSectionProps {
@@ -127,7 +127,7 @@ const MintSection: React.FC<MintSectionProps> = ({
               transformOrigin: "center lg:left center",
             }}
           >
-            {process.env.NODE_ENV === "development" ? mintText : "--"}
+            {mintText}
           </div>
         </motion.div>
 
