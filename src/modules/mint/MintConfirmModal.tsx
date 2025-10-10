@@ -54,7 +54,7 @@ const MintConfirmModal: React.FC<MintConfirmModalProps> = ({
             "text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg"
           )}
         >
-          5 SOL
+          1 SOL
         </div>
       </div>
     </Modal>
