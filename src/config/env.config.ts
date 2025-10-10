@@ -10,8 +10,7 @@
  */
 export const API_CONFIG = {
   // Base URL cho API backend
-  BASE_URL:
-    process.env.NEXT_PUBLIC_API_URI || "https://belpy-core.blockifyy.com",
+  BASE_URL: process.env.NEXT_PUBLIC_API_URI,
 
   // Timeout cho các request API (30 giây)
   TIMEOUT: 30000,
