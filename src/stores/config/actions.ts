@@ -48,9 +48,8 @@ export const createConfigActions = (
           totalSupply,
         });
       } else {
-        console.error(
-          "❌ Failed to fetch candy machine config:",
-          result.message
+        throw new Error(
+          result.message || "Failed to fetch candy machine config"
         );
       }
     } catch (error: any) {
