@@ -1,4 +1,3 @@
-import { GetServerSideProps } from "next";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
@@ -11,46 +10,30 @@ import MintHeader from "@/modules/mint/MintHeader";
 import MintSection from "@/modules/mint/MintSection";
 import MintConfirmModal from "@/modules/mint/MintConfirmModal";
 import MintSuccessModal from "@/modules/mint/MintSuccessModal";
-import FeatureAnnouncementModal from "@/modules/mint/FeatureAnnouncementModalProps";
 import { useCandyMachineContext } from "@/providers/CandyMachineProvider";
 import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
 import { fetchDigitalAsset } from "@metaplex-foundation/mpl-token-metadata";
 import { NftService } from "@/services";
 
 const cats = [
-  "tokens/1.png",
-  "tokens/2.png",
-  "tokens/3.png",
-  "tokens/4.png",
-  "tokens/5.png",
-  "tokens/6.png",
-  "tokens/7.png",
-  "tokens/8.png",
-  "tokens/9.png",
-  "tokens/10.png",
+  "tokens/1.webp",
+  "tokens/2.webp",
+  "tokens/3.webp",
+  "tokens/4.webp",
+  "tokens/5.webp",
+  "tokens/6.webp",
+  "tokens/7.webp",
+  "tokens/8.webp",
+  "tokens/9.webp",
+  "tokens/10.webp",
 ];
 
 const BelpyMintPage = () => {
   const router = useRouter();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
-  const {
-    solAddress,
-    connectWallet,
-    refreshSolBalance,
-    connectedWallet,
-    authToken,
-    loadUserData,
-  } = useWalletContext();
+  const { solAddress } = useWalletContext();
 
-  const {
-    isMinting,
-    mint,
-    lastMintResult,
-    error: mintError,
-    canMint,
-    clearResult,
-    clearError,
-  } = useCandyMachine();
+  const { isMinting, mint, clearResult, clearError } = useCandyMachine();
 
   // Zustand store
   const candyMachineConfig = useConfig();
@@ -69,21 +52,7 @@ const BelpyMintPage = () => {
   const [nftAddress, setNftAddress] = useState<string>("");
   const [nftDetailData, setNftDetailData] = useState<any>(null);
 
-  const [showFeatureAnnouncement, setShowFeatureAnnouncement] = useState(false);
-
-  const [isHiddenRemindMe, setIsHiddenRemindMe] = useState(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-
-  // Don't auto-connect wallet - let users manually connect
-  // useEffect(() => {
-  //   if (!solAddress && authToken) {
-  //     console.log("🔄 Auto-connecting wallet with existing authToken...");
-  //     // Try to get last used wallet type or default to phantom
-  //     const lastWalletType =
-  //       (window.localStorage.getItem("last-wallet-type") as any) || "phantom";
-  //     connectWallet(lastWalletType);
-  //   }
-  // }, [solAddress, authToken, connectWallet]);
 
   // Auto-refresh stats every 30s
   useEffect(() => {
@@ -292,36 +261,9 @@ const BelpyMintPage = () => {
   };
 
   const handleMintClick = () => {
-    if (process.env.NODE_ENV === "development") {
-      setShowMintModal(true);
-      return;
-    }
-    setShowFeatureAnnouncement(true);
-    setIsHiddenRemindMe(true);
+    setShowMintModal(true);
   };
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const reminder = localStorage.getItem("belp-feature-reminder");
-      if (!reminder) {
-        setShowFeatureAnnouncement(true);
-      } else {
-        const now = new Date();
-        const expire = new Date(reminder);
-        if (
-          now.getFullYear() > expire.getFullYear() ||
-          (now.getFullYear() === expire.getFullYear() &&
-            now.getMonth() > expire.getMonth()) ||
-          (now.getFullYear() === expire.getFullYear() &&
-            now.getMonth() === expire.getMonth() &&
-            now.getDate() > expire.getDate())
-        ) {
-          localStorage.removeItem("belp-feature-reminder");
-          setShowFeatureAnnouncement(true);
-        }
-      }
-    }
-  }, []);
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 pt-10 pb-20">
       <motion.div
@@ -362,22 +304,6 @@ const BelpyMintPage = () => {
           }}
         />
       </motion.div>
-
-      <FeatureAnnouncementModal
-        isOpen={showFeatureAnnouncement}
-        isHiddenRemindMe={isHiddenRemindMe}
-        onClose={(action) => {
-          if (action === "remind") {
-            setIsHiddenRemindMe(true);
-            // Set reminder for tomorrow (you can implement localStorage logic here)
-            localStorage.setItem(
-              "belp-feature-reminder",
-              new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-            );
-          }
-          setShowFeatureAnnouncement(false);
-        }}
-      />
     </div>
   );
 };
