@@ -305,7 +305,7 @@ const clearNewlyMintedNftsFromStorage = (walletAddress: string) => {
 };
 async function getTransactionFromRPC(
   signature: string,
-  rpcEndpoint: string = "https://api.devnet.solana.com"
+  rpcEndpoint: string = "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06"
 ) {
   try {
     const response = await fetch(rpcEndpoint, {
@@ -426,7 +426,8 @@ export function CandyMachineProvider({
     const initMetaplex = async () => {
       try {
         const connection = new Connection(
-          configData?.rpcUrl || "https://api.devnet.solana.com",
+          configData?.rpcUrl ||
+            "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06",
           "confirmed"
         );
 
@@ -843,7 +844,9 @@ export function CandyMachineProvider({
       };
 
       // Khởi tạo UMI
-      const rpcEndpoint = configData.rpcUrl || "https://api.devnet.solana.com";
+      const rpcEndpoint =
+        configData.rpcUrl ||
+        "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06";
       console.log("✅ UMI initialized with rpcEndpoint:", rpcEndpoint);
       const umi = createUmi(rpcEndpoint)
         .use(mplCandyMachine())
@@ -1116,7 +1119,8 @@ export function CandyMachineProvider({
       // Tùy chọn: Lấy thông tin chi tiết transaction từ RPC
       try {
         const rpcEndpoint =
-          configData?.rpcUrl || "https://api.devnet.solana.com";
+          configData?.rpcUrl ||
+          "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06";
         transactionDetails = await getTransactionFromRPC(
           base58Signature,
           rpcEndpoint

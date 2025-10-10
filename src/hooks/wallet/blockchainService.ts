@@ -12,7 +12,7 @@ function getConnection(rpcUrl: string): Connection {
 
 export async function getSolBalanceLamports(
   address: string,
-  rpcUrl: string = "https://api.devnet.solana.com"
+  rpcUrl: string = "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06"
 ): Promise<number> {
   console.log("🔍 Getting SOL balance for:", address, "via RPC:", rpcUrl);
 

@@ -125,7 +125,10 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
   // Memoize RPC URL to prevent unnecessary re-renders
   const rpcUrl = useMemo(() => {
-    return configData?.rpcUrl || "https://api.devnet.solana.com";
+    return (
+      configData?.rpcUrl ||
+      "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06"
+    );
   }, [configData?.rpcUrl]);
 
   // Helper function to get SOL balance using config RPC URL

@@ -30,7 +30,7 @@ export const BLOCKCHAIN_CONFIG = {
   // Solana RPC endpoint
   SOLANA_RPC:
     process.env.NODE_ENV === "development"
-      ? "https://api.devnet.solana.com"
+      ? "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06"
       : "https://api.mainnet-beta.solana.com",
 
   // Network type

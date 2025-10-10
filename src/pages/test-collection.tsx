@@ -89,7 +89,8 @@ const TestCollectionPage = () => {
     const initMetaplex = async () => {
       try {
         const connection = new Connection(
-          configData?.rpcUrl || "https://api.devnet.solana.com",
+          configData?.rpcUrl ||
+            "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06",
           "confirmed"
         );
 
