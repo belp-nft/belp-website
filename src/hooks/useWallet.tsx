@@ -158,7 +158,7 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         setLoading(null);
       }
     },
-    [solAddress, getSolBalance, setSolLamports, setLoading, rpcUrl]
+    [solAddress]
   );
 
   // User data management
@@ -328,7 +328,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setSolAddress(null);
           setConnectedWallet(null);
           setConnectedType(null);
-          setSolLamports(0);
 
           // Reset global connection flags to prevent auto-reconnect
           globalConnectionProcessed = true; // Keep as true to prevent auto-connect
@@ -684,7 +683,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
           setSolAddress(null);
           setConnectedWallet(null);
           setConnectedType(null);
-          setSolLamports(0);
 
           // Clear storage and set disconnected flag
           WalletStorage.clear();
@@ -842,7 +840,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       // Reset state but keep isInitialLoadComplete to prevent auto-reconnect
       clearWalletState();
-      setSolLamports(0);
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
@@ -869,7 +866,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
 
       // Force cleanup on error but keep isInitialLoadComplete
       clearWalletState();
-      setSolLamports(0);
       setAuthToken(null);
       setUserStatistics(null);
       setTransactions([]);
