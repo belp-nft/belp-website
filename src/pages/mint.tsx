@@ -31,7 +31,7 @@ const cats = [
 const BelpyMintPage = () => {
   const router = useRouter();
   const { showSuccess, showError, showWarning, showInfo } = useToast();
-  const { solAddress } = useWalletContext();
+  const { solAddress, solBalanceText } = useWalletContext();
 
   const { isMinting, mint, clearResult, clearError } = useCandyMachine();
 
@@ -78,6 +78,24 @@ const BelpyMintPage = () => {
 
     try {
       if (!solAddress) {
+        setIsProcessing(false);
+        return;
+      }
+
+      // Check if balance is available and sufficient
+      const balanceNumber = Number(solBalanceText.replace(/,/g, ""));
+      if (
+        !solBalanceText ||
+        solBalanceText === "—" ||
+        solBalanceText === "Loading..." ||
+        isNaN(balanceNumber) ||
+        balanceNumber < 1
+      ) {
+        showError(
+          "Insufficient SOL",
+          "Your wallet doesn't have enough SOL balance to mint. Please add more SOL to your wallet.",
+          8000
+        );
         setIsProcessing(false);
         return;
       }
