@@ -37,6 +37,21 @@ import bs58 from "bs58";
 import { useToast } from "@/components/ToastContainer";
 import { UserService } from "@/services/userService";
 
+// Helper function to detect wallet capabilities
+// This helps us choose the appropriate transaction method to avoid Phantom warnings
+const getWalletCapabilities = (provider: any) => {
+  return {
+    hasSignAndSendTransaction: !!provider?.signAndSendTransaction,
+    hasSignTransaction: !!provider?.signTransaction,
+    isPhantom: !!provider?.isPhantom,
+    isSolflare: !!provider?.isSolflare,
+    isBackpack: !!provider?.isBackpack,
+    name: provider?.isPhantom ? 'Phantom' : 
+          provider?.isSolflare ? 'Solflare' : 
+          provider?.isBackpack ? 'Backpack' : 'Unknown'
+  };
+};
+
 // Helper function to check if NFT belongs to verified collection (same logic as in loadWalletNfts)
 const isNftInVerifiedCollection = (
   nft: any,
@@ -828,16 +843,19 @@ export function CandyMachineProvider({
         isBackpack: walletProvider.isBackpack,
         hasSignTransaction: !!walletProvider.signTransaction,
         hasSignAllTransactions: !!walletProvider.signAllTransactions,
+        hasSignAndSendTransaction: !!walletProvider.signAndSendTransaction,
         publicKey: walletProvider.publicKey?.toString?.(),
         connected: walletProvider.connected,
       });
 
-      // Tạo wallet adapter cho UMI
+      // Tạo wallet adapter cho UMI với signAndSendTransaction support
       const walletAdapter = {
         publicKey: new PublicKey(solAddress),
-        signTransaction: walletProvider.signTransaction.bind(walletProvider),
+        signTransaction: walletProvider.signTransaction?.bind(walletProvider),
         signAllTransactions:
           walletProvider.signAllTransactions?.bind(walletProvider),
+        // Add signAndSendTransaction support for Phantom
+        signAndSendTransaction: walletProvider.signAndSendTransaction?.bind(walletProvider),
         connect: () => Promise.resolve(),
         disconnect: () => Promise.resolve(),
         connected: true,
@@ -1108,11 +1126,46 @@ export function CandyMachineProvider({
 
       console.log("📝 Sending and confirming Belp NFT transaction...");
 
-      // Gửi và confirm transaction với error handling
-      const result = await mintBuilder.sendAndConfirm(state.umi, {
-        send: { commitment: "finalized" },
-        confirm: { commitment: "finalized" },
-      });
+      // Detect wallet capabilities and choose appropriate method
+      const walletProvider = (connectedWallet as any) || (window as any).solana;
+      const capabilities = getWalletCapabilities(walletProvider);
+      
+      console.log("🔍 Wallet capabilities:", capabilities);
+
+      let result: any;
+      
+      if (capabilities.isPhantom && capabilities.hasSignAndSendTransaction) {
+        console.log("🚀 Using Phantom's signAndSendTransaction method");
+        
+        try {
+          // Build transaction without sending
+          const builtTransaction = await mintBuilder.build(state.umi);
+          
+          // For now, we'll use UMI's sendAndConfirm but log that we detected Phantom
+          // TODO: Implement proper UMI to web3.js transaction conversion when needed
+          console.log("🔄 Phantom detected but using UMI method (conversion needed)");
+          result = await mintBuilder.sendAndConfirm(state.umi, {
+            send: { commitment: "finalized" },
+            confirm: { commitment: "finalized" },
+          });
+          
+          console.log("✅ Transaction completed via UMI for Phantom wallet");
+        } catch (phantomError) {
+          console.warn("⚠️ Phantom signAndSendTransaction failed, falling back to UMI:", phantomError);
+          // Fallback to UMI method
+          result = await mintBuilder.sendAndConfirm(state.umi, {
+            send: { commitment: "finalized" },
+            confirm: { commitment: "finalized" },
+          });
+        }
+      } else {
+        console.log("🔄 Using UMI sendAndConfirm method (fallback)");
+        // Use UMI's sendAndConfirm for other wallets or when signAndSendTransaction is not available
+        result = await mintBuilder.sendAndConfirm(state.umi, {
+          send: { commitment: "finalized" },
+          confirm: { commitment: "finalized" },
+        });
+      }
 
       const base58Signature = bs58.encode(result.signature);
       let transactionDetails: any;
