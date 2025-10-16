@@ -38,11 +38,6 @@ declare global {
       signAllTransactions?: (
         transactions: Transaction[]
       ) => Promise<Transaction[]>;
-      // Phantom's preferred method
-      signAndSendTransaction?: (
-        transaction: Transaction,
-        options?: { commitment?: string }
-      ) => Promise<{ signature: string }>;
     };
     solflare?: any;
     backpack?: any;

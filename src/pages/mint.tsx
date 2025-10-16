@@ -83,8 +83,6 @@ const BelpyMintPage = () => {
       }
 
       // Check if balance is available and sufficient
-      // COMMENTED FOR TESTING - Uncomment when ready for production
-      /*
       const balanceNumber = Number(solBalanceText.replace(/,/g, ""));
       if (
         !solBalanceText ||
@@ -101,8 +99,6 @@ const BelpyMintPage = () => {
         setIsProcessing(false);
         return;
       }
-      */
-      console.log("⚠️ BALANCE CHECK DISABLED FOR TESTING - Current balance:", solBalanceText);
 
       // Call mint from CandyMachine provider
       const mintResult = await mint();
