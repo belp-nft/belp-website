@@ -55,10 +55,18 @@ export function useSolflareProvider() {
       // console.log('🚀 Starting Solflare wallet connection...');
 
       // Bước 1: Kết nối với Solflare wallet
-      const resp = await solflare.connect();
-      const walletAddress = resp.publicKey?.toString?.() || null;
+      // Solflare connection flow: call connect(), then check provider.publicKey
+      await solflare.connect();
+
+      const walletAddress = solflare.publicKey?.toString?.() || null;
 
       if (!walletAddress) {
+        console.error("❌ Solflare publicKey not found after connect()");
+        console.error("❌ Provider state:", {
+          hasConnect: !!solflare.connect,
+          hasPublicKey: !!solflare.publicKey,
+          publicKeyValue: solflare.publicKey,
+        });
         throw new Error("Không thể lấy địa chỉ ví từ Solflare");
       }
 
@@ -86,7 +94,7 @@ export function useSolflareProvider() {
       }
 
       // console.log('🎉 Solflare wallet connection successful!');
-      return resp;
+      return { publicKey: walletAddress };
     } catch (error: any) {
       console.error("❌ Solflare connection failed:", error);
 

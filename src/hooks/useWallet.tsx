@@ -489,15 +489,25 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         console.log(`Starting ${config.displayName} wallet connection...`);
 
         // Request connection from wallet
-        const resp = await provider.connect();
-
-        if (!resp?.publicKey) {
-          throw new Error(
-            `Failed to get public key from ${config.displayName}`
-          );
+        let addr: string;
+        
+        if (walletType === "solflare") {
+          // Solflare has different connection flow
+          await provider.connect();
+          if (!provider.publicKey) {
+            throw new Error("Failed to get public key from Solflare");
+          }
+          addr = provider.publicKey.toString();
+        } else {
+          // Other wallets (Phantom, Backpack, etc.)
+          const resp = await provider.connect();
+          if (!resp?.publicKey) {
+            throw new Error(
+              `Failed to get public key from ${config.displayName}`
+            );
+          }
+          addr = resp.publicKey.toString();
         }
-
-        const addr = resp.publicKey.toString();
         setSolAddress(addr);
         setConnectedType("sol");
         setConnectedWallet(walletType);
@@ -539,6 +549,14 @@ export function useWallet(onConnected?: (info: Connected) => void) {
         } else if (error.message?.includes("wallet not found")) {
           alert(
             `${config.displayName} wallet not found. Please install ${config.displayName} extension or app.`
+          );
+        } else if (error.message?.includes("Failed to get public key")) {
+          alert(
+            `Failed to connect to ${config.displayName}. Please:\n` +
+            `1. Make sure ${config.displayName} extension is installed and enabled\n` +
+            `2. Open the extension and make sure you're logged in\n` +
+            `3. Refresh the page and try again\n` +
+            `4. Check that network matches (mainnet/devnet)`
           );
         } else {
           alert(
