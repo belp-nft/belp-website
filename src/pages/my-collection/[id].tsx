@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
-import { BLOCKCHAIN_CONFIG } from "@/services";
+import { BLOCKCHAIN_CONFIG } from "@/config/env.config";
 import { BiStar } from "react-icons/bi";
 import { motion } from "framer-motion";
 import clsx from "clsx";
@@ -74,8 +74,7 @@ const NftDetailPage = () => {
     const initMetaplex = async () => {
       try {
         const connection = new Connection(
-          configData?.rpcUrl ||
-            "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06",
+          BLOCKCHAIN_CONFIG.SOLANA_RPC,
           "confirmed"
         );
 
@@ -89,7 +88,7 @@ const NftDetailPage = () => {
     };
 
     initMetaplex();
-  }, [configData?.rpcUrl]);
+  }, []);
 
   const openTokenOnSolscan = (tokenAddress: string) => {
     if (!tokenAddress) return;
@@ -180,7 +179,7 @@ const NftDetailPage = () => {
                   `This could be because:\n` +
                   `• The address is not a valid mint address\n` +
                   `• The NFT doesn't exist\n` +
-                  `• The NFT is not on the current network (${configData?.rpcUrl?.includes("devnet") ? "devnet" : "mainnet"})\n\n` +
+                  `• The NFT is not on the current network (${BLOCKCHAIN_CONFIG.NETWORK})\n\n` +
                   `Please verify the address and try again.`
               );
             }

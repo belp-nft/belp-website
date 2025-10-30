@@ -1,5 +1,6 @@
 import { ConfigService } from "@/services";
 import type { CandyMachineConfig, CandyMachineState } from "./types";
+import { BLOCKCHAIN_CONFIG } from "@/config/env.config";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   mplCandyMachine,
@@ -24,10 +25,9 @@ export const createConfigActions = (
         let totalMinted = 0;
         let totalSupply = 0;
         try {
-          const rpcEndpoint =
-            config.rpcUrl ||
-            "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06";
-          const umi = createUmi(rpcEndpoint).use(mplCandyMachine());
+          const umi = createUmi(BLOCKCHAIN_CONFIG.SOLANA_RPC).use(
+            mplCandyMachine()
+          );
           const cm = await fetchCandyMachine(umi, umiPublicKey(config.address));
           totalMinted = Number(cm.itemsRedeemed || 0);
           totalSupply = Number(cm.itemsLoaded || 0);
@@ -79,10 +79,9 @@ export const createConfigActions = (
     }
 
     try {
-      const rpcEndpoint =
-        state.config?.rpcUrl ||
-        "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06";
-      const umi = createUmi(rpcEndpoint).use(mplCandyMachine());
+      const umi = createUmi(BLOCKCHAIN_CONFIG.SOLANA_RPC).use(
+        mplCandyMachine()
+      );
       const cm = await fetchCandyMachine(umi, umiPublicKey(targetAddress));
 
       const totalProcessed = Number(cm.itemsRedeemed || 0);

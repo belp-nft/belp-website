@@ -16,6 +16,7 @@ import {
   useConfigLoading,
   useConfigError,
 } from "@/stores/config";
+import { BLOCKCHAIN_CONFIG } from "@/config/env.config";
 import { PublicKey, Connection } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -426,8 +427,7 @@ export function CandyMachineProvider({
     const initMetaplex = async () => {
       try {
         const connection = new Connection(
-          configData?.rpcUrl ||
-            "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06",
+          BLOCKCHAIN_CONFIG.SOLANA_RPC,
           "confirmed"
         );
 
@@ -445,7 +445,7 @@ export function CandyMachineProvider({
     };
 
     initMetaplex();
-  }, [configData?.rpcUrl]);
+  }, []);
 
   // Load wallet NFTs function with pagination support and cancellation
   const loadWalletNfts = useCallback(
@@ -844,11 +844,8 @@ export function CandyMachineProvider({
       };
 
       // Khởi tạo UMI
-      const rpcEndpoint =
-        configData.rpcUrl ||
-        "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06";
-      console.log("✅ UMI initialized with rpcEndpoint:", rpcEndpoint);
-      const umi = createUmi(rpcEndpoint)
+      console.log("✅ UMI initialized with rpcEndpoint:", BLOCKCHAIN_CONFIG.SOLANA_RPC);
+      const umi = createUmi(BLOCKCHAIN_CONFIG.SOLANA_RPC)
         .use(mplCandyMachine())
         .use(mplCore())
         .use(walletAdapterIdentity(walletAdapter));
@@ -910,7 +907,6 @@ export function CandyMachineProvider({
         address: configData.address,
         collectionAddress: configData.collectionAddress,
         updateAuthority: configData.updateAuthority,
-        rpcUrl: configData.rpcUrl,
       });
     }
   }, [configData, configLoading, configError, fetchConfig]);
@@ -1118,12 +1114,9 @@ export function CandyMachineProvider({
       let transactionDetails: any;
       // Tùy chọn: Lấy thông tin chi tiết transaction từ RPC
       try {
-        const rpcEndpoint =
-          configData?.rpcUrl ||
-          "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06";
         transactionDetails = await getTransactionFromRPC(
           base58Signature,
-          rpcEndpoint
+          BLOCKCHAIN_CONFIG.SOLANA_RPC
         );
         if (transactionDetails) {
           console.log("📋 Transaction details from RPC:", transactionDetails);

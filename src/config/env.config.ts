@@ -27,11 +27,9 @@ export const API_CONFIG = {
  * Blockchain Configuration
  */
 export const BLOCKCHAIN_CONFIG = {
-  // Solana RPC endpoint
+  // Solana RPC endpoint - sử dụng từ biến môi trường
   SOLANA_RPC:
-    process.env.NODE_ENV === "development"
-      ? "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06"
-      : "https://api.mainnet-beta.solana.com",
+    "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06",
 
   // Network type
   NETWORK: process.env.NODE_ENV === "development" ? "devnet" : "mainnet",

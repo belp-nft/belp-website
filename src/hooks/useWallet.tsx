@@ -2,10 +2,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useBalance } from "@/providers/BalanceProvider";
-import { useClearConfig, useConfig } from "@/stores/config";
+import { useClearConfig } from "@/stores/config";
 
 import { AuthService } from "@/services";
 import { WalletStorage } from "@/constants/storage";
+import { BLOCKCHAIN_CONFIG } from "@/config/env.config";
 
 // Import separated services
 import { WalletDebugService } from "./wallet/debugService";
@@ -105,7 +106,6 @@ export function useWallet(onConnected?: (info: Connected) => void) {
   const currentSolAddressRef = useRef<string | null>(null);
 
   const clearConfig = useClearConfig();
-  const configData = useConfig();
 
   // Computed values
   const solBalanceText = useMemo(
@@ -123,13 +123,10 @@ export function useWallet(onConnected?: (info: Connected) => void) {
     );
   }, [solAddress, authToken, isAuthenticating]);
 
-  // Memoize RPC URL to prevent unnecessary re-renders
+  // Memoize RPC URL to prevent unnecessary re-renders - use from env config
   const rpcUrl = useMemo(() => {
-    return (
-      configData?.rpcUrl ||
-      "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06"
-    );
-  }, [configData?.rpcUrl]);
+    return BLOCKCHAIN_CONFIG.SOLANA_RPC;
+  }, []);
 
   // Helper function to get SOL balance using config RPC URL
   const getSolBalance = useCallback(

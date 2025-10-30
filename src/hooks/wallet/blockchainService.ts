@@ -1,4 +1,5 @@
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { BLOCKCHAIN_CONFIG } from "@/config/env.config";
 
 // Connection pool to reuse connections
 const connectionPool = new Map<string, Connection>();
@@ -12,7 +13,7 @@ function getConnection(rpcUrl: string): Connection {
 
 export async function getSolBalanceLamports(
   address: string,
-  rpcUrl: string = "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06"
+  rpcUrl: string = BLOCKCHAIN_CONFIG.SOLANA_RPC
 ): Promise<number> {
   console.log("🔍 Getting SOL balance for:", address, "via RPC:", rpcUrl);
 

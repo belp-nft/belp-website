@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Metaplex } from "@metaplex-foundation/js";
 import { useConfig } from "@/stores";
+import { BLOCKCHAIN_CONFIG } from "@/config/env.config";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import clsx from "clsx";
@@ -89,8 +90,7 @@ const TestCollectionPage = () => {
     const initMetaplex = async () => {
       try {
         const connection = new Connection(
-          configData?.rpcUrl ||
-            "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06",
+          BLOCKCHAIN_CONFIG.SOLANA_RPC,
           "confirmed"
         );
 
@@ -104,7 +104,7 @@ const TestCollectionPage = () => {
     };
 
     initMetaplex();
-  }, [configData?.rpcUrl]);
+  }, []);
 
   const loadWalletNfts = async () => {
     if (!metaplex) {
