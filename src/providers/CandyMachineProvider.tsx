@@ -1116,9 +1116,9 @@ export function CandyMachineProvider({
       });
 
       const mintBuilder = transactionBuilder()
-        // Add compute budget instructions first
-        .add(setComputeUnitLimit(state.umi, { units: 400_000 })) // Increased from 350k to 400k for reliability
-        .add(setComputeUnitPrice(state.umi, { microLamports: 5 })) // Increased from 1 to 5 microLamports for better priority
+        // Add compute budget instructions first - increased for stability
+        .add(setComputeUnitLimit(state.umi, { units: 500_000 })) // 500k CUs for reliability
+        .add(setComputeUnitPrice(state.umi, { microLamports: 10 })) // 10 microLamports for better priority
         .add(
           mintV2(state.umi, {
             candyMachine: umiPublicKey(configData?.address || ""),
@@ -1136,11 +1136,54 @@ export function CandyMachineProvider({
 
       console.log("📝 Sending and confirming Belp NFT transaction...");
 
-      // Gửi và confirm transaction với error handling
-      const result = await mintBuilder.sendAndConfirm(state.umi, {
-        send: { commitment: "finalized" },
-        confirm: { commitment: "finalized" },
-      });
+      // Gửi và confirm transaction với error handling + retry logic
+      let result: any;
+      let retryCount = 0;
+      const maxRetries = 2;
+
+      while (retryCount <= maxRetries) {
+        try {
+          result = await mintBuilder.sendAndConfirm(state.umi, {
+            send: { commitment: "processed" }, // Use 'processed' for faster initial send
+            confirm: { commitment: "confirmed" }, // Confirm with 'confirmed' for security
+          });
+          console.log("✅ Transaction sent successfully");
+          break;
+        } catch (error: any) {
+          retryCount++;
+          console.log(
+            `⚠️ Transaction attempt ${retryCount}/${maxRetries + 1} failed:`,
+            error.message
+          );
+
+          // Only retry on specific network errors
+          if (
+            retryCount <= maxRetries &&
+            (error.message?.includes("blockhash") ||
+              error.message?.includes("timeout") ||
+              error.message?.includes("InvalidBlockhash"))
+          ) {
+            console.log(`⏳ Waiting 2s before retry ${retryCount}...`);
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2s before retry
+
+            // Refresh candy machine for next attempt
+            const refreshedCM = await fetchCandyMachine(
+              state.umi,
+              umiPublicKey(configData?.address || "")
+            );
+            console.log("🔄 Refreshed candy machine for retry");
+
+            continue;
+          }
+
+          // Throw error if max retries exceeded or non-retryable error
+          throw error;
+        }
+      }
+
+      if (!result) {
+        throw new Error("Transaction failed after all retries");
+      }
 
       const base58Signature = bs58.encode(result.signature);
       let transactionDetails: any;
