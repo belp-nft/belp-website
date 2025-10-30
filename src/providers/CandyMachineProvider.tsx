@@ -374,6 +374,7 @@ export function CandyMachineProvider({
 
   // Get config from store
   const configData = useConfig();
+  console.log("🚀 ~ CandyMachineProvider ~ configData:", configData)
   const collectionAddress = useCollectionAddress();
   const fetchConfig = useFetchConfig();
   const configLoading = useConfigLoading();
@@ -1078,37 +1079,103 @@ export function CandyMachineProvider({
       lastMintResult: null,
     }));
 
-    console.log("Starting mint for wallet:", solAddress);
+    console.log("🎯 Starting mint for wallet:", solAddress);
 
     try {
+      // Log candy machine details
+      console.log("📋 Candy Machine Details:", {
+        address: state.candyMachine.publicKey,
+        itemsLoaded: Number(state.candyMachine.itemsLoaded),
+        itemsRedeemed: Number(state.candyMachine.itemsRedeemed),
+        collectionMint: state.candyMachine.collectionMint,
+        authority: state.candyMachine.authority,
+        tokenStandard: state.candyMachine.tokenStandard,
+      });
+
       // Tạo NFT mint signer
       const nftMint = generateSigner(state.umi);
       console.log("🎯 Generated NFT mint:", nftMint.publicKey);
 
+      // ULTRA-DETAILED LOGGING FOR DEBUGGING
+      console.log("📋 ===== FULL CONFIG DATA =====");
+      console.log("configData.address:", configData.address);
+      console.log("configData.collectionAddress:", configData.collectionAddress);
+      console.log("configData.updateAuthority:", configData.updateAuthority);
+      console.log("configData.authority:", (configData as any).authority);
+      console.log("state.candyMachine.collectionMint:", state.candyMachine.collectionMint);
+      console.log("state.candyMachine.authority:", state.candyMachine.authority);
+      console.log("state.candyMachine.tokenStandard:", state.candyMachine.tokenStandard);
+      console.log("state.umi.identity.publicKey:", state.umi.identity.publicKey);
+      console.log("===============================");
+
+      // Log mint parameters before building
+      console.log("🔧 Mint Parameters:", {
+        candyMachineAddress: configData.address,
+        nftMintKey: nftMint.publicKey,
+        collectionMintKey: state.candyMachine.collectionMint,
+        collectionAuthority: state.candyMachine.authority,
+        updateAuthority: configData.updateAuthority,
+        payerKey: state.umi.identity.publicKey,
+      });
+
       // Tạo mint instruction
       console.log("🔨 Building mint transaction...");
+      
+      // Get core values needed for mint
+      const cmAddress = umiPublicKey(configData.address);
+      const nftMintSigner = nftMint;
+      
+      // Get collection info from state (already validated on-chain)
+      const collectionMint = state.candyMachine.collectionMint
+        ? umiPublicKey(state.candyMachine.collectionMint)
+        : undefined;
+      
+      const collectionUpdateAuthority = state.candyMachine.authority
+        ? umiPublicKey(state.candyMachine.authority)
+        : undefined;
+
+      console.log("🔑 Core Mint Values:", {
+        candyMachine: cmAddress.toString(),
+        nftMint: nftMintSigner.publicKey.toString(),
+        collectionMint: collectionMint?.toString(),
+        collectionUpdateAuthority: collectionUpdateAuthority?.toString(),
+        payer: state.umi.identity.publicKey.toString(),
+      });
+
+      // Build minimal mint config - only required fields
+      const mintConfig: any = {
+        candyMachine: cmAddress,
+        nftMint: nftMintSigner,
+        collectionMint: collectionMint,
+        collectionUpdateAuthority: collectionUpdateAuthority,
+      };
+
+      // CRITICAL FIX: If candy machine has a guard, include it!
+      // The Guard program requires these accounts to process the mint
+      console.log("🔍 Checking if candy machine has a guard...");
+      if ((state.candyMachine as any).guard) {
+        console.log("✅ Found guard in candy machine, adding to mint config");
+        mintConfig.guard = (state.candyMachine as any).guard;
+      }
+
+      console.log("📋 Final mint config:", JSON.stringify(mintConfig, null, 2));
+      console.log("✅ About to call mintV2 with proper config");
+
+      // Build transaction with guard support
       const mintBuilder = transactionBuilder().add(
-        mintV2(state.umi, {
-          candyMachine: umiPublicKey(configData?.address || ""),
-          nftMint,
-          collectionMint: state.candyMachine.collectionMint,
-          collectionUpdateAuthority: state.candyMachine.authority,
-          tokenStandard: state.candyMachine.tokenStandard,
-          mintArgs: {
-            solPayment: {
-              destination: umiPublicKey(configData?.updateAuthority || ""),
-            },
-          },
-        })
+        mintV2(state.umi, mintConfig)
       );
 
+      console.log("✅ Mint instruction built successfully");
       console.log("📝 Sending and confirming Belp NFT transaction...");
 
-      // Gửi và confirm transaction với error handling
+      // Gửi transaction với error logging
       const result = await mintBuilder.sendAndConfirm(state.umi, {
         send: { commitment: "finalized" },
         confirm: { commitment: "finalized" },
       });
+      
+      console.log("✅ Transaction confirmed:", result);
 
       const base58Signature = bs58.encode(result.signature);
       let transactionDetails: any;
@@ -1295,56 +1362,54 @@ export function CandyMachineProvider({
 
       return mintResult;
     } catch (error: any) {
-      console.log("❌ Belp NFT mint failed:", error);
+      console.error("❌ MINT FAILED - Full Error:", error);
+      
+      const errorInfo = {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        logs: error.logs,
+        cause: error.cause,
+        methodLogs: null as any,
+      };
 
-      // Try to get detailed logs if it's a SendTransactionError
-      if (error.getLogs && typeof error.getLogs === "function") {
+      // Try to get logs
+      if (typeof error.getLogs === "function") {
         try {
-          const logs = await error.getLogs();
-          console.log("🔍 Transaction logs:", logs);
-        } catch (logError) {
-          console.log("❌ Failed to get transaction logs:", logError);
+          errorInfo.methodLogs = await error.getLogs();
+          console.log("✅ Got logs:", errorInfo.methodLogs);
+        } catch (e) {
+          console.log("⚠️ getLogs() failed");
         }
       }
+
+      console.error("🔍 Error Details:", errorInfo);
+      const errorStr = error.toString?.() || error.message || "";
 
       let errorMessage = "Failed to mint Belp NFT";
       let errorType = "error";
 
-      // Xử lý các loại lỗi khác nhau
       if (
-        error.message?.includes("User rejected") ||
-        error.message?.includes("rejected")
+        errorStr.includes("User rejected") ||
+        errorStr.includes("rejected")
       ) {
-        errorMessage = "Transaction was cancelled by user";
-        errorType = "warning";
-      } else if (error.message?.includes("insufficient")) {
-        errorMessage =
-          "Insufficient SOL balance. Please add more SOL to your wallet";
-        errorType = "error";
-      } else if (error.message?.includes("sold out")) {
-        errorMessage = "All Belp NFTs have been sold out";
-        errorType = "info";
-      } else if (error.message?.includes("not active")) {
-        errorMessage = "Belp NFT minting is not currently active";
-        errorType = "info";
-      } else if (error.message?.includes("blockhash")) {
-        errorMessage = "Network congestion. Please try again";
-        errorType = "warning";
-      } else if (error.message?.includes("timeout")) {
-        errorMessage = "Transaction timeout. Please try again";
+        errorMessage = "Transaction cancelled";
         errorType = "warning";
       } else if (
-        error.message?.includes("simulation failed") ||
-        error.message?.includes("Simulation failed")
+        errorStr.includes("insufficient") ||
+        errorStr.includes("Insufficient")
       ) {
-        errorMessage =
-          "Transaction simulation failed. Please try again or check your wallet balance";
+        errorMessage = "Insufficient SOL - need at least 0.1 SOL";
+        errorType = "error";
+      } else if (errorStr.includes("simulation failed") ||
+        errorStr.includes("Simulation failed")) {
+        errorMessage = "Simulation failed - check SOL balance, already minted, or CM active";
         errorType = "warning";
-      } else if (error.message?.includes("deserialize")) {
-        errorMessage = "Transaction format error. Please refresh and try again";
-        errorType = "warning";
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (errorStr.includes("custom program error")) {
+        errorMessage = "Candy machine constraint error - already minted?";
+        errorType = "error";
+      } else {
+        errorMessage = errorStr.substring(0, 200);
       }
 
       const result: MintResult = {
@@ -1353,7 +1418,6 @@ export function CandyMachineProvider({
         errorType,
       };
 
-      // Hiển thị lỗi bằng toast
       showError("Mint Error", errorMessage);
 
       setState((prev) => ({
