@@ -1102,6 +1102,19 @@ export function CandyMachineProvider({
 
       // Tạo mint instruction
       console.log("🔨 Building mint transaction...");
+      
+      // Debug: Log mint parameters
+      console.log("📋 Mint Parameters:", {
+        candyMachine: configData?.address,
+        nftMint: nftMint.publicKey,
+        collectionMint: freshCandyMachine.collectionMint,
+        collectionUpdateAuthority: freshCandyMachine.authority,
+        tokenStandard: freshCandyMachine.tokenStandard,
+        updateAuthority: configData?.updateAuthority,
+        freshCMAuthority: freshCandyMachine.authority?.toString?.(),
+        freshCMCollectionMint: freshCandyMachine.collectionMint?.toString?.(),
+      });
+
       const mintBuilder = transactionBuilder()
         // Add compute budget instructions first
         .add(setComputeUnitLimit(state.umi, { units: 400_000 })) // Increased from 350k to 400k for reliability
