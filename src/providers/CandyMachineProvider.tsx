@@ -27,6 +27,10 @@ import {
   mplCandyMachine,
   CandyMachine,
 } from "@metaplex-foundation/mpl-candy-machine";
+import {
+  setComputeUnitLimit,
+  setComputeUnitPrice,
+} from "@metaplex-foundation/mpl-toolbox";
 import { CollectionV1, mplCore } from "@metaplex-foundation/mpl-core";
 import {
   generateSigner,
@@ -1081,26 +1085,41 @@ export function CandyMachineProvider({
     console.log("Starting mint for wallet:", solAddress);
 
     try {
+      // ⚠️ CRITICAL: Refresh Candy Machine data before mint to avoid deserialization errors
+      console.log("🔄 Refreshing Candy Machine data before mint...");
+      const freshCandyMachine = await fetchCandyMachine(
+        state.umi,
+        umiPublicKey(configData?.address || "")
+      );
+      console.log("✅ Candy Machine refreshed:", {
+        itemsLoaded: freshCandyMachine.itemsLoaded,
+        itemsRedeemed: freshCandyMachine.itemsRedeemed,
+      });
+
       // Tạo NFT mint signer
       const nftMint = generateSigner(state.umi);
       console.log("🎯 Generated NFT mint:", nftMint.publicKey);
 
       // Tạo mint instruction
       console.log("🔨 Building mint transaction...");
-      const mintBuilder = transactionBuilder().add(
-        mintV2(state.umi, {
-          candyMachine: umiPublicKey(configData?.address || ""),
-          nftMint,
-          collectionMint: state.candyMachine.collectionMint,
-          collectionUpdateAuthority: state.candyMachine.authority,
-          tokenStandard: state.candyMachine.tokenStandard,
-          mintArgs: {
-            solPayment: {
-              destination: umiPublicKey(configData?.updateAuthority || ""),
+      const mintBuilder = transactionBuilder()
+        // Add compute budget instructions first
+        .add(setComputeUnitLimit(state.umi, { units: 400_000 })) // Increased from 350k to 400k for reliability
+        .add(setComputeUnitPrice(state.umi, { microLamports: 5 })) // Increased from 1 to 5 microLamports for better priority
+        .add(
+          mintV2(state.umi, {
+            candyMachine: umiPublicKey(configData?.address || ""),
+            nftMint,
+            collectionMint: freshCandyMachine.collectionMint,
+            collectionUpdateAuthority: freshCandyMachine.authority,
+            tokenStandard: freshCandyMachine.tokenStandard,
+            mintArgs: {
+              solPayment: {
+                destination: umiPublicKey(configData?.updateAuthority || ""),
+              },
             },
-          },
-        })
-      );
+          })
+        );
 
       console.log("📝 Sending and confirming Belp NFT transaction...");
 
