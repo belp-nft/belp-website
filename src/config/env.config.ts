@@ -29,7 +29,7 @@ export const API_CONFIG = {
 export const BLOCKCHAIN_CONFIG = {
   // Solana RPC endpoint - sử dụng từ biến môi trường
   SOLANA_RPC:
-    "https://stylish-long-water.solana-mainnet.quiknode.pro/a51cf5df251ae4aadcc70d3c7685f56a8707dd06",
+    "https://api.zan.top/node/v1/solana/mainnet/352e7fc949b44076ac8ba20fbdd5b216",
 
   // Network type
   NETWORK: process.env.NODE_ENV === "development" ? "devnet" : "mainnet",
