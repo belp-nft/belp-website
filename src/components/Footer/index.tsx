@@ -36,6 +36,18 @@ export default function BelpFooter() {
       tooltip: "Discord",
       href: "https://discord.gg/belp",
     },
+    {
+      name: "youtube",
+      icon: "/icons/youtube.svg",
+      tooltip: "YouTube",
+      href: "https://www.youtube.com/@BELPYTHECAT",
+    },
+    {
+      name: "instagram",
+      icon: "/icons/instagram.svg",
+      tooltip: "Instagram",
+      href: "https://www.instagram.com/belpy_the_cat/",
+    },
   ];
   return (
     <footer className="bg-[#690078] pt-12 pb-6 w-full">
@@ -49,7 +61,7 @@ export default function BelpFooter() {
         />
         <hr className="border-t border-white mt-10" />
 
-        <div className="flex gap-3 sm:gap-5 md:gap-[30px] py-5 items-center justify-center relative">
+        <div className="flex flex-wrap gap-4 sm:gap-5 md:gap-6 py-5 items-center justify-center relative px-4">
           {socialIcons.map((social) => (
             <div
               key={social.name}
@@ -68,7 +80,7 @@ export default function BelpFooter() {
                       alt={social.tooltip}
                       width={50}
                       height={50}
-                      className="w-full h-full object-contain filter"
+                      className="w-10 h-10 sm:w-12 sm:h-12 md:w-[50px] md:h-[50px] object-contain filter"
                     />
                   </a>
                 ) : (
@@ -83,7 +95,7 @@ export default function BelpFooter() {
                       alt={social.tooltip}
                       width={50}
                       height={50}
-                      className="w-full h-full object-contain filter"
+                      className="w-10 h-10 sm:w-12 sm:h-12 md:w-[50px] md:h-[50px] object-contain filter"
                     />
                   </Link>
                 )
@@ -94,7 +106,7 @@ export default function BelpFooter() {
                     alt={social.tooltip}
                     width={50}
                     height={50}
-                    className="w-full h-full object-contain filter"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-[50px] md:h-[50px] object-contain filter"
                   />
                 </div>
               )}
