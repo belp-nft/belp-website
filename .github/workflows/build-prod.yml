@@ -70,6 +70,11 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa \
             ${{ secrets.BELPY_SSH_USERNAME }}@${{ secrets.BELPY_IP }} \
             "cd home/belpy && \
+            echo '🧹 Cleaning Docker on EC2...' &&
+            docker stop \$(docker ps -aq) || true &&
+            docker rm -f \$(docker ps -aq) || true &&
+            docker system prune -af --volumes || true &&
+            docker volume prune -f || true &&
             docker rm -f belpy_website && \
             docker rmi -f ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_APPNAME }}.prod && \
             docker-compose up -d"
